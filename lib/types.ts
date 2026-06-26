@@ -14,10 +14,13 @@ export interface Profile {
   id: string;
   full_name: string;
   email: string;
+  email_secondary: string | null;
   role: UserRole;
   avatar_url: string | null;
   phone: string | null;
   cnic: string | null;
+  gender: string | null;
+  employee_code: string | null;
   position: string | null;
   department: string | null;
   reports_to: string | null;
@@ -27,8 +30,35 @@ export interface Profile {
   emergency_name: string | null;
   emergency_phone: string | null;
   emergency_relation: string | null;
+  bank_account_number: string | null;
+  bank_account_title: string | null;
+  bank_name: string | null;
+  iban: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CompensationComponent {
+  id: string;
+  employee_id: string;
+  label: string;
+  amount: number;
+  description: string | null;
+  recurring: boolean;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayslipComponent {
+  id: string;
+  payroll_run_id: string;
+  label: string;
+  amount: number;
+  kind: "base" | "addition" | "deduction";
+  description: string | null;
+  created_at: string;
 }
 
 export interface Shift {
@@ -124,6 +154,11 @@ export interface PayrollRun {
   deductions: number;
   net_pay: number;
   status: PayrollStatus;
+  additions_total: number;
+  payment_status: "pending" | "paid";
+  paid_at: string | null;
+  paid_amount: number | null;
+  credited_account: string | null;
   notes: string | null;
   generated_by: string | null;
   finalised_at: string | null;
