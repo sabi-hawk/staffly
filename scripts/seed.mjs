@@ -11,16 +11,22 @@ const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const admin = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });
 
-const PASSWORD = "Test@12345";
+const ADMIN_PASSWORD = "Test@12345";       // founder + hr admin accounts
+const EMP_PASSWORD = "Softonoma@123";      // real employees
 const USERS = [
-  { id: "00000000-0000-0000-0000-000000000001", email: "founder@acme.test", full_name: "Founder Admin", role: "super_admin" },
-  { id: "00000000-0000-0000-0000-000000000002", email: "hr@acme.test",       full_name: "Hira HR",       role: "admin" },
-  { id: "00000000-0000-0000-0000-000000000011", email: "ali@acme.test",      full_name: "Ali Dev",       role: "employee" },
-  { id: "00000000-0000-0000-0000-000000000012", email: "sara@acme.test",     full_name: "Sara Dev",      role: "employee" },
-  { id: "00000000-0000-0000-0000-000000000013", email: "bilal@acme.test",    full_name: "Bilal BD",      role: "employee" },
-  { id: "00000000-0000-0000-0000-000000000014", email: "zara@acme.test",     full_name: "Zara BD",       role: "employee" },
-  { id: "00000000-0000-0000-0000-000000000015", email: "omar@acme.test",     full_name: "Omar Ops",      role: "employee" },
+  { id: "00000000-0000-0000-0000-000000000001", email: "founder@acme.test", full_name: "Founder Admin", role: "super_admin", password: ADMIN_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000002", email: "hr@acme.test",       full_name: "Hira HR",       role: "admin",       password: ADMIN_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000021", email: "029755shaizamaheen@gmail.com", full_name: "Shaiza Maheen",        role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000022", email: "ahmad.roshi5@gmail.com",        full_name: "Ahmad Roshan",         role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000023", email: "fatimasul89@gmail.com",         full_name: "Fatima Sultan",        role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000024", email: "areebazaidi027@gmail.com",      full_name: "Areeba",               role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000025", email: "muhammad.aizaz0900@gmail.com",  full_name: "Muhammad Aizaz Ansab", role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000026", email: "muzammilfaiz.dev@gmail.com",    full_name: "Muzammal Faiz",        role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000027", email: "hamzailyas311@gmail.com",       full_name: "Muhammad Hamza Ilyas", role: "employee", password: EMP_PASSWORD },
 ];
+
+// Legacy fake employees from v1 — remove their auth users so they no longer appear.
+const STALE_EMAILS = ["ali@acme.test", "sara@acme.test", "bilal@acme.test", "zara@acme.test", "omar@acme.test"];
 
 async function findUserByEmail(email) {
   // paginate admin.listUsers
@@ -41,9 +47,8 @@ async function ensureUser(u) {
       // Recreate with the fixed UUID so profiles FKs resolve.
       await admin.auth.admin.deleteUser(existing.id);
     } else {
-      // keep, but make sure password + metadata are set
       await admin.auth.admin.updateUserById(u.id, {
-        password: PASSWORD,
+        password: u.password,
         user_metadata: { full_name: u.full_name, role: u.role },
         email_confirm: true,
       });
@@ -53,7 +58,7 @@ async function ensureUser(u) {
   const { data, error } = await admin.auth.admin.createUser({
     id: u.id,
     email: u.email,
-    password: PASSWORD,
+    password: u.password,
     email_confirm: true,
     user_metadata: { full_name: u.full_name, role: u.role },
   });
@@ -63,11 +68,24 @@ async function ensureUser(u) {
   return "created";
 }
 
+async function removeStaleUsers() {
+  for (const email of STALE_EMAILS) {
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      await admin.auth.admin.deleteUser(existing.id);
+      console.log(`   removed legacy user ${email}`);
+    }
+  }
+}
+
 async function main() {
-  console.log("== 1. Creating demo auth users (password " + PASSWORD + ") ==");
+  console.log("== 0. Removing legacy fake employees ==");
+  await removeStaleUsers();
+
+  console.log("== 1. Creating auth users (admins Test@12345 / employees Softonoma@123) ==");
   for (const u of USERS) {
     const r = await ensureUser(u);
-    console.log(`   ${r.padEnd(8)} ${u.email.padEnd(20)} ${u.role}`);
+    console.log(`   ${r.padEnd(8)} ${u.email.padEnd(34)} ${u.role}`);
   }
 
   console.log("== 2. Running supabase/seed.sql ==");
@@ -77,12 +95,21 @@ async function main() {
   await client.query(sql);
   console.log("   seed.sql applied.");
 
-  console.log("== 3. Verification — Ali's attendance (trigger-computed) ==");
+  // counts for pagination/analytics sanity
+  const counts = await client.query(
+    `select (select count(*) from profiles where role='employee') emp,
+            (select count(*) from attendance) att,
+            (select count(*) from compensation_components) comp`
+  );
+  console.log(`== 2b. Counts — employees ${counts.rows[0].emp}, attendance rows ${counts.rows[0].att}, compensation ${counts.rows[0].comp} ==`);
+
+  console.log("== 3. Verification — Muzammal's canonical last 5 working days ==");
   const { rows } = await client.query(
     `select work_date, total_hours, deficit_hours, extra_hours,
             (check_out_time is null) as open
      from attendance
-     where employee_id = '00000000-0000-0000-0000-000000000011'
+     where employee_id = '00000000-0000-0000-0000-000000000026'
+       and work_date >= current_date - 7 and work_date <= current_date - 3
      order by work_date`
   );
   console.log("   date         total  deficit  extra   note");
@@ -107,8 +134,9 @@ async function main() {
   console.log(`\n   canonical dataset correct: ${ok ? "YES ✅" : "NO ❌"}`);
 
   await client.end();
-  console.log("\nDone. Demo logins (password " + PASSWORD + "):");
-  console.log("  Super Admin: founder@acme.test | Admin: hr@acme.test | Employee: ali@acme.test");
+  console.log("\nDone. Logins:");
+  console.log("  Super Admin: founder@acme.test (Test@12345) | Admin: hr@acme.test (Test@12345)");
+  console.log("  Employees:   <their email> (Softonoma@123) — e.g. muzammilfaiz.dev@gmail.com");
 }
 
 main().catch((e) => {
