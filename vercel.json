@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/missed-checkin", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/missed-checkout", "schedule": "*/15 * * * *" }
+  ]
+}
