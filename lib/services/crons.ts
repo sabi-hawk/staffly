@@ -102,7 +102,7 @@ export async function scanMissedCheckout(supabase: SupabaseClient, now = new Dat
 
   const { data: open } = await supabase
     .from("attendance")
-    .select("*, profiles!inner(id, full_name, email)")
+    .select("*, profiles!attendance_employee_id_fkey!inner(id, full_name, email)")
     .is("check_out_time", null)
     .not("check_in_time", "is", null);
 

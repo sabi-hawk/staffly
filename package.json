@@ -12,7 +12,9 @@
     "simulate": "node scripts/simulate.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rls": "node scripts/rls-test.mjs"
+    "test:rls": "node scripts/rls-test.mjs",
+    "test:int": "vitest run --config vitest.integration.config.ts",
+    "report": "node scripts/final-report.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
