@@ -90,14 +90,16 @@ export async function checkOut(
 }
 
 /**
- * §9.6 Edit a checkout time. Writes an audit_log row (before/after) and sets is_edited.
- * Employees may edit their own current-day record; admins may edit any record (edit_reason required).
+ * §9.6 Edit an attendance record's check-in and/or check-out time. Writes an audit_log row
+ * (before/after) and sets is_edited; the DB trigger recomputes total/deficit/extra.
+ * Employees may edit their own current-day checkout; admins may edit either timestamp on any
+ * record (edit_reason expected).
  */
-export async function editCheckout(
+export async function editAttendance(
   supabase: SupabaseClient,
   attendanceId: string,
   actorId: string,
-  opts: { check_out_time: string; edit_reason?: string }
+  opts: { check_in_time?: string; check_out_time?: string; edit_reason?: string }
 ) {
   const { data: before, error: e1 } = await supabase
     .from("attendance")
@@ -106,18 +108,22 @@ export async function editCheckout(
     .single();
   if (e1 || !before) throw new Error("Attendance not found");
 
-  const checkout = new Date(opts.check_out_time);
-  if (before.check_in_time && checkout.getTime() < new Date(before.check_in_time).getTime())
+  const newIn = opts.check_in_time ? new Date(opts.check_in_time) : before.check_in_time ? new Date(before.check_in_time) : null;
+  const newOut = opts.check_out_time ? new Date(opts.check_out_time) : before.check_out_time ? new Date(before.check_out_time) : null;
+  if (newIn && newOut && newOut.getTime() < newIn.getTime())
     throw new Error("Checkout cannot precede check-in");
+
+  const patch: Record<string, unknown> = {
+    is_edited: true,
+    edited_by: actorId,
+    edit_reason: opts.edit_reason ?? null,
+  };
+  if (opts.check_in_time) patch.check_in_time = newIn!.toISOString();
+  if (opts.check_out_time) patch.check_out_time = newOut!.toISOString();
 
   const { data: after, error } = await supabase
     .from("attendance")
-    .update({
-      check_out_time: checkout.toISOString(),
-      is_edited: true,
-      edited_by: actorId,
-      edit_reason: opts.edit_reason ?? null,
-    })
+    .update(patch)
     .eq("id", attendanceId)
     .select()
     .single();
@@ -134,3 +140,6 @@ export async function editCheckout(
 
   return { attendance: after };
 }
+
+// Back-compat alias (checkout-only callers).
+export const editCheckout = editAttendance;

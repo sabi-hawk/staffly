@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
-import { EditCheckout } from "@/components/attendance/edit-checkout";
+import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,15 @@ export default async function AttendancePage() {
                       {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                     </TD>
                     <TD className="max-w-[200px] truncate text-text-secondary">{workLogPreview(r.work_log) || "—"}</TD>
-                    <TD>{r.work_date === today && open && <EditCheckout attendanceId={r.id} workDate={r.work_date} />}</TD>
+                    <TD>{r.work_date === today && open && (
+                      <EditAttendance
+                        attendanceId={r.id}
+                        workDate={r.work_date}
+                        checkInTime={r.check_in_time}
+                        checkOutTime={r.check_out_time}
+                        mode="employee"
+                      />
+                    )}</TD>
                   </TR>
                 );
               })}
