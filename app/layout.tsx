@@ -6,8 +6,8 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Staffly — Employee Portal",
-  description: "HR & workforce management portal",
+  title: "Softonoma — Employee Portal",
+  description: "Softonoma HR & workforce management portal",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -8,9 +9,9 @@ import { Input, Label } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 const DEMOS = [
-  { label: "Super Admin", email: "founder@acme.test" },
-  { label: "Admin / HR", email: "hr@acme.test" },
-  { label: "Employee", email: "ali@acme.test" },
+  { label: "Super Admin", email: "founder@acme.test", password: "Test@12345" },
+  { label: "Admin / HR", email: "hr@acme.test", password: "Test@12345" },
+  { label: "Employee", email: "muzammilfaiz.dev@gmail.com", password: "Softonoma@123" },
 ];
 
 export default function LoginPage() {
@@ -19,13 +20,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function signIn(e?: React.FormEvent, presetEmail?: string) {
+  async function signIn(e?: React.FormEvent, preset?: { email: string; password: string }) {
     e?.preventDefault();
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
-      email: presetEmail ?? email,
-      password: presetEmail ? "Test@12345" : password,
+      email: preset?.email ?? email,
+      password: preset?.password ?? password,
     });
     setLoading(false);
     if (error) {
@@ -38,18 +39,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sidebar px-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-primary text-lg font-bold text-white">
-            S
-          </div>
-          <span className="text-2xl font-semibold text-white">Staffly</span>
+        <div className="mb-8 flex items-center justify-center">
+          <Image src="/softonoma-logo.png" alt="Softonoma" width={220} height={56} priority />
         </div>
 
-        <Card className="p-6">
-          <h1 className="text-h2 text-text-primary">Sign in</h1>
-          <p className="mb-5 text-caption text-text-secondary">Welcome back to your portal.</p>
+        <Card className="p-6 shadow-soft">
+          <h1 className="text-h2 text-text-primary">Employee Portal</h1>
+          <p className="mb-5 text-caption text-text-secondary">Sign in to continue.</p>
 
           <form onSubmit={signIn} className="space-y-4">
             <div className="space-y-1.5">
@@ -80,7 +78,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 border-t border-border pt-4">
-            <p className="mb-2 text-caption text-text-secondary">Quick demo login (Test@12345)</p>
+            <p className="mb-2 text-caption text-text-secondary">Quick demo login</p>
             <div className="grid grid-cols-3 gap-2">
               {DEMOS.map((d) => (
                 <Button
@@ -88,7 +86,7 @@ export default function LoginPage() {
                   variant="secondary"
                   size="sm"
                   disabled={loading}
-                  onClick={() => signIn(undefined, d.email)}
+                  onClick={() => signIn(undefined, { email: d.email, password: d.password })}
                 >
                   {d.label}
                 </Button>

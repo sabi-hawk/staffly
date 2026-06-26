@@ -11,15 +11,21 @@ const config: Config = {
     container: { center: true, padding: "24px", screens: { "2xl": "1280px" } },
     extend: {
       colors: {
-        brand: { primary: "#1A56DB", light: "#EBF0FF" },
+        // Softonoma blue (matched to the logo gradient)
+        brand: { primary: "#1A73C7", light: "#E8F1FB", dark: "#15609F" },
         success: "#059669",
         warning: "#D97706",
         danger: "#DC2626",
-        sidebar: "#0F172A",
-        text: { primary: "#111827", secondary: "#6B7280" },
-        surface: "#F9FAFB",
+        // light, modern sidebar
+        sidebar: { DEFAULT: "#FFFFFF", muted: "#F1F5F9", border: "#E8EDF3" },
+        text: { primary: "#0F172A", secondary: "#64748B" },
+        surface: "#F6F8FB",
         card: "#FFFFFF",
-        border: "#E5E7EB",
+        border: "#E8EDF3",
+      },
+      boxShadow: {
+        card: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
+        soft: "0 4px 16px rgba(16,24,40,0.06)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
