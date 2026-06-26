@@ -27,6 +27,7 @@ export interface Profile {
   employment_type: EmploymentType;
   status: EmployeeStatus;
   joining_date: string | null;
+  date_of_birth: string | null;
   emergency_name: string | null;
   emergency_phone: string | null;
   emergency_relation: string | null;

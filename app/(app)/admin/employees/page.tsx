@@ -1,33 +1,68 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/ui/pagination";
+import { avatarUrl, formatCode } from "@/lib/utils";
 
-export default async function EmployeesPage() {
+export default async function EmployeesPage({
+  searchParams,
+}: {
+  searchParams: { page?: string; pageSize?: string };
+}) {
   const supabase = createClient();
-  const { data: people } = await supabase
-    .from("profiles").select("*").order("full_name");
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  const pageSize = Number(searchParams.pageSize) || DEFAULT_PAGE_SIZE;
+  const from = (page - 1) * pageSize;
+
+  const { data: people, count } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact" })
+    .order("role", { ascending: true })
+    .order("full_name", { ascending: true })
+    .range(from, from + pageSize - 1);
 
   return (
     <Card>
-      <CardHeader><CardTitle>Employees ({(people ?? []).length})</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Employees ({count ?? 0})</CardTitle>
+      </CardHeader>
       <CardContent>
         <Table>
-          <THead><TR><TH>Name</TH><TH>Role</TH><TH>Position</TH><TH>Department</TH><TH>Type</TH><TH>Status</TH></TR></THead>
+          <THead>
+            <TR>
+              <TH>Code</TH><TH>Name</TH><TH>Role</TH><TH>Designation</TH>
+              <TH>Department</TH><TH>Type</TH><TH>Status</TH><TH></TH>
+            </TR>
+          </THead>
           <TBody>
             {(people ?? []).map((p) => (
-              <TR key={p.id}>
-                <TD><Link className="text-brand-primary hover:underline" href={`/admin/employees/${p.id}`}>{p.full_name}</Link></TD>
+              <TR key={p.id} className="cursor-pointer">
+                <TD className="tabular text-text-secondary">{formatCode(p.employee_code)}</TD>
+                <TD>
+                  <Link href={`/admin/employees/${p.id}`} className="flex items-center gap-2.5 font-medium text-text-primary hover:text-brand-primary">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatarUrl(p.avatar_url, p.gender)} alt="" className="h-7 w-7 rounded-full object-cover" />
+                    {p.full_name}
+                  </Link>
+                </TD>
                 <TD className="capitalize">{p.role.replace("_", " ")}</TD>
                 <TD>{p.position ?? "—"}</TD>
                 <TD>{p.department ?? "—"}</TD>
                 <TD className="capitalize">{p.employment_type}</TD>
                 <TD><Badge tone={p.status === "active" ? "success" : "neutral"}>{p.status}</Badge></TD>
+                <TD className="text-right">
+                  <Link href={`/admin/employees/${p.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open">
+                    <ChevronRight className="size-4" />
+                  </Link>
+                </TD>
               </TR>
             ))}
           </TBody>
         </Table>
+        <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
       </CardContent>
     </Card>
   );

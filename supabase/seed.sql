@@ -28,6 +28,17 @@ on conflict (id) do update set
   bank_account_number=excluded.bank_account_number, bank_account_title=excluded.bank_account_title,
   bank_name=excluded.bank_name, iban=excluded.iban;
 
+-- date of birth (placeholders — admin should set real values)
+update profiles p set date_of_birth = v.dob from (values
+  ('00000000-0000-0000-0000-000000000021'::uuid,'2000-03-12'::date),
+  ('00000000-0000-0000-0000-000000000022'::uuid,'1996-07-22'::date),
+  ('00000000-0000-0000-0000-000000000023'::uuid,'2001-11-05'::date),
+  ('00000000-0000-0000-0000-000000000024'::uuid,'2003-02-18'::date),
+  ('00000000-0000-0000-0000-000000000025'::uuid,'1998-09-30'::date),
+  ('00000000-0000-0000-0000-000000000026'::uuid,'1995-05-14'::date),
+  ('00000000-0000-0000-0000-000000000027'::uuid,'1999-12-01'::date)
+) v(id, dob) where p.id = v.id;
+
 -- ---------- shifts (per-employee) ----------
 delete from shifts where employee_id >= '00000000-0000-0000-0000-000000000021'
   and employee_id <= '00000000-0000-0000-0000-000000000027';
