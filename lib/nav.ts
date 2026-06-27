@@ -5,7 +5,6 @@ import {
   User,
   Users,
   Wallet,
-  Clock4,
   BarChart3,
   Settings,
   type LucideIcon,
@@ -30,7 +29,6 @@ const adminNav: NavItem[] = [
   { label: "Attendance", href: "/admin/attendance", icon: CalendarClock },
   { label: "Employees", href: "/admin/employees", icon: Users },
   { label: "Leaves", href: "/admin/leaves", icon: CalendarDays },
-  { label: "Shifts", href: "/admin/shifts", icon: Clock4 },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
 ];
 
