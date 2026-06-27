@@ -62,6 +62,30 @@ export interface PayslipComponent {
   created_at: string;
 }
 
+export interface AuditLog {
+  id: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  actor_role: string | null;
+  action: string; // insert | update | delete | attendance.edit | leave.approved ...
+  entity: string;
+  entity_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface LoginEvent {
+  id: string;
+  user_id: string | null;
+  email: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
 export interface Shift {
   id: string;
   employee_id: string;

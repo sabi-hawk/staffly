@@ -33,6 +33,8 @@ export default function LoginPage() {
       toast.error(error.message);
       return;
     }
+    // best-effort: record login activity (IP + device) for the audit trail
+    fetch("/api/audit/login", { method: "POST" }).catch(() => {});
     toast.success("Welcome back");
     router.push("/");
     router.refresh();

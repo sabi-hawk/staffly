@@ -7,6 +7,7 @@ import {
   Wallet,
   BarChart3,
   Settings,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@/lib/types";
@@ -34,6 +35,7 @@ const adminNav: NavItem[] = [
 
 const superAdminNav: NavItem[] = [
   { label: "Payroll", href: "/admin/payroll", icon: Wallet },
+  { label: "Logs", href: "/admin/logs", icon: ScrollText },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

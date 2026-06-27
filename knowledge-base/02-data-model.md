@@ -11,6 +11,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0004_softonoma_v2.sql` — employee fields (code, email2, gender, bank/account), dynamic
   `compensation_components`, payroll payment columns, `payslip_components`.
 - `0005_employee_dob.sql` — `profiles.date_of_birth` (age computed in-app).
+- `0006_audit.sql` — generic `record_audit()` trigger on sensitive tables (skips service-role/
+  seed writes), `audit_log` enriched (actor_email/role, ip/ua), `login_events` table; audit +
+  login visibility restricted to **super_admin**.
 
 ## Enums
 `user_role(employee|admin|super_admin)`, `employment_type(onsite|remote)`,
@@ -43,7 +46,13 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   paid_at, paid_amount, credited_account**, generated_by, finalised_at.
 - **payslip_components** *(super_admin)* — payroll_run_id, label, amount, **kind(base|addition|
   deduction)**, description. Editable/deletable line items for a specific payslip.
-- **announcements, holidays, documents, alerts_log, audit_log, company_settings** — supporting.
+- **audit_log** — actor_id/email/role, action (insert|update|delete|domain events), entity,
+  entity_id, before/after jsonb, ip_address, user_agent, created_at. Written by `record_audit()`
+  triggers on profiles/attendance/leave_requests/leave_balances/shifts/salary_structures/
+  compensation_components/payroll_runs/payslip_components. **Super-admin read only.**
+- **login_events** — user_id, email, ip_address, user_agent, created_at (captured at sign-in by
+  `/api/audit/login`). **Super-admin read only.**
+- **announcements, holidays, documents, alerts_log, company_settings** — supporting.
 
 ## Functions & triggers
 - `compute_attendance_hours()` (BEFORE INSERT/UPDATE on attendance) — computes total/deficit/extra
