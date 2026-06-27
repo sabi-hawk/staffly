@@ -67,6 +67,10 @@ export function LeaveApplyForm() {
               <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} required />
             </div>
           </div>
+          <p className="text-caption text-text-secondary">
+            Annual: 8/year, request at least 21 days ahead. Casual: max 2 days per month.
+            Unpaid: unlimited (deducted).
+          </p>
           <Button type="submit" disabled={busy}>
             {busy ? "Submitting…" : "Submit request"}
           </Button>

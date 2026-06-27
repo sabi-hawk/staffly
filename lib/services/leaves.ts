@@ -44,20 +44,52 @@ export interface RequestLeaveInput {
  * - casual → auto-approved, casual_used incremented
  * - unpaid → approved, flagged for deduction, unpaid_used incremented
  */
+/** Sum of approved casual leave days in the calendar month of `date`. */
+async function casualDaysInMonth(supabase: SupabaseClient, employeeId: string, date: string) {
+  const d = new Date(date);
+  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from("leave_requests")
+    .select("days_count")
+    .eq("employee_id", employeeId)
+    .eq("type", "casual")
+    .eq("status", "approved")
+    .gte("start_date", monthStart)
+    .lte("start_date", monthEnd);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
+export const CASUAL_MONTHLY_LIMIT = 2;
+export const ANNUAL_NOTICE_DAYS = 21;
+
 export async function requestLeave(
   supabase: SupabaseClient,
   employeeId: string,
-  input: RequestLeaveInput
+  input: RequestLeaveInput,
+  opts: { allowShortNotice?: boolean } = {}
 ) {
   const daysCount = await workingDays(supabase, employeeId, input.start_date, input.end_date);
   const { balance } = await currentBalance(supabase, employeeId);
 
-  // advance-notice warning for annual (§11.3)
+  // advance-notice rule for annual (§11.3 → 21 days). Admins may override.
   const today = new Date();
-  const twoWeeks = new Date(today.getTime() + 14 * 86400000);
-  const lateNotice = input.type === "annual" && new Date(input.start_date) < twoWeeks;
+  const noticeCutoff = new Date(today.getTime() + ANNUAL_NOTICE_DAYS * 86400000);
+  const lateNotice = input.type === "annual" && new Date(input.start_date) < noticeCutoff;
+  if (lateNotice && !opts.allowShortNotice) {
+    throw new Error(
+      `Annual leave must be requested at least ${ANNUAL_NOTICE_DAYS} days in advance (admin override required).`
+    );
+  }
 
   if (input.type === "casual") {
+    // casual is capped at 2 days per calendar month
+    const used = await casualDaysInMonth(supabase, employeeId, input.start_date);
+    if (used + daysCount > CASUAL_MONTHLY_LIMIT) {
+      throw new Error(
+        `Casual leave is limited to ${CASUAL_MONTHLY_LIMIT} days per month (already used ${used}).`
+      );
+    }
     const { data } = await supabase
       .from("leave_requests")
       .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
@@ -69,7 +101,7 @@ export async function requestLeave(
         .update({ casual_used: (balance.casual_used ?? 0) + daysCount })
         .eq("id", balance.id);
     }
-    return { requests: [data], overflowOffered: false, lateNotice };
+    return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
   if (input.type === "unpaid") {
