@@ -11,6 +11,16 @@ export function companyToday(now: Date = new Date()): string {
   }).format(now);
 }
 
+/** Karachi-midnight of a YYYY-MM-DD date, as a UTC ISO instant (Karachi has no DST, +05:00). */
+export function karachiMidnightISO(dateStr: string): string {
+  return new Date(`${dateStr}T00:00:00+05:00`).toISOString();
+}
+
+/** Start of the current company day, as a UTC ISO instant — for de-duping "once per day" alerts. */
+export function companyDayStartISO(now: Date = new Date()): string {
+  return karachiMidnightISO(companyToday(now));
+}
+
 /** Day of week (0=Sun..6=Sat) in the company timezone. */
 export function companyDow(date: Date = new Date()): number {
   const wd = new Intl.DateTimeFormat("en-US", { timeZone: COMPANY_TZ, weekday: "short" }).format(date);

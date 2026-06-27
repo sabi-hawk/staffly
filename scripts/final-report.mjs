@@ -53,7 +53,7 @@ const intgC = vitestCount(intg.out);
 const intgOk = intg.ok && intgC && intgC.failed === 0;
 console.log(intgOk ? `OK (${intgC?.passed}/${intgC?.total})` : "FAIL");
 rows.push([`§14.4 Integration flows 1–6${intgC ? ` + sim (${intgC.passed}/${intgC.total})` : ""}`, intgOk]);
-rows.push(["§14.5 E2E-4 (payroll run incl. overtime → finalise)", intgOk]);
+rows.push(["§14.5 E2E-4 (payroll run incl. additions→ finalise)", intgOk]);
 
 // 4. Definition of Done — typecheck (§14.7)
 process.stdout.write("• Typecheck (tsc --noEmit, §14.7) ... ");

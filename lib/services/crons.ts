@@ -2,7 +2,7 @@
 // Designed to run with the service-role (admin) client from guarded /api/cron/* routes.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email";
-import { companyToday, companyDow } from "@/lib/time";
+import { companyToday, companyDow, companyDayStartISO, karachiMidnightISO } from "@/lib/time";
 import { shiftDurationHours } from "@/lib/hours";
 
 async function settings(supabase: SupabaseClient) {
@@ -34,8 +34,10 @@ async function alreadyAlerted(
 /** §9.3 Missed check-in: shift started + buffer elapsed, no check-in, no approved leave today. */
 export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date()) {
   const workDate = companyToday(now);
+  const dayStart = companyDayStartISO(now);
   const dow = companyDow(now);
   const fired: string[] = [];
+  const alertedThisRun = new Set<string>();
 
   const { data: shifts } = await supabase
     .from("shifts")
@@ -45,6 +47,7 @@ export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date
   for (const shift of shifts ?? []) {
     const emp = (shift as any).profiles;
     if (!emp || emp.status !== "active") continue;
+    if (alertedThisRun.has(emp.id)) continue;
     if (!shift.days_of_week.includes(dow)) continue;
 
     // shift start + buffer threshold (company-local wall clock applied to today)
@@ -71,7 +74,7 @@ export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date
       .maybeSingle();
     if (leave) continue;
 
-    if (await alreadyAlerted(supabase, emp.id, "missed_checkin", workDate + "T00:00:00Z")) continue;
+    if (await alreadyAlerted(supabase, emp.id, "missed_checkin", dayStart)) continue;
 
     await supabase.from("alerts_log").insert({
       employee_id: emp.id,
@@ -79,6 +82,7 @@ export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date
       message: `${emp.full_name} has not checked in (shift ${shift.start_time}).`,
       email_sent: true,
     });
+    alertedThisRun.add(emp.id);
     await sendEmail({
       to: emp.email,
       subject: "You haven't checked in yet",
@@ -118,7 +122,7 @@ export async function scanMissedCheckout(supabase: SupabaseClient, now = new Dat
     const overtimeThreshold = expectedOut + overtimeWarningHours * 3_600_000;
 
     if (now.getTime() > missedThreshold) {
-      if (!(await alreadyAlerted(supabase, emp.id, "missed_checkout", row.work_date + "T00:00:00Z"))) {
+      if (!(await alreadyAlerted(supabase, emp.id, "missed_checkout", karachiMidnightISO(row.work_date)))) {
         await supabase.from("alerts_log").insert({
           employee_id: emp.id,
           type: "missed_checkout",
@@ -140,7 +144,7 @@ export async function scanMissedCheckout(supabase: SupabaseClient, now = new Dat
     }
 
     if (now.getTime() > overtimeThreshold) {
-      if (!(await alreadyAlerted(supabase, emp.id, "overtime_warning", row.work_date + "T00:00:00Z"))) {
+      if (!(await alreadyAlerted(supabase, emp.id, "overtime_warning", karachiMidnightISO(row.work_date)))) {
         await supabase.from("alerts_log").insert({
           employee_id: emp.id,
           type: "overtime_warning",
