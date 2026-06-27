@@ -1,7 +1,8 @@
-// Payroll generation (PRD §12). Aggregates attendance + leave, then uses the pure
-// lib/payroll math. Salary/payroll access is super_admin-only (enforced by RLS).
+// Payroll generation (PRD §12 + v2 dynamic compensation). Net = base + Σ additions − deductions.
+// Additions come from each employee's dynamic compensation_components. A payslip = a payroll_run
+// plus its payslip_components (base/addition/deduction line items). Super-admin only (RLS).
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computePayroll, type SalaryType, type Benefit } from "@/lib/payroll";
+import { round2 } from "@/lib/hours";
 
 export interface GenerateOptions {
   from: string; // YYYY-MM-DD
@@ -9,7 +10,11 @@ export interface GenerateOptions {
   generatedBy?: string;
 }
 
-/** Generate draft payroll runs for every employee with an active salary structure. */
+function sum(xs: number[]) {
+  return round2(xs.reduce((a, b) => a + b, 0));
+}
+
+/** Generate (or refresh) draft payroll runs + payslip line items for all active employees. */
 export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOptions) {
   const { data: salaries, error } = await supabase
     .from("salary_structures")
@@ -20,11 +25,11 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
   const runs = [];
   for (const sal of salaries ?? []) {
     const employeeId = sal.employee_id as string;
+    const base = round2(Number(sal.base_salary) || 0);
 
     const workingDays =
       Number(
-        (await supabase.rpc("working_days", { p_employee: employeeId, p_start: opts.from, p_end: opts.to }))
-          .data
+        (await supabase.rpc("working_days", { p_employee: employeeId, p_start: opts.from, p_end: opts.to })).data
       ) || 0;
 
     const { data: att } = await supabase
@@ -41,24 +46,26 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
 
     const { data: leaves } = await supabase
       .from("leave_requests")
-      .select("days_count, type, status")
+      .select("days_count")
       .eq("employee_id", employeeId)
       .eq("type", "unpaid")
       .eq("status", "approved")
       .gte("start_date", opts.from)
       .lte("end_date", opts.to);
     const unpaidDays = sum((leaves ?? []).map((l) => Number(l.days_count) || 0));
+    const deductions = workingDays > 0 ? round2((unpaidDays * base) / workingDays) : 0;
 
-    const result = computePayroll({
-      salaryType: sal.type as SalaryType,
-      baseSalary: Number(sal.base_salary),
-      overtimeRateHour: Number(sal.overtime_rate_hour),
-      totalExtraHours: totalExtra,
-      commissionAmount: 0, // entered by admin later for commission staff
-      benefits: (sal.benefits as Benefit[]) ?? [],
-      workingDays,
-      unpaidDays,
-    });
+    // dynamic additions = recurring compensation components
+    const { data: comps } = await supabase
+      .from("compensation_components")
+      .select("*")
+      .eq("employee_id", employeeId)
+      .eq("is_active", true)
+      .eq("recurring", true);
+    const additions = (comps ?? []).map((c) => ({ label: c.label, amount: round2(Number(c.amount) || 0), description: c.description }));
+    const additionsTotal = sum(additions.map((a) => a.amount));
+
+    const netPay = round2(base + additionsTotal - deductions);
 
     const row = {
       employee_id: employeeId,
@@ -70,61 +77,69 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
       total_hours: totalHours,
       total_extra_hours: totalExtra,
       total_deficit_hours: totalDeficit,
-      base_salary: result.baseSalary,
-      overtime_pay: result.overtimePay,
-      commission_amount: result.commissionAmount,
-      benefits_total: result.benefitsTotal,
-      deductions: result.deductions,
-      net_pay: result.netPay,
+      base_salary: base,
+      additions_total: additionsTotal,
+      deductions,
+      net_pay: netPay,
       status: "draft" as const,
       generated_by: opts.generatedBy ?? null,
     };
 
-    const { data, error: upErr } = await supabase
+    const { data: run, error: upErr } = await supabase
       .from("payroll_runs")
       .upsert(row, { onConflict: "employee_id,period_start,period_end" })
       .select()
       .single();
     if (upErr) throw new Error(upErr.message);
-    runs.push(data);
+
+    // rebuild payslip line items for a draft run
+    if (run.status === "draft") {
+      await supabase.from("payslip_components").delete().eq("payroll_run_id", run.id);
+      const lines = [
+        { payroll_run_id: run.id, label: "Base salary", amount: base, kind: "base", description: null },
+        ...additions.map((a) => ({ payroll_run_id: run.id, label: a.label, amount: a.amount, kind: "addition", description: a.description })),
+      ];
+      if (deductions > 0)
+        lines.push({ payroll_run_id: run.id, label: "Unpaid leave deduction", amount: deductions, kind: "deduction", description: `${unpaidDays} unpaid day(s)` });
+      await supabase.from("payslip_components").insert(lines);
+    }
+
+    runs.push(run);
   }
   return runs;
 }
 
-/** Edit a draft run (e.g. enter commission for commission staff) and recompute net. */
-export async function updatePayrollRun(
-  supabase: SupabaseClient,
-  id: string,
-  patch: Partial<{
-    commission_amount: number;
-    deductions: number;
-    overtime_pay: number;
-    benefits_total: number;
-    notes: string;
-  }>
-) {
-  const { data: run, error } = await supabase.from("payroll_runs").select("*").eq("id", id).single();
-  if (error || !run) throw new Error("Run not found");
-
-  const merged = { ...run, ...patch };
-  const net =
-    Number(merged.base_salary) +
-    Number(merged.overtime_pay) +
-    Number(merged.commission_amount) +
-    Number(merged.benefits_total) -
-    Number(merged.deductions);
-
-  const { data, error: e2 } = await supabase
+/** Recompute a run's totals from its payslip_components (after manual line edits). */
+export async function recomputeRun(supabase: SupabaseClient, runId: string) {
+  const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", runId);
+  const base = sum((lines ?? []).filter((l) => l.kind === "base").map((l) => Number(l.amount)));
+  const additions = sum((lines ?? []).filter((l) => l.kind === "addition").map((l) => Number(l.amount)));
+  const deductions = sum((lines ?? []).filter((l) => l.kind === "deduction").map((l) => Number(l.amount)));
+  const net = round2(base + additions - deductions);
+  const { data } = await supabase
     .from("payroll_runs")
-    .update({ ...patch, net_pay: Math.round(net * 100) / 100 })
-    .eq("id", id)
+    .update({ base_salary: base, additions_total: additions, deductions, net_pay: net })
+    .eq("id", runId)
     .select()
     .single();
-  if (e2) throw new Error(e2.message);
   return data;
 }
 
-/** Finalise a run: lock it (status finalised, finalised_at set). */
+/** Add/remove a payslip line item, then recompute. */
+export async function addPayslipLine(
+  supabase: SupabaseClient,
+  runId: string,
+  line: { label: string; amount: number; kind: "addition" | "deduction"; description?: string }
+) {
+  await supabase.from("payslip_components").insert({ payroll_run_id: runId, ...line, description: line.description ?? null });
+  return recomputeRun(supabase, runId);
+}
+export async function removePayslipLine(supabase: SupabaseClient, lineId: string, runId: string) {
+  await supabase.from("payslip_components").delete().eq("id", lineId);
+  return recomputeRun(supabase, runId);
+}
+
+/** Finalise (lock) a run. */
 export async function finalisePayroll(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase
     .from("payroll_runs")
@@ -136,6 +151,33 @@ export async function finalisePayroll(supabase: SupabaseClient, id: string) {
   return data;
 }
 
-function sum(xs: number[]) {
-  return Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100;
+/** Mark a run paid (or back to pending). */
+export async function setPaymentStatus(
+  supabase: SupabaseClient,
+  id: string,
+  opts: { status: "paid" | "pending"; paidAt?: string; creditedAccount?: string; paidAmount?: number }
+) {
+  const patch =
+    opts.status === "paid"
+      ? {
+          payment_status: "paid",
+          paid_at: opts.paidAt ?? new Date().toISOString(),
+          credited_account: opts.creditedAccount ?? null,
+          paid_amount: opts.paidAmount ?? null,
+        }
+      : { payment_status: "pending", paid_at: null, credited_account: null, paid_amount: null };
+  const { data, error } = await supabase.from("payroll_runs").update(patch).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// Back-compat for older callers/tests.
+export async function updatePayrollRun(
+  supabase: SupabaseClient,
+  id: string,
+  patch: Record<string, unknown>
+) {
+  const { data, error } = await supabase.from("payroll_runs").update(patch).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return data;
 }

@@ -14,16 +14,31 @@ export default async function PayrollPage() {
 
   const { data: runs } = await supabase
     .from("payroll_runs").select("*").order("created_at", { ascending: false });
-  const { data: people } = await supabase.from("profiles").select("id, full_name");
-  const names = Object.fromEntries((people ?? []).map((p) => [p.id, p.full_name]));
+
+  const runIds = (runs ?? []).map((r) => r.id);
+  const { data: lines } = runIds.length
+    ? await supabase.from("payslip_components").select("*").in("payroll_run_id", runIds)
+    : { data: [] as any[] };
+  const linesByRun: Record<string, any[]> = {};
+  for (const l of lines ?? []) (linesByRun[l.payroll_run_id] ??= []).push(l);
+
+  const { data: employees } = await supabase
+    .from("profiles").select("id, full_name, employee_code, bank_name, bank_account_number")
+    .eq("role", "employee").order("full_name");
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-h1 text-text-primary">Payroll</h2>
-        <p className="text-caption text-text-secondary">Super Admin only · salary & compensation</p>
+        <p className="text-caption text-text-secondary">Super Admin only · salary, payslips &amp; payments</p>
       </div>
-      <PayrollClient initialRuns={runs ?? []} defaultFrom={from} defaultTo={to} names={names} />
+      <PayrollClient
+        initialRuns={runs ?? []}
+        linesByRun={linesByRun}
+        employees={employees ?? []}
+        defaultFrom={from}
+        defaultTo={to}
+      />
     </div>
   );
 }

@@ -22,6 +22,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* print: hide app chrome so payslips print clean (Save as PDF) */
+@media print {
+  aside,
+  header.sticky {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
 /* Tiptap editor minimal styling */
 .tiptap {
   min-height: 140px;
