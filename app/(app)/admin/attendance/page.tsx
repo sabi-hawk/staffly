@@ -6,7 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/pagination";
+import { parsePaging } from "@/lib/pagination";
 import { AttendanceControls } from "@/components/attendance/attendance-controls";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { formatHours, formatCode } from "@/lib/utils";
@@ -22,9 +23,7 @@ export default async function AdminAttendancePage({
   const supabase = createClient();
   const employeeId = searchParams.employeeId || "";
   const { from, to, range } = resolveRange(searchParams.range as RangeKey, searchParams.from, searchParams.to);
-  const page = Math.max(1, Number(searchParams.page) || 1);
-  const pageSize = Number(searchParams.pageSize) || DEFAULT_PAGE_SIZE;
-  const offset = (page - 1) * pageSize;
+  const { page, pageSize, from: offset } = parsePaging(searchParams);
 
   const { data: employees } = await supabase
     .from("profiles").select("id, full_name, employee_code").eq("role", "employee").order("full_name");

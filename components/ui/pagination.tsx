@@ -2,9 +2,9 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PAGE_SIZES } from "@/lib/pagination";
 
-export const PAGE_SIZES = [10, 25, 50, 100, 200, 300];
-export const DEFAULT_PAGE_SIZE = 10;
+export { PAGE_SIZES, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 /** URL-driven pagination + page-size selector. Reads/writes ?page & ?pageSize. */
 export function Pagination({

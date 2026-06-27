@@ -43,3 +43,4 @@ yarn-error.log*
 # uploaded avatars (keep dir, ignore files)
 public/uploads/avatars/*
 !public/uploads/avatars/.gitkeep
+test-artifacts/

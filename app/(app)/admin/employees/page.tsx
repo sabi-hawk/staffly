@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/ui/pagination";
+import { Pagination } from "@/components/ui/pagination";
+import { parsePaging } from "@/lib/pagination";
 import { avatarUrl, formatCode } from "@/lib/utils";
 
 export default async function EmployeesPage({
@@ -13,16 +14,14 @@ export default async function EmployeesPage({
   searchParams: { page?: string; pageSize?: string };
 }) {
   const supabase = createClient();
-  const page = Math.max(1, Number(searchParams.page) || 1);
-  const pageSize = Number(searchParams.pageSize) || DEFAULT_PAGE_SIZE;
-  const from = (page - 1) * pageSize;
+  const { page, pageSize, from, to } = parsePaging(searchParams);
 
   const { data: people, count } = await supabase
     .from("profiles")
     .select("*", { count: "exact" })
     .order("role", { ascending: true })
     .order("full_name", { ascending: true })
-    .range(from, from + pageSize - 1);
+    .range(from, to);
 
   return (
     <Card>
