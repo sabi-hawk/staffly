@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/webp"];
 const MAX_BYTES = 4 * 1024 * 1024;
+const BUCKET = "avatars";
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -29,12 +29,18 @@ export async function POST(request: Request) {
   }
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const dir = path.join(process.cwd(), "public", "uploads", "avatars");
-  await mkdir(dir, { recursive: true });
-  const filename = `${targetId}.${ext}`;
-  await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
+  const objectPath = `${targetId}.${ext}`;
 
-  const url = `/uploads/avatars/${filename}?t=${Date.now()}`;
+  // Upload to Supabase Storage (works on serverless; replaces local-disk writes).
+  const admin = createAdminClient();
+  const { error: upErr } = await admin.storage
+    .from(BUCKET)
+    .upload(objectPath, Buffer.from(await file.arrayBuffer()), { contentType: file.type, upsert: true });
+  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 400 });
+
+  const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(objectPath);
+  const url = `${pub.publicUrl}?t=${Date.now()}`; // cache-bust on re-upload
+
   const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", targetId);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 

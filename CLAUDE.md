@@ -100,6 +100,7 @@ agent can both run (terminal) and verify (read the PNGs). This is the recommende
 ```
 npm run dev            # run app (http://localhost:3000)
 npm run db:migrate     # apply supabase/migrations/*.sql to the cloud DB (idempotent)
+npm run storage:setup  # create/verify the public "avatars" Storage bucket
 npm run seed:test      # create demo/auth users + seed data + verification table
 npm test               # Vitest unit (pure logic)
 npm run test:rls       # RLS tests vs cloud

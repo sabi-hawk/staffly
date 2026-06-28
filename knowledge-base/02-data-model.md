@@ -69,8 +69,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - **salary_structures, payroll_runs, compensation_components, payslip_components: super_admin ONLY.**
 - company_settings: read all; write super_admin. audit_log: admin read.
 
+## Storage
+- **Avatars** are stored in the public Supabase Storage bucket **`avatars`** (object key
+  `<employee_id>.<ext>`). Uploaded via `/api/upload/avatar` (service-role, after a self-or-admin
+  check); `profiles.avatar_url` holds the public URL. Bucket is created/verified by
+  `npm run storage:setup`. Serverless-safe (no local disk writes).
+
 ## Known caveats
-- **Avatar uploads** write to `public/uploads/avatars` on local disk (works in `npm run dev` and
-  Node hosting). On Vercel serverless the FS is read-only — switch to Supabase Storage before/at
-  Vercel deploy. Tracked in DECISIONS.
 - Direct `DATABASE_URL` host is IPv6-only; tooling uses `SUPABASE_DB_URL` (session pooler, same DB).

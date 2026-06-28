@@ -31,8 +31,8 @@ and fixes anything red before declaring shippable. Re-run before any release.
 ## Data & ops
 - [ ] All migrations applied to the cloud DB; `verify-schema` clean.
 - [ ] Seed produces realistic data; canonical subject correct.
-- [ ] **Avatar uploads**: local FS works in dev/Node. **Before Vercel deploy**, switch avatar
-      storage to Supabase Storage (serverless FS is read-only) — OR host on a Node server.
+- [x] **Avatar uploads**: stored in Supabase Storage bucket `avatars` (serverless-safe). Run
+      `npm run storage:setup` once per environment to ensure the bucket exists.
 - [ ] Email: real `RESEND_API_KEY` set for production (otherwise alerts only log to console).
 - [ ] Pagination present on every large grid; empty/loading/error states exist.
 
