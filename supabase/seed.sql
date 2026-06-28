@@ -8,46 +8,60 @@ insert into company_settings (id, company_name) values (1, 'Softonoma')
 on conflict (id) do update set company_name = excluded.company_name;
 
 -- ---------- profiles ----------
-insert into profiles (id, full_name, email, email_secondary, role, employee_code, gender,
+-- Admins log in by email; employees by username. Only Shaiza is remote. DOB not provided → null.
+insert into profiles (id, full_name, email, username, email_secondary, role, employee_code, gender,
                       employment_type, position, department, phone, joining_date) values
-('00000000-0000-0000-0000-000000000001','Founder Admin','founder@acme.test',null,'super_admin','1001','male','onsite','Founder','Exec',null,'2024-01-01'),
-('00000000-0000-0000-0000-000000000002','Hira HR','hr@acme.test',null,'admin','1002','female','onsite','HR Manager','People',null,'2024-02-01'),
-('00000000-0000-0000-0000-000000000021','Shaiza Maheen','029755shaizamaheen@gmail.com','shaiza.softonoma@gmail.com','employee','1042','female','onsite','Business Developer','Business Development','03084761857','2025-12-15'),
-('00000000-0000-0000-0000-000000000022','Ahmad Roshan','ahmad.roshi5@gmail.com','softonomaahmad@gmail.com','employee','2087','male','onsite','Sr. Business Executive','Business Development','03227707911','2026-04-27'),
-('00000000-0000-0000-0000-000000000023','Fatima Sultan','fatimasul89@gmail.com','fatima.softonoma21@gmail.com','employee','3310','female','onsite','Jr. Business Executive','Business Development','03298041475','2026-05-05'),
-('00000000-0000-0000-0000-000000000024','Areeba','areebazaidi027@gmail.com','areebasoftonoma@gmail.com','employee','4765','female','remote','Internee Business Developer','Business Development','03425807691','2026-05-21'),
-('00000000-0000-0000-0000-000000000025','Muhammad Aizaz Ansab','muhammad.aizaz0900@gmail.com',null,'employee','5028','male','onsite','Software Engineer','Engineering','03090464711','2025-12-08'),
-('00000000-0000-0000-0000-000000000026','Muzammal Faiz','muzammilfaiz.dev@gmail.com',null,'employee','6193','male','onsite','Sr. Software Engineer','Engineering','03304014980','2026-02-24'),
-('00000000-0000-0000-0000-000000000027','Muhammad Hamza Ilyas','hamzailyas311@gmail.com',null,'employee','7451','male','remote','UI/UX Designer','Design','03210191191','2026-02-02')
+('00000000-0000-0000-0000-000000000001','Super Admin','super.admin@softonoma.com',null,null,'super_admin','1001','male','onsite','Founder','Exec',null,null),
+('00000000-0000-0000-0000-000000000002','HR Admin','admin@softonoma.com',null,null,'admin','1002','female','onsite','HR Manager','People',null,null),
+('00000000-0000-0000-0000-000000000021','Shaiza Maheen','029755shaizamaheen@gmail.com','shaiza.maheen','shaiza.softonoma@gmail.com','employee','1042','female','remote','Business Developer','Business Development','03084761857','2025-12-15'),
+('00000000-0000-0000-0000-000000000022','Ahmad Roshan','ahmad.roshi5@gmail.com','ahmad.roshan','softonomaahmad@gmail.com','employee','2087','male','onsite','Sr. Business Executive','Business Development','03227707911','2026-04-27'),
+('00000000-0000-0000-0000-000000000023','Fatima Sultan','fatimasul89@gmail.com','fatima.sultan','fatima.softonoma21@gmail.com','employee','3310','female','onsite','Jr. Business Executive','Business Development','03298041475','2026-05-05'),
+('00000000-0000-0000-0000-000000000024','Areeba Zaidi','areebazaidi027@gmail.com','areeba.zaidi','areebasoftonoma@gmail.com','employee','4765','female','onsite','Internee Business Developer','Business Development','03425807691','2026-05-21'),
+('00000000-0000-0000-0000-000000000025','Muhammad Aizaz Ansab','muhammad.aizaz0900@gmail.com','aizaz.ansab',null,'employee','5028','male','onsite','Software Engineer','Engineering','03090464711','2025-12-08'),
+('00000000-0000-0000-0000-000000000026','Muzammal Faiz','muzammilfaiz.dev@gmail.com','muzammil.faiz',null,'employee','6193','male','onsite','Sr. Software Engineer','Engineering','03304014980','2026-02-24'),
+('00000000-0000-0000-0000-000000000027','Muhammad Hamza Ilyas','hamzailyas311@gmail.com','hamza.ilyas',null,'employee','7451','male','onsite','UI/UX Designer','Design','03210191191','2026-02-02')
 on conflict (id) do update set
-  full_name=excluded.full_name, email=excluded.email, email_secondary=excluded.email_secondary,
-  role=excluded.role, employee_code=excluded.employee_code, gender=excluded.gender,
-  employment_type=excluded.employment_type, position=excluded.position, department=excluded.department,
-  phone=excluded.phone, joining_date=excluded.joining_date;
+  full_name=excluded.full_name, email=excluded.email, username=excluded.username,
+  email_secondary=excluded.email_secondary, role=excluded.role, employee_code=excluded.employee_code,
+  gender=excluded.gender, employment_type=excluded.employment_type, position=excluded.position,
+  department=excluded.department, phone=excluded.phone, joining_date=excluded.joining_date,
+  date_of_birth=null;
 
--- ---------- sensitive PII (employee_private) ----------
-insert into employee_private (employee_id, cnic, bank_account_number, bank_account_title, bank_name, iban) values
-('00000000-0000-0000-0000-000000000021','35202-7141090-8','01230045671','Shaiza Maheen','Meezan Bank','PK36MEZN0001230045671001'),
-('00000000-0000-0000-0000-000000000022','34301-4655288-9','01230045672','Ahmad Roshan','HBL','PK24HABB0001230045672002'),
-('00000000-0000-0000-0000-000000000023','35201-5693384-6','01230045673','Fatima Sultan','UBL','PK51UNIL0001230045673003'),
-('00000000-0000-0000-0000-000000000024','35201-6414871-0','01230045674','Areeba','Meezan Bank','PK36MEZN0001230045674004'),
-('00000000-0000-0000-0000-000000000025','35202-4978893-7','01230045675','Muhammad Aizaz Ansab','Bank Alfalah','PK77ALFH0001230045675005'),
-('00000000-0000-0000-0000-000000000026','36501-2156016-9','01230045676','Muzammal Faiz','HBL','PK24HABB0001230045676006'),
-('00000000-0000-0000-0000-000000000027','35201-3736870-3','01230045677','Muhammad Hamza Ilyas','Meezan Bank','PK36MEZN0001230045677007')
-on conflict (employee_id) do update set
-  cnic=excluded.cnic, bank_account_number=excluded.bank_account_number,
-  bank_account_title=excluded.bank_account_title, bank_name=excluded.bank_name, iban=excluded.iban;
+-- ---------- sensitive PII (employee_private): CNIC + real bank details from payslips ----------
+-- Areeba's bank details not provided yet → left empty.
+insert into employee_private (employee_id, cnic, bank_account_number, bank_account_title, bank_name) values
+('00000000-0000-0000-0000-000000000021','35202-7141090-8','04017901146003','Maheen AA','HBL'),
+('00000000-0000-0000-0000-000000000022','34301-4655288-9','04770010098164920015','Ahmad Roshan','Allied Bank'),
+('00000000-0000-0000-0000-000000000023','35201-5693384-6','02380115291490','Fatima Sultan','Meezan Bank'),
+('00000000-0000-0000-0000-000000000024','35201-6414871-0','03417394972','Asifa Zaidi','Jazzcash'),
+('00000000-0000-0000-0000-000000000025','35202-4978893-7','PK94MEZN0011360112270126','Muhammad Aizaz Ansab','Meezan Bank'),
+('00000000-0000-0000-0000-000000000026','36501-2156016-9','00661010185171','Muzammal Faiz','Bank Alfalah'),
+('00000000-0000-0000-0000-000000000027','35201-3736870-3','04771009527101','Muhammad Hamza Ilyas','Bank Alfalah')
+on conflict (employee_id) do update set cnic=excluded.cnic,
+  bank_account_number=excluded.bank_account_number, bank_account_title=excluded.bank_account_title,
+  bank_name=excluded.bank_name, iban=null;
 
--- date of birth (placeholders — admin should set real values)
-update profiles p set date_of_birth = v.dob from (values
-  ('00000000-0000-0000-0000-000000000021'::uuid,'2000-03-12'::date),
-  ('00000000-0000-0000-0000-000000000022'::uuid,'1996-07-22'::date),
-  ('00000000-0000-0000-0000-000000000023'::uuid,'2001-11-05'::date),
-  ('00000000-0000-0000-0000-000000000024'::uuid,'2003-02-18'::date),
-  ('00000000-0000-0000-0000-000000000025'::uuid,'1998-09-30'::date),
-  ('00000000-0000-0000-0000-000000000026'::uuid,'1995-05-14'::date),
-  ('00000000-0000-0000-0000-000000000027'::uuid,'1999-12-01'::date)
-) v(id, dob) where p.id = v.id;
+-- ---------- portal credentials (password = Softonoma@<employee_code>) ----------
+insert into employee_credentials (employee_id, portal_password) values
+('00000000-0000-0000-0000-000000000021','Softonoma@1042'),
+('00000000-0000-0000-0000-000000000022','Softonoma@2087'),
+('00000000-0000-0000-0000-000000000023','Softonoma@3310'),
+('00000000-0000-0000-0000-000000000024','Softonoma@4765'),
+('00000000-0000-0000-0000-000000000025','Softonoma@5028'),
+('00000000-0000-0000-0000-000000000026','Softonoma@6193'),
+('00000000-0000-0000-0000-000000000027','Softonoma@7451')
+on conflict (employee_id) do update set portal_password=excluded.portal_password;
+
+-- ---------- BD commission policies (sheet col K) ----------
+delete from commission_policies where employee_id between '00000000-0000-0000-0000-000000000021'
+  and '00000000-0000-0000-0000-000000000027';
+insert into commission_policies (employee_id, label, rate, description) values
+('00000000-0000-0000-0000-000000000021','Own deals', 4, 'Commission on her own closed deals'),
+('00000000-0000-0000-0000-000000000021','Moon''s deals', 2, 'On Moon''s business (not an employee)'),
+('00000000-0000-0000-0000-000000000022','Own deals', 3, 'Commission on his own closed deals'),
+('00000000-0000-0000-0000-000000000022','Junior deals', 1, 'On deals by juniors he trains'),
+('00000000-0000-0000-0000-000000000023','Own deals', 2, 'Commission on her own closed deals'),
+('00000000-0000-0000-0000-000000000024','Own deals', 2, 'Commission on her own closed deals');
 
 -- ---------- shifts (per-employee) ----------
 delete from shifts where employee_id >= '00000000-0000-0000-0000-000000000021'
@@ -76,12 +90,11 @@ insert into salary_structures (employee_id, type, base_salary, currency) values
 -- ---------- dynamic compensation components ----------
 delete from compensation_components where employee_id >= '00000000-0000-0000-0000-000000000021'
   and employee_id <= '00000000-0000-0000-0000-000000000027';
+-- only the sheet's conditional engineer bonuses (col K); non-recurring so they are NOT auto-applied
+-- to payroll — recorded as available one-off categories the super admin can add when earned.
 insert into compensation_components (employee_id, label, amount, description, recurring) values
-('00000000-0000-0000-0000-000000000021','Fuel Allowance', 5000,'Monthly fuel allowance for client visits', true),
-('00000000-0000-0000-0000-000000000022','Fuel Allowance',10000,'Monthly fuel allowance', true),
-('00000000-0000-0000-0000-000000000022','Deal Commission',25000,'Commission on the ACME deal closed in June', false),
-('00000000-0000-0000-0000-000000000025','Extra Hours Pay',12000,'Weekend release support — agreed with lead', false),
-('00000000-0000-0000-0000-000000000026','Internet Allowance',3000,'Home internet reimbursement', true);
+('00000000-0000-0000-0000-000000000025','Investment bonus', 50000,'50,000 (invesp) — per sheet', false),
+('00000000-0000-0000-0000-000000000026','Extra-hours bonus', 50000,'50,000 if he gives 4 extra hours daily', false);
 
 -- ---------- leave balances (current year + month) ----------
 insert into leave_balances (employee_id, year, annual_total, annual_used, casual_month, casual_used)

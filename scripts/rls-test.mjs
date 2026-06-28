@@ -11,9 +11,12 @@ const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 // canonical employee = Muzammal Faiz; second employee = Shaiza Maheen
 const EMP = "00000000-0000-0000-0000-000000000026";
 const EMP_EMAIL = "muzammilfaiz.dev@gmail.com";
-const EMP_PW = "Softonoma@123";
+const EMP_PW = "Softonoma@6193";
 const EMP2 = "00000000-0000-0000-0000-000000000021";
-const ADMIN_PW = "Test@12345";
+const SUPER_EMAIL = "super.admin@softonoma.com";
+const SUPER_PW = "Softonoma@SaDM7k29";
+const ADMIN_EMAIL = "admin@softonoma.com";
+const ADMIN_PW = "Softonoma@HrAd4n63";
 
 const results = [];
 function check(name, pass, detail = "") {
@@ -55,7 +58,7 @@ async function main() {
   const empAudit = await emp.from("audit_log").select("*");
   check("employee: audit_log → 0 rows (super-admin only)", (empAudit.data?.length ?? 0) === 0);
 
-  const hira = await asUser("hr@acme.test", ADMIN_PW);
+  const hira = await asUser(ADMIN_EMAIL, ADMIN_PW);
   const hiraSal = await hira.from("salary_structures").select("*");
   check("admin: salary_structures → 0 rows (admin excluded from payroll)", (hiraSal.data?.length ?? 0) === 0);
   const hiraPay = await hira.from("payroll_runs").select("*");
@@ -63,7 +66,7 @@ async function main() {
   const hiraAudit = await hira.from("audit_log").select("*");
   check("admin: audit_log → 0 rows (super-admin only)", (hiraAudit.data?.length ?? 0) === 0);
 
-  const founder = await asUser("founder@acme.test", ADMIN_PW);
+  const founder = await asUser(SUPER_EMAIL, SUPER_PW);
   const fSal = await founder.from("salary_structures").select("*");
   check("super_admin: salary_structures → all (7 seeded)", (fSal.data?.length ?? 0) === 7, `${fSal.data?.length ?? 0} rows`);
   const fAudit = await founder.from("audit_log").select("id").limit(1);

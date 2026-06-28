@@ -24,16 +24,15 @@ describe("§14.5 E2E-4 (data) — payroll with dynamic additions → finalise", 
     const run = runs.find((r: any) => r.employee_id === MUZAMMAL);
     expect(run).toBeTruthy();
 
-    // base 150,000; recurring Internet Allowance 3,000; no unpaid → net 153,000
+    // base 150,000; no recurring additions (his bonus is conditional/non-recurring); no unpaid
     expect(Number(run.base_salary)).toBe(150000);
-    expect(Number(run.additions_total)).toBe(3000);
+    expect(Number(run.additions_total)).toBe(0);
     expect(Number(run.deductions)).toBe(0);
-    expect(Number(run.net_pay)).toBe(153000);
+    expect(Number(run.net_pay)).toBe(150000);
 
-    // payslip line items created (base + addition)
+    // payslip base line item created
     const { data: lines } = await admin.from("payslip_components").select("*").eq("payroll_run_id", run.id);
     expect((lines ?? []).some((l) => l.kind === "base")).toBe(true);
-    expect((lines ?? []).some((l) => l.kind === "addition")).toBe(true);
 
     const finalised = await finalisePayroll(admin, run.id);
     expect(finalised.status).toBe("finalised");

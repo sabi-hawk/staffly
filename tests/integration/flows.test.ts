@@ -58,13 +58,13 @@ describe("§14.4 integration flows (cloud)", () => {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { persistSession: false } }
     );
-    await anon.auth.signInWithPassword({ email: "founder@acme.test", password: "Test@12345" });
+    await anon.auth.signInWithPassword({ email: "super.admin@softonoma.com", password: "Softonoma@SaDM7k29" });
     const before = await anon.from("audit_log").select("id", { count: "exact", head: true }).eq("entity", "profiles");
     await anon.from("profiles").update({ department: "Engineering (audit " + Date.now() + ")" }).eq("id", AHMAD);
     const after = await anon.from("audit_log").select("*").eq("entity", "profiles").order("created_at", { ascending: false }).limit(1);
     expect((after.data ?? []).length).toBe(1);
     expect(after.data![0].action).toBe("update");
-    expect(after.data![0].actor_email).toBe("founder@acme.test");
+    expect(after.data![0].actor_email).toBe("super.admin@softonoma.com");
     expect(after.data![0].before).toBeTruthy();
     expect(after.data![0].after).toBeTruthy();
   });

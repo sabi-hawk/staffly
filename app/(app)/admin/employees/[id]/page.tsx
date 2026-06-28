@@ -1,6 +1,7 @@
-import { Clock, TrendingDown, CalendarCheck, CalendarX, Plane, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Clock, TrendingDown, CalendarCheck, CalendarX, Plane, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, isSuperAdmin, isAdmin } from "@/lib/auth";
 import { resolveRange, type RangeKey } from "@/lib/time";
 import { buildEmployeeReport } from "@/lib/services/reports";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import { EmployeeEditor } from "@/components/admin/employee-editor";
 import { PrivateEditor } from "@/components/admin/private-editor";
 import { ShiftEditor } from "@/components/admin/shift-editor";
 import { CompensationEditor } from "@/components/admin/compensation-editor";
+import { CredentialsCard } from "@/components/admin/credentials-card";
+import { CommissionEditor } from "@/components/admin/commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
 import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12 } from "@/lib/utils";
 
@@ -24,10 +27,12 @@ export default async function EmployeeDetail({
 }) {
   const viewer = (await getCurrentProfile())!;
   const superAdmin = isSuperAdmin(viewer.role);
+  const adminViewer = isAdmin(viewer.role);
   const supabase = createClient();
 
   const { data: p } = await supabase.from("profiles").select("*").eq("id", params.id).single();
   if (!p) return <p className="text-text-secondary">Employee not found.</p>;
+  const isBD = (p.department ?? "").toLowerCase().includes("business");
 
   const { data: shift } = await supabase
     .from("shifts").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle();
@@ -35,17 +40,28 @@ export default async function EmployeeDetail({
   const { from, to, range } = resolveRange(searchParams.range as RangeKey, searchParams.from, searchParams.to);
   const report = await buildEmployeeReport(supabase, params.id, from, to);
 
+  // credentials are visible to admin + super admin
+  const creds = adminViewer
+    ? (await supabase.from("employee_credentials").select("*").eq("employee_id", params.id).maybeSingle()).data
+    : null;
+
   let salary = null;
   let comps: any[] = [];
   let priv = null;
+  let policies: any[] = [];
   if (superAdmin) {
     salary = (await supabase.from("salary_structures").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle()).data;
     comps = (await supabase.from("compensation_components").select("*").eq("employee_id", params.id).eq("is_active", true).order("created_at")).data ?? [];
     priv = (await supabase.from("employee_private").select("*").eq("employee_id", params.id).maybeSingle()).data;
+    policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("created_at")).data ?? [];
   }
 
   return (
     <div className="space-y-6">
+      <Link href="/admin/employees" className="inline-flex items-center gap-1.5 text-caption font-medium text-text-secondary hover:text-brand-primary">
+        <ArrowLeft className="size-4" /> Back to employees
+      </Link>
+
       {/* Header */}
       <Card>
         <CardContent className="flex items-center gap-4 pt-5">
@@ -67,6 +83,19 @@ export default async function EmployeeDetail({
           </div>
         </CardContent>
       </Card>
+
+      {/* Login credentials (admin + super admin) */}
+      {adminViewer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Login credentials</CardTitle>
+            <CardDescription>Employee signs in at /login with their username. Copy to share securely.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CredentialsCard employeeId={p.id} fullName={p.full_name} username={p.username} password={creds?.portal_password ?? null} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attendance summary with range */}
       <Card>
@@ -107,6 +136,19 @@ export default async function EmployeeDetail({
         <CardContent><ShiftEditor employeeId={p.id} shift={shift} /></CardContent>
       </Card>
 
+      {/* Commission policy (BD employees, super admin only) */}
+      {superAdmin && isBD && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Commission policy</CardTitle>
+            <CardDescription>Percentage commitments for this business-development employee.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CommissionEditor employeeId={p.id} policies={policies} />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Compensation (super admin only) */}
       {superAdmin && (
         <Card>
@@ -115,7 +157,7 @@ export default async function EmployeeDetail({
             <CardDescription>Base salary {formatPKR(salary?.base_salary ?? 0)} · additional categories below</CardDescription>
           </CardHeader>
           <CardContent>
-            <CompensationEditor employeeId={p.id} components={comps} />
+            <CompensationEditor employeeId={p.id} components={comps} baseSalary={Number(salary?.base_salary ?? 0)} />
           </CardContent>
         </Card>
       )}

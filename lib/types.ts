@@ -14,6 +14,7 @@ export interface Profile {
   id: string;
   full_name: string;
   email: string;
+  username: string | null;
   email_secondary: string | null;
   role: UserRole;
   avatar_url: string | null;
@@ -80,6 +81,21 @@ export interface AuditLog {
   after: Record<string, unknown> | null;
   ip_address: string | null;
   user_agent: string | null;
+  created_at: string;
+}
+
+export interface EmployeeCredentials {
+  employee_id: string;
+  portal_password: string | null;
+  updated_at: string;
+}
+
+export interface CommissionPolicy {
+  id: string;
+  employee_id: string;
+  label: string;
+  rate: number;
+  description: string | null;
   created_at: string;
 }
 

@@ -11,21 +11,26 @@ const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const admin = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });
 
-const ADMIN_PASSWORD = "Test@12345";       // founder + hr admin accounts
-const EMP_PASSWORD = "Softonoma@123";      // real employees
+// Admin accounts log in by EMAIL; employees by USERNAME (→ resolved to their email).
+// Employee password convention: Softonoma@<employee_code>.
+const SUPER_ADMIN_PW = "Softonoma@SaDM7k29";
+const ADMIN_PW = "Softonoma@HrAd4n63";
+const empPw = (code) => `Softonoma@${code}`;
+
 const USERS = [
-  { id: "00000000-0000-0000-0000-000000000001", email: "founder@acme.test", full_name: "Founder Admin", role: "super_admin", password: ADMIN_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000002", email: "hr@acme.test",       full_name: "Hira HR",       role: "admin",       password: ADMIN_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000021", email: "029755shaizamaheen@gmail.com", full_name: "Shaiza Maheen",        role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000022", email: "ahmad.roshi5@gmail.com",        full_name: "Ahmad Roshan",         role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000023", email: "fatimasul89@gmail.com",         full_name: "Fatima Sultan",        role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000024", email: "areebazaidi027@gmail.com",      full_name: "Areeba",               role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000025", email: "muhammad.aizaz0900@gmail.com",  full_name: "Muhammad Aizaz Ansab", role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000026", email: "muzammilfaiz.dev@gmail.com",    full_name: "Muzammal Faiz",        role: "employee", password: EMP_PASSWORD },
-  { id: "00000000-0000-0000-0000-000000000027", email: "hamzailyas311@gmail.com",       full_name: "Muhammad Hamza Ilyas", role: "employee", password: EMP_PASSWORD },
+  { id: "00000000-0000-0000-0000-000000000001", email: "super.admin@softonoma.com", full_name: "Super Admin", role: "super_admin", password: SUPER_ADMIN_PW },
+  { id: "00000000-0000-0000-0000-000000000002", email: "admin@softonoma.com",       full_name: "HR Admin",    role: "admin",       password: ADMIN_PW },
+  { id: "00000000-0000-0000-0000-000000000021", email: "029755shaizamaheen@gmail.com", full_name: "Shaiza Maheen",        role: "employee", password: empPw(1042) },
+  { id: "00000000-0000-0000-0000-000000000022", email: "ahmad.roshi5@gmail.com",        full_name: "Ahmad Roshan",         role: "employee", password: empPw(2087) },
+  { id: "00000000-0000-0000-0000-000000000023", email: "fatimasul89@gmail.com",         full_name: "Fatima Sultan",        role: "employee", password: empPw(3310) },
+  { id: "00000000-0000-0000-0000-000000000024", email: "areebazaidi027@gmail.com",      full_name: "Areeba Zaidi",         role: "employee", password: empPw(4765) },
+  { id: "00000000-0000-0000-0000-000000000025", email: "muhammad.aizaz0900@gmail.com",  full_name: "Muhammad Aizaz Ansab", role: "employee", password: empPw(5028) },
+  { id: "00000000-0000-0000-0000-000000000026", email: "muzammilfaiz.dev@gmail.com",    full_name: "Muzammal Faiz",        role: "employee", password: empPw(6193) },
+  { id: "00000000-0000-0000-0000-000000000027", email: "hamzailyas311@gmail.com",       full_name: "Muhammad Hamza Ilyas", role: "employee", password: empPw(7451) },
 ];
 
-// Legacy fake employees from v1 — remove their auth users so they no longer appear.
+// Legacy v1 fake employees to remove. (The old acme admin accounts at fixed UUIDs are
+// UPDATED in place to the new softonoma.com emails — no delete, to avoid a recreate race.)
 const STALE_EMAILS = ["ali@acme.test", "sara@acme.test", "bilal@acme.test", "zara@acme.test", "omar@acme.test"];
 
 async function findUserByEmail(email) {
@@ -41,19 +46,21 @@ async function findUserByEmail(email) {
 }
 
 async function ensureUser(u) {
+  // Update in place if the fixed UUID already exists (avoids delete+recreate races).
+  const byId = await admin.auth.admin.getUserById(u.id);
+  if (byId.data?.user) {
+    await admin.auth.admin.updateUserById(u.id, {
+      email: u.email,
+      password: u.password,
+      email_confirm: true,
+      user_metadata: { full_name: u.full_name, role: u.role },
+    });
+    return "updated";
+  }
+  // A different account may hold this email — free it so the fixed UUID can claim it.
   const existing = await findUserByEmail(u.email);
-  if (existing) {
-    if (existing.id !== u.id) {
-      // Recreate with the fixed UUID so profiles FKs resolve.
-      await admin.auth.admin.deleteUser(existing.id);
-    } else {
-      await admin.auth.admin.updateUserById(u.id, {
-        password: u.password,
-        user_metadata: { full_name: u.full_name, role: u.role },
-        email_confirm: true,
-      });
-      return "updated";
-    }
+  if (existing && existing.id !== u.id) {
+    await admin.auth.admin.deleteUser(existing.id);
   }
   const { data, error } = await admin.auth.admin.createUser({
     id: u.id,
@@ -62,7 +69,10 @@ async function ensureUser(u) {
     email_confirm: true,
     user_metadata: { full_name: u.full_name, role: u.role },
   });
-  if (error) throw new Error(`createUser ${u.email}: ${error.message}`);
+  if (error) {
+    console.error(`createUser ${u.email} raw error:`, JSON.stringify(error), "| status:", error.status, "| code:", error.code, "| name:", error.name, "| message:", error.message);
+    throw new Error(`createUser ${u.email}: ${error.message || error.code || "unknown"}`);
+  }
   if (data.user.id !== u.id)
     throw new Error(`UUID mismatch for ${u.email}: wanted ${u.id} got ${data.user.id}`);
   return "created";
@@ -135,8 +145,10 @@ async function main() {
 
   await client.end();
   console.log("\nDone. Logins:");
-  console.log("  Super Admin: founder@acme.test (Test@12345) | Admin: hr@acme.test (Test@12345)");
-  console.log("  Employees:   <their email> (Softonoma@123) — e.g. muzammilfaiz.dev@gmail.com");
+  console.log(`  Super Admin (email): super.admin@softonoma.com  /  ${SUPER_ADMIN_PW}`);
+  console.log(`  Admin / HR  (email): admin@softonoma.com        /  ${ADMIN_PW}`);
+  console.log("  Employees (username): first.last  /  Softonoma@<employee_code>");
+  console.log("    e.g. shaiza.maheen / Softonoma@1042 · muzammil.faiz / Softonoma@6193");
 }
 
 main().catch((e) => {

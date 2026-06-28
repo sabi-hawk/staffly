@@ -14,8 +14,9 @@ export default async function AdminDashboard() {
   const today = companyToday();
 
   const { data: employees } = await supabase
-    .from("profiles").select("id, full_name, employment_type, status, role").eq("status", "active");
-  const emps = (employees ?? []).filter((e) => e.role === "employee" || e.role === "admin" || e.role === "super_admin");
+    .from("profiles").select("id, full_name, employment_type, status, role")
+    .eq("status", "active").eq("role", "employee"); // admins are not counted as staff
+  const emps = employees ?? [];
 
   const { data: todayAtt } = await supabase.from("attendance").select("*").eq("work_date", today);
   const attByEmp = new Map((todayAtt ?? []).map((a) => [a.employee_id, a]));
@@ -78,15 +79,26 @@ export default async function AdminDashboard() {
           <CardHeader><CardTitle>Alerts feed</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {(alerts ?? []).length === 0 && <p className="text-caption text-text-secondary">No alerts. All clear.</p>}
-            {(alerts ?? []).map((al: any) => (
-              <div key={al.id} className="flex items-start gap-2">
-                <Badge tone={al.type.includes("missed") ? "danger" : "warning"}>{al.type.replace("_", " ")}</Badge>
-                <div className="text-caption text-text-secondary">
-                  {al.message}
-                  <div className="text-[11px]">{new Date(al.triggered_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}</div>
+            {(alerts ?? []).map((al: any) => {
+              const danger = al.type.includes("missed");
+              const label =
+                al.type === "missed_checkin" ? "Missed check-in" :
+                al.type === "missed_checkout" ? "Missed checkout" :
+                al.type === "overtime_warning" ? "Overtime" :
+                al.type === "late_arrival" ? "Late arrival" : al.type.replace(/_/g, " ");
+              return (
+                <div key={al.id} className="flex gap-3">
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${danger ? "bg-danger" : "bg-warning"}`} />
+                  <div className="min-w-0">
+                    <div className={`text-caption font-semibold ${danger ? "text-danger" : "text-warning"}`}>{label}</div>
+                    <div className="text-caption text-text-secondary">{al.message}</div>
+                    <div className="text-[11px] text-text-secondary/70">
+                      {new Date(al.triggered_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       </div>

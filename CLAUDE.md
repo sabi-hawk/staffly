@@ -73,8 +73,17 @@ e.g. in parallel:
   to employee/admin; check cron `CRON_SECRET`.
 - **Quality auditor**: pagination/empty/loading/error states, reused helpers, dead code, type
   safety, business-rule regressions (non-netting, leave quotas).
-Treat their findings as a punch-list; fix before commit. Use subagents liberally for audits — they
-are cheap insurance for a production launch.
+- **Professional QA (human-style)**: walk the WHOLE flow as an experienced HR/payroll-portal QA —
+  not just the diff. Judge against *intent*, not only the written spec. Surface (a) missing-but-
+  obviously-needed features (e.g. "no way to edit base salary", "no back button on an inner page",
+  "can't edit a check-in"), (b) features that exist but feel incomplete, and (c) rough UX. Give an
+  **honest, opinionated** list of what a real user would expect and what's absent. Keep the product
+  simple — meet the real need, don't gold-plate.
+
+Treat findings as a punch-list. **Fix the clear gaps yourself.** For anything that would expand
+scope, change agreed behaviour, or might conflict with the owner's intent, **ask the owner**
+("QA suggests X — want it?") instead of silently building it. Use subagents liberally for audits —
+they are cheap insurance for a production launch.
 
 ## 6. Browser testing (this environment)
 There is no in-IDE clickable browser here, so we use **Playwright headless + screenshots**, which an

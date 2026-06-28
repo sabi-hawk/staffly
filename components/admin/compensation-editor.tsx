@@ -10,13 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import type { CompensationComponent } from "@/lib/types";
 
-/** Super-admin editor for an employee's dynamic compensation categories. */
+/** Super-admin editor for an employee's base salary + dynamic compensation categories. */
 export function CompensationEditor({
   employeeId,
   components,
+  baseSalary,
 }: {
   employeeId: string;
   components: CompensationComponent[];
+  baseSalary: number;
 }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
@@ -24,6 +26,24 @@ export function CompensationEditor({
   const [description, setDescription] = useState("");
   const [recurring, setRecurring] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [base, setBase] = useState(String(baseSalary ?? 0));
+  const [savingBase, setSavingBase] = useState(false);
+
+  async function saveBase() {
+    setSavingBase(true);
+    const supabase = createClient();
+    // update the active salary structure, or create one if none exists
+    const { data: existing } = await supabase
+      .from("salary_structures").select("id").eq("employee_id", employeeId).eq("is_active", true).maybeSingle();
+    const value = Number(base) || 0;
+    const { error } = existing
+      ? await supabase.from("salary_structures").update({ base_salary: value }).eq("id", existing.id)
+      : await supabase.from("salary_structures").insert({ employee_id: employeeId, base_salary: value, currency: "PKR" });
+    setSavingBase(false);
+    if (error) return toast.error(error.message);
+    toast.success("Base salary updated");
+    router.refresh();
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +74,17 @@ export function CompensationEditor({
 
   return (
     <div className="space-y-4">
+      {/* base salary */}
+      <div className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
+        <div className="space-y-1.5">
+          <Label>Base salary (PKR)</Label>
+          <Input type="number" value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
+        </div>
+        <Button onClick={saveBase} disabled={savingBase}>{savingBase ? "Saving…" : "Update base salary"}</Button>
+      </div>
+
       <div className="space-y-2">
+        <p className="text-caption font-medium text-text-secondary">Additional categories</p>
         {components.length === 0 && (
           <p className="text-caption text-text-secondary">No additional compensation categories yet.</p>
         )}

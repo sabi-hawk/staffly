@@ -48,7 +48,7 @@ export default async function AttendancePage() {
                       {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                     </TD>
                     <TD className="max-w-[200px] truncate text-text-secondary">{workLogPreview(r.work_log) || "—"}</TD>
-                    <TD>{r.work_date === today && open && (
+                    <TD>{r.work_date === today && r.check_in_time && (
                       <EditAttendance
                         attendanceId={r.id}
                         workDate={r.work_date}

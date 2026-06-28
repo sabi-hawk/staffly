@@ -55,4 +55,31 @@ Every edit on the platform must be logged and viewable by the super admin:
   regardless of write path; a `login_events` table for IP/user-agent at sign-in; audit visibility
   restricted to **super admin** (so salary changes stay private). See `02-data-model.md`.
 
+## 2026-06-28 — QA round 2 (usernames/credentials, BD commissions, data cleanup, UX)
+- **Alerts feed badges** look broken (type chip wraps) — redesign cleanly.
+- **Employment type**: only **Shaiza Maheen = remote**; everyone else **onsite** (remote count → 1).
+- **Dashboard + Employees list** must show **only role=employee** (hide Founder Admin / Hira HR).
+  Keep the admin/super-admin accounts but never list them as employees.
+- **Usernames** for all employees, `first.last` lowercase: shaiza.maheen, ahmad.roshan,
+  fatima.sultan, areeba.zaidi, aizaz.ansab, muzammil.faiz, hamza.ilyas. Complete Areeba's name
+  to **Areeba Zaidi**.
+- **Login by username OR email.** Employees log in with username; the two admin accounts use
+  emails: **super.admin@softonoma.com** (super_admin) and **admin@softonoma.com** (admin).
+- **Passwords**: employees = `Softonoma@<employee_code>`. Admin accounts = `Softonoma@<random>`
+  (strong). Admin/super-admin can **edit username + reset password** from the employee panel.
+- **Credentials visible** in the employee panel (username + password) with a **Copy** button that
+  copies a formatted block ("Login credentials for <name> — Username: … Password: …"), and editable.
+- **Deactivate employee**: a status toggle (active/inactive); inactive users **cannot log in**
+  but their records remain.
+- **Back button** on inner screens (employee detail, payslip, etc.).
+- **Sidebar collapse**: the expand control gets cut off — use a circular arrow straddling the
+  sidebar's right edge, fixed mid-height, visible collapsed or expanded.
+- **Remove fake data**: I invented bank account/title/bank/IBAN, DOB, and some compensation
+  categories — none of that was provided. Keep only what the sheet has (name, designation,
+  joining date, phone, emails, CNIC, salary, commissions/extra-hours). Empty the rest.
+- **BD commissions** (sheet col K) as a per-employee commission policy (BD dept only):
+  Shaiza 4% own + 2% on Moon's deals; Ahmad 3% own + 1% juniors; Fatima 2% own; Areeba 2% own.
+  Engineers' conditional bonuses (Aizaz "50,000 (invesp)", Muzammil "50,000 if 4 extra hrs/day")
+  recorded as non-recurring compensation notes; Hamza none.
+
 <!-- New requirements go below this line. -->

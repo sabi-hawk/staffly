@@ -19,7 +19,7 @@ export default async function EmployeesPage({
   const { data: people, count } = await supabase
     .from("profiles")
     .select("*", { count: "exact" })
-    .order("role", { ascending: true })
+    .eq("role", "employee") // admins/super-admins are not listed as employees
     .order("full_name", { ascending: true })
     .range(from, to);
 

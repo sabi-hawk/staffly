@@ -14,6 +14,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0006_audit.sql` — generic `record_audit()` trigger on sensitive tables (skips service-role/
   seed writes), `audit_log` enriched (actor_email/role, ip/ua), `login_events` table; audit +
   login visibility restricted to **super_admin**.
+- `0007_private_pii.sql` — `employee_private` (CNIC + bank), self/super-admin RLS.
+- `0008_usernames_credentials.sql` — `profiles.username` (login), `employee_credentials`
+  (portal_password; admin/super/self read), `commission_policies` (BD %, super-admin),
+  `resolve_login_email(identifier)` RPC (username→email, pre-auth), `profiles` read tightened to
+  authenticated only.
 
 ## Enums
 `user_role(employee|admin|super_admin)`, `employment_type(onsite|remote)`,

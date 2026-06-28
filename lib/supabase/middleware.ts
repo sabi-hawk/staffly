@@ -48,14 +48,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role gating for /admin/* — employees are redirected away
-  if (user && path.startsWith(ADMIN_PREFIX)) {
+  if (user && !isPublic) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, status")
       .eq("id", user.id)
       .single();
-    if (!profile || profile.role === "employee") {
+
+    // Deactivated accounts cannot use the app (records remain in the DB).
+    if (!profile || profile.status === "inactive") {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("disabled", "1");
+      return NextResponse.redirect(url);
+    }
+
+    // Role gating for /admin/* — employees are redirected away.
+    if (path.startsWith(ADMIN_PREFIX) && profile.role === "employee") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);

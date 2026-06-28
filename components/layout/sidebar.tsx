@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronLeft, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/nav";
 
@@ -14,10 +14,19 @@ export function Sidebar({ items, role }: { items: NavItem[]; role: string }) {
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
+        "sticky top-0 z-20 flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
         collapsed ? "w-16" : "w-60"
       )}
     >
+      {/* circular collapse/expand toggle straddling the right edge */}
+      <button
+        onClick={() => setCollapsed((c) => !c)}
+        className="absolute -right-3 top-20 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-white text-text-secondary shadow-card hover:text-brand-primary"
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
+      </button>
+
       <div className="flex h-16 items-center gap-2 px-4">
         <Image src="/softonoma-icon.png" alt="Softonoma" width={28} height={28} className="shrink-0" />
         {!collapsed && (
@@ -26,13 +35,6 @@ export function Sidebar({ items, role }: { items: NavItem[]; role: string }) {
             <div className="text-[10px] uppercase tracking-wide text-text-secondary">Employee Portal</div>
           </div>
         )}
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="ml-auto rounded-md p-1.5 text-text-secondary hover:bg-sidebar-muted"
-          aria-label="Toggle sidebar"
-        >
-          {collapsed ? <Menu className="size-4" /> : <ChevronLeft className="size-4" />}
-        </button>
       </div>
 
       <nav className="flex-1 space-y-1 px-2 py-3">
