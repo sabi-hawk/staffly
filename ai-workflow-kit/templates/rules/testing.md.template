@@ -1,0 +1,24 @@
+# Testing & Verification — {{PROJECT_NAME}}
+
+The gate is **{{GATE}}** (+ a real-world check of the feature), not a number for its own sake. Be
+pragmatic: test the rules that matter; verify the thing actually works.
+
+## The suites
+{{List the project's test layers and their commands, e.g.:}}
+- **Unit** ({{UNIT_CMD}}) — pure logic; deterministic; no network.
+- **Integration** ({{INT_CMD}}) — service/data-layer flows.
+- **{{Other}}** ({{...}}) — {{e.g. row-security, e2e}}.
+- **Gate** ({{GATE}}) — runs the above + type-check/build and reports PASS/FAIL.
+
+## Real-world verification (don't ship on green tests alone)
+{{How to actually exercise the change — e.g. drive the UI headless and screenshot, hit the API,
+inspect output. Reading the result is part of "done".}}
+
+## Definition of done
+- Type-check + build clean.
+- {{GATE}} all-PASS.
+- The affected behaviour verified for real.
+- Knowledge base updated (`.claude/database/database.md` + relevant `knowledgebase/<module>`) in the same change.
+
+## Test data
+Use deterministic seeded data ({{SEED_CMD}}); tests that mutate shared/cloud data must clean up.

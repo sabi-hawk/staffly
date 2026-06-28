@@ -12,7 +12,7 @@ code, and must **update** them when requirements or architecture change.
 1. [`00-product-overview.md`](00-product-overview.md) — what the product is, who uses it.
 2. [`01-architecture-and-conventions.md`](01-architecture-and-conventions.md) — stack, folder
    structure, coding conventions, how data flows.
-3. [`02-data-model.md`](02-data-model.md) — tables, columns, RLS, triggers, enums.
+3. [`../database/database.md`](../database/database.md) — tables, columns, RLS, triggers, enums.
 4. [`03-business-rules.md`](03-business-rules.md) — the rules that must never be violated
    (hours math, leave quotas, payroll, permissions).
 5. [`04-v2-softonoma-overhaul.md`](04-v2-softonoma-overhaul.md) — the v2 feature set & status.
@@ -25,7 +25,7 @@ code, and must **update** them when requirements or architecture change.
 ## Rules for keeping it current (agents MUST follow)
 - **New requirement from the owner?** Append a dated entry to
   [`06-requirements-changelog.md`](06-requirements-changelog.md) *first*, then implement.
-- **Changed the schema?** Update [`02-data-model.md`](02-data-model.md) in the same change.
+- **Changed the schema?** Update [`../database/database.md`](../database/database.md) in the same change.
 - **Changed a business rule / added a feature?** Update `03`/`04` in the same change.
 - Keep entries concise and factual. Link between docs with relative paths.
 - Never delete history from the changelog — supersede with a new entry instead.

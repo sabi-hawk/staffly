@@ -1,0 +1,21 @@
+---
+name: qa-review
+description: Run a multi-agent review/QA pass before declaring a milestone shippable — spawn the security, quality, and professional-QA agents in parallel, triage findings, fix the clear gaps, and ask the owner about scope expansions. Use at milestones or when the owner asks for a QA pass.
+---
+
+# QA Review
+
+Cheap insurance before shipping. Make the QA think like a human tester and surface missing/incomplete
+things — not just lint the diff.
+
+## Run (parallel subagents)
+Spawn together (one message, multiple agent calls): **security-reviewer**, **quality-reviewer**, and
+for milestones **professional-qa**. Also run any built-in code/security review.
+
+## Triage
+- **Fix clear gaps yourself** (bugs, dead ends, missing states, obvious omissions).
+- **Ask the owner** for anything that expands scope or might conflict with intent — phrase as "QA suggests X — want it?".
+- Re-run the gate + real-world verification after fixes.
+
+## Output to the owner
+A short PASS/FAIL summary + the honest punch-list: what you fixed and what needs their call.

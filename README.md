@@ -62,4 +62,6 @@ npm run report       # full §14 protocol → PASS/FAIL table
 - **RLS** (§7): employees see only their own rows; **salary & payroll are `super_admin` only**
   (Admin/HR excluded). Cron routes require `Authorization: Bearer ${CRON_SECRET}`.
 
-See `PROGRESS.md`, `RUNLOG.md`, `DECISIONS.md`, and `CLAUDE.md` for build detail.
+See `CLAUDE.md` (how we work) and `.claude/` — `knowledgebase/` (product, rules, status),
+`database/database.md` (schema), `rules/`, `skills/`, `agents/`, and `PROGRESS.md` / `RUNLOG.md` /
+`DECISIONS.md` — for full detail.

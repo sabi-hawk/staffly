@@ -1,0 +1,24 @@
+# {{PROJECT_NAME}} — Knowledge Base
+
+The **single source of truth** for what we're building, why, and how. Read the relevant files here
+**before** writing code; **update** them in the same change as the code. (If `CLAUDE.md` is "how we
+work", this is "what we're building.")
+
+## Layout (one doc — or folder — per concern/module)
+Fill these from the actual codebase. Suggested starting set:
+1. `00-product-overview.md` — what the product is, who uses it, the roles/personas.
+2. `01-architecture-and-conventions.md` — stack, structure, how data flows, coding conventions.
+3. `02-business-rules.md` — the rules that must never be violated (the core invariants).
+4. `03-features-and-status.md` — feature set + current build status.
+5. `04-testing-and-validation.md` — how we test and self-verify.
+6. `05-requirements-changelog.md` — dated log of every requirement the owner gives. **Append first, then build.**
+7. One folder per substantial **module** (e.g. `billing/`, `auth/`) holding its own knowledge.
+
+The database schema lives in the sibling `../database/database.md`; delivery plans (optional) in `../plans/`.
+
+## Rules for keeping it current
+- **New requirement?** Append a dated entry to the changelog *first*, then implement.
+- **Schema change?** Update `../database/database.md` in the same change.
+- **New/changed feature or rule?** Update the relevant doc in the same change.
+- Concise + factual; cite real file paths; link between docs with relative paths.
+- No secrets, no PII. Never delete changelog history — supersede with a new entry.

@@ -1,0 +1,21 @@
+---
+name: db-change
+description: Add or change the database safely — write a migration with access control, apply it, verify it, and update the knowledge base. Use whenever adding/altering a table, column, index, enum, trigger, or access policy. (Omit this skill if the project has no database.)
+---
+
+# DB Change
+
+{{Where migrations live and how they're applied ({{MIGRATE_CMD}}); local vs cloud DB.}}
+
+## Steps
+1. **Write** the migration (next in sequence). Make it re-runnable (idempotent guards).
+2. **Access control in the same file** for any new table — match the project's sensitivity model.
+   Add audit/`updated_at` triggers where appropriate.
+3. **Apply**: {{MIGRATE_CMD}}.
+4. **Verify**: query that the table/columns/policies/triggers exist; confirm key values.
+5. **Types/models**: update the code's type/model definitions to match.
+6. **Seed**: update the seed so {{SEED_CMD}} reproduces the data; re-seed and confirm.
+7. **Sync KB**: update `.claude/database/database.md` (migration list + table + access + change log) in the same change.
+
+## Gotchas
+{{List the project's real DB footguns — id/type quirks, month-end math, connection/host caveats, etc.}}

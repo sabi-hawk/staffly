@@ -53,7 +53,7 @@ Every edit on the platform must be logged and viewable by the super admin:
   IP + user-agent at login instead). Detailed + filterable + paginated.
 - Design: DB-level audit triggers on sensitive tables for guaranteed before/after capture
   regardless of write path; a `login_events` table for IP/user-agent at sign-in; audit visibility
-  restricted to **super admin** (so salary changes stay private). See `02-data-model.md`.
+  restricted to **super admin** (so salary changes stay private). See `../database/database.md`.
 
 ## 2026-06-28 — QA round 2 (usernames/credentials, BD commissions, data cleanup, UX)
 - **Alerts feed badges** look broken (type chip wraps) — redesign cleanly.

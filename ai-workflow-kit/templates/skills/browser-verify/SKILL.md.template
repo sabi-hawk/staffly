@@ -1,0 +1,25 @@
+---
+name: browser-verify
+description: Verify UI changes in a real browser using a headless driver + screenshots the agent can read back. Use after any UI change to confirm it renders and works — not just that tests pass. (Omit if the project has no browser UI.)
+---
+
+# Browser Verify
+
+There's no clickable browser in the agent's environment, so drive a **headless browser and
+screenshot**, then **read the PNGs** to confirm the UI. This catches what unit tests miss.
+
+## One-time
+{{Install the headless browser, e.g. `npx playwright install chromium`.}}
+
+## Standard smoke
+{{The e2e command and where screenshots land. Then Read the PNGs.}}
+
+## Ad-hoc flow check (recommended for a specific change)
+1. Start the dev server (background); wait until ready.
+2. A short throwaway script that logs in ({{test creds source}}), navigates to the changed screen,
+   performs the action, and saves a full-page screenshot.
+3. **Read** the screenshot(s). Clean up any data the script created.
+
+## Tips
+{{Login selectors/labels, any a11y quirks (e.g. labels not linked to inputs), wait-after-mutation note,
+and the rule to never leave test artifacts in a shared/cloud DB.}}

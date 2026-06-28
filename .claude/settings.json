@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run db:migrate)",
+      "Bash(npm run seed:test)",
+      "Bash(npm test)",
+      "Bash(npm run test:rls)",
+      "Bash(npm run test:int)",
+      "Bash(npm run report)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run build)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./CREDENTIALS.md)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/block-secret-writes.mjs" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/typecheck-changed.mjs" }]
+      }
+    ]
+  }
+}

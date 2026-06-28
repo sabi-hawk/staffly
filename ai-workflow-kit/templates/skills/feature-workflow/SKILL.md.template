@@ -1,0 +1,48 @@
+---
+name: feature-workflow
+description: The end-to-end loop for any feature/bug/change on {{PROJECT_NAME}} — capture the requirement, ground in the knowledge base, decide, implement, self-test, validate with review subagents, verify for real, sync the knowledge base, and commit. Use whenever starting non-trivial work.
+---
+
+# Feature Workflow (lightweight, owner-driven)
+
+How we build here. Requirements come from the **owner in chat** ({{adjust if tickets/FRDs are used}}).
+Be pragmatic; don't add ceremony. Run the phases in order; don't skip verify + KB-sync.
+
+> Golden rules: ground in the KB before coding · keep the app shippable after each slice · the gate is
+> {{GATE}} + a real check · update the KB in the same change · {{push policy}} · never touch secrets.
+
+## 1. Capture
+Log the requirement (dated) in the knowledge base before implementing, so intent is never lost.
+
+## 2. Ground
+Read the relevant KB docs + the code you'll touch. **Reuse** existing helpers/services. For a large
+or uncertain change, spawn the **context-gatherer** agent first.
+
+## 3. Decide
+Resolve ambiguities yourself; record notable choices. **Ask the owner only** when a choice is
+irreversible/costly, expands scope, conflicts with a prior requirement, or needs a secret.
+
+## 4. Implement (small slices)
+{{Project structure rule — thin routes/UI, logic in the right layer. New data → migration with
+access-control in the same change.}}
+
+## 5. Self-test
+Type-check → build → {{GATE}}. Add/adjust tests for new behaviour. Loop until green.
+
+## 6. Validate with subagents (non-trivial changes)
+Spawn in parallel: **security-reviewer**, **quality-reviewer**, and for milestones **professional-qa**.
+Also run any built-in code/security review. Fix clear gaps; ask the owner about scope expansions.
+
+## 7. Verify for real
+{{How to actually exercise the change (drive the UI / hit the API / inspect output) and read the result.}}
+
+## 8. Sync the knowledge base
+Update the database index (on schema change) + the relevant module doc + the requirements log — in the
+**same** change as the code.
+
+## 9. Commit (+ push when asked)
+Commit per slice with a clear message. {{Push/PR policy.}}
+
+## Optional: bigger initiatives
+For a multi-step initiative worth tracking, drop a short note folder under `.claude/plans/` (see its
+README). Optional and lightweight — most chat-sized requests don't need it.

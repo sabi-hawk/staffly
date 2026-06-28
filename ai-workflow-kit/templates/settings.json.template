@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Replace allow[] with this project's real safe commands; keep deny[] guarding secrets.",
+  "permissions": {
+    "allow": [
+      "Bash({{TEST_CMD}})",
+      "Bash({{BUILD_CMD}})",
+      "Bash({{TYPECHECK_CMD}})"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/block-secret-writes.mjs" }]
+      }
+    ]
+  }
+}

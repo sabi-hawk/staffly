@@ -1,0 +1,44 @@
+# CLAUDE.md — {{PROJECT_NAME}}
+
+How any agent (or human) works in this repo. Detail lives in **`.claude/`** — this file is the map.
+Keep it lightweight and matched to how the owner actually works.
+
+## 0. Prime directive — read `.claude/` first
+Before non-trivial work, read `.claude/knowledgebase/README.md` (product, architecture, business
+rules, status), `.claude/database/database.md` (schema — if this project has a DB), and `.claude/rules/`
+(security · testing · conventions · git). Ground decisions in these; if something's missing, decide
+sensibly and **write it down**.
+
+## 1. What this is
+{{ONE_PARAGRAPH: what the product is, who uses it, the stack ({{STACK}}), and where it runs.}}
+
+## 2. Golden rules (never violate — detail in `.claude/rules/`)
+{{LIST the 4–8 non-negotiables for THIS project: core domain invariants, the permission/security
+model, data-integrity rules, and any framework pitfall the team keeps hitting.}}
+
+## 3. How we work — the `feature-workflow` skill
+Every change follows `.claude/skills/feature-workflow/SKILL.md`:
+capture the requirement → ground in the KB/code → decide (record notable choices; ask the owner only
+on big/irreversible/conflicting calls) → implement small slices → self-test ({{GATE}}) → review with
+subagents → verify for real → sync the KB → commit (push when asked).
+
+## 4. Commands
+```
+{{DEV_CMD}}        # run locally
+{{TEST_CMD}}       # the gate
+{{BUILD_CMD}}      # production build
+{{OTHER_CMDS}}     # migrate / seed / lint / type-check as applicable
+```
+
+## 5. Skills & agents (`.claude/`)
+- **Skills**: `feature-workflow`{{, db-change, browser-verify, find-skills — keep what applies}}.
+- **Agents** (read-only review): `context-gatherer`, `security-reviewer`, `quality-reviewer`, `professional-qa`.
+- **Hooks**: block secret/credential writes{{; + any project-specific guard}}.
+
+## 6. Git & docs
+- Identity: {{GIT_IDENTITY}}. Default branch: {{DEFAULT_BRANCH}}. Push/PR: {{PUSH_POLICY}}.
+- Never commit secrets. Keep the KB current in the same change as the code.
+
+## 7. For the owner
+State the change in chat — the assistant reads the KB, logs it, decides details, implements, runs the
+gate, verifies, updates the KB, and keeps the app shippable; it asks only when it's genuinely your call.

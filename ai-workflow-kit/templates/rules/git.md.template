@@ -1,0 +1,19 @@
+# Git & Delivery — {{PROJECT_NAME}}
+
+Match the owner's reality; don't impose ceremony they didn't ask for.
+
+## Identity
+{{GIT_IDENTITY}} (set locally to this repo if it differs from global). Remote: {{REMOTE}}.
+
+## Flow
+- Default branch: {{DEFAULT_BRANCH}}. {{Direct commits, or feature branches + PRs — pick what the owner wants.}}
+- Commit per logical slice with a clear message{{; trailer: }} `{{COAUTHOR_TRAILER}}`.
+- **Push policy**: {{push only when asked / on every slice / …}}.
+- {{PR policy: never auto-create/merge unless asked; hand the owner a compare URL if they self-merge.}}
+- Never commit secrets / credentials (git-ignored + hook-blocked).
+
+## Before committing
+Run the gate ({{GATE}}); type-check + build clean; verify the change for real; update the KB in the same change.
+
+## Optional rigor (not default)
+{{Feature branches / git worktrees for parallel work / compare URLs — available when the owner wants more process.}}

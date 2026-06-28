@@ -44,3 +44,7 @@ test-artifacts/
 
 # local-only secrets (never commit)
 CREDENTIALS.md
+
+# reference material from another company — local inspiration only, NEVER commit
+# (contains their proprietary workflow + a production DB schema dump)
+old-projects-context/

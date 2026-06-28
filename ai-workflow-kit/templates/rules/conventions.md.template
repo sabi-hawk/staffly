@@ -1,0 +1,20 @@
+# Code Conventions — {{PROJECT_NAME}}
+
+{{STACK}}. Full architecture: `.claude/knowledgebase/` (architecture doc).
+
+## Structure
+- {{Where business logic lives vs UI vs routes/handlers; keep routes/UI thin, logic reusable.}}
+- {{Naming (DB vs code casing), import aliases, where shared helpers live.}}
+- {{Time/money/locale handling — name the canonical helpers so they aren't re-implemented.}}
+
+## Known pitfalls (the bugs this team keeps hitting — list them)
+- {{e.g. framework boundary gotchas, async/ordering traps, rounding/timezone mistakes. Capturing
+  these here is one of the highest-value parts of the KB — every painful bug becomes a one-line rule.}}
+
+## UI (if applicable)
+- {{Design system / component primitives to reuse; required states (empty / loading / error);
+  feedback on mutations; navigation affordances.}}
+
+## Data / migrations (if applicable)
+- {{Where migrations live, how they're applied, and the rule to update `.claude/database/database.md`
+  in the same change.}}

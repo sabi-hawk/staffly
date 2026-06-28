@@ -1,0 +1,30 @@
+# {{PROJECT_NAME}} — Database Index
+
+The authoritative map of the data layer. **Update this in the same change as any schema change**
+(new/altered table, column, index, enum, trigger, or access policy) and add a row to the change log.
+
+## Engine & access
+- DB: {{DB_ENGINE}}. Migrations: {{where they live}} · applied via {{MIGRATE_CMD}}.
+- Access-control model: {{row-level security / app-layer scoping}} — {{summary of who can see what}}.
+
+## Migrations
+| # | File | What it does |
+|---|------|--------------|
+| 0001 | {{...}} | {{...}} |
+
+## Tables
+For each table: purpose, key columns, relationships, access policy, and any triggers.
+
+### {{table_name}}
+- **Purpose**: {{...}}
+- **Columns**: {{key columns + types}}
+- **Access**: {{who can read/write}}
+- **Triggers/derived**: {{audit, updated_at, computed fields}}
+
+## Conventions
+{{Casing, timestamps, soft-delete, id strategy, enum handling, connection caveats.}}
+
+## Change log
+| Date | Change | Migration |
+|------|--------|-----------|
+| {{YYYY-MM-DD}} | {{...}} | {{####}} |

@@ -1,129 +1,62 @@
-# CLAUDE.md — How we work on the Softonoma Employee Portal
+# CLAUDE.md — Softonoma Employee Portal
 
-This file tells any agent (or human) **how to work in this repo**. It is paired with the
-**knowledge base** (`knowledge-base/`) which tells you **what we're building**. Read both.
+How any agent (or human) works in this repo. The detail lives in **`.claude/`** — this file is the
+map. Keep it lightweight: requirements come from the **owner in chat** (no FRDs/tickets), work goes
+straight to `main` under the repo's git identity, and the gate is `npm run report` + a browser check.
 
----
+## 0. Prime directive — read `.claude/` first
+Before non-trivial work, read:
+- `.claude/knowledgebase/README.md` → product, architecture, **business rules**, current status, the **requirements changelog**.
+- `.claude/database/database.md` → tables, RLS, triggers, migrations (keep it current with every schema change).
+- `.claude/rules/` → `security.md`, `testing.md`, `conventions.md`, `git.md`.
+Ground every decision in these; don't re-derive from memory. If something isn't covered, decide
+sensibly and **write it down** in the KB.
 
-## 0. Prime directive — read the knowledge base first
-**Before doing anything**, read `knowledge-base/README.md` and the docs it points to (product
-overview, architecture, data model, business rules, current v2 status, testing, production
-readiness, requirements changelog). The knowledge base is the **source of truth**. If this file
-and the KB disagree, the KB wins for "what", this file wins for "how".
-
-Do **not** re-derive product facts from memory or from a single file — ground every decision in
-the KB. If something isn't covered, decide sensibly (see §4) and **write it down** in the KB.
-
-## 1. What this product is (one line)
+## 1. What this is
 **Softonoma Employee Portal** — internal HR/attendance/leave/payroll app. Roles: Employee, Admin/HR,
-Super Admin. Stack: Next.js 14 (App Router, TS strict) + Supabase (Postgres 17 + Auth + RLS) +
-Tailwind/shadcn-style UI. Cloud DB. Full detail: `knowledge-base/00-product-overview.md`.
+Super Admin. Next.js 14 (App Router, TS strict) + Supabase (Postgres 17 + Auth + RLS) + Tailwind/
+shadcn-style UI. Cloud DB. Full detail in `.claude/knowledgebase/00-product-overview.md`.
 
-## 2. Golden rules (never violate — detail in `knowledge-base/03-business-rules.md`)
-1. **Non-netting hours**: extra hours one day never cancel another day's deficit; summaries are gross.
-2. **Compensation privacy**: salary, payroll, compensation, payslips = **Super Admin only**. Admin/HR
-   excluded. Enforce in middleware **and** RLS **and** UI.
-3. **Employees can't edit their own profile fields** (only their photo). Admin/Super Admin edit.
-4. **Leave**: casual ≤2/month; annual 8/yr, ≥21-day notice (admin override); unpaid unlimited/deducted.
-5. **Money** = PKR; **time** = stored UTC, shown Asia/Karachi; **week** starts Monday.
-6. New tables get **RLS + policies in the same migration**. Migrations are applied to the **cloud** DB.
+## 2. Golden rules (never violate — detail in `.claude/rules/`)
+1. **Non-netting hours**; **multi-session** day total = sum of worked sessions.
+2. **Compensation/payroll/audit = super_admin only**; CNIC/bank in `employee_private`. Defense in depth: middleware + RLS + UI.
+3. **Leave**: annual accrues 1/mo→8 (carry within year); casual 1/mo (no carry); probation = 0 annual + 1 casual/3mo, rest unpaid.
+4. **RSC pitfall**: never import a value/const/function from a `"use client"` module into a server component — put shared helpers in `lib/*`.
+5. New tables get **RLS + policies in the same migration**, applied to the **cloud** DB (`npm run db:migrate`).
+6. Money PKR; time stored UTC, shown Asia/Karachi (use `lib/time.ts` / `lib/utils.ts`).
 
-## 3. The development workflow (own it end-to-end)
-For every task, run this loop. Optimise for the owner needing to do **zero** manual checking.
+## 3. How we work — the `feature-workflow` skill
+Every change follows `.claude/skills/feature-workflow/SKILL.md`:
+**capture** the requirement (changelog) → **ground** in the KB/code (reuse `lib/services/*`, `lib/*`)
+→ **decide** (record in `.claude/DECISIONS.md`; ask the owner only for big/irreversible/conflicting)
+→ **implement** small slices → **self-test** (`tsc`, `build`, `npm run report`) → **validate** with
+review subagents → **browser-verify** (Playwright screenshots) → **sync the KB** → **commit**
+(push when asked). Production gate: `.claude/knowledgebase/07-production-readiness.md`.
 
-1. **Capture** — append the new requirement to `knowledge-base/06-requirements-changelog.md`
-   (dated), so intent is never lost.
-2. **Ground** — read the relevant KB docs + the actual code you'll touch (reuse existing helpers in
-   `lib/` — don't reinvent `formatHours`, `working_days`, `buildEmployeeReport`, etc.).
-3. **Decide** — resolve ambiguities yourself (see §4) and record non-obvious choices in
-   `DECISIONS.md`.
-4. **Implement in small slices** — thin routes/UI, logic in `lib/services/**` + pure math in
-   `lib/{hours,payroll}.ts`. Match existing styling and conventions.
-5. **Self-test** — `npx tsc --noEmit`, `npm run build`, `npm test`, `npm run test:rls`,
-   `npm run test:int` (and `npm run report` for anything cross-cutting). Add/adjust tests for new
-   behaviour. Fix until green.
-6. **Validate with subagents** — spawn review subagents to audit the diff against the KB:
-   requirement coverage, permission/RLS leaks, missing pagination/empty-states, broken business
-   rules, dead code, accessibility. Fix findings before commit. (See §5.)
-7. **Browser-check** — run the Playwright E2E for affected flows; screenshots land in
-   `test-artifacts/`. **Read the screenshots** and confirm it actually looks/works right. (See §6.)
-8. **Sync the KB** — update `02-data-model.md` / `03-business-rules.md` / `04-v2-…` / changelog so
-   the KB always matches reality.
-9. **Commit** — one focused commit per slice (see §7).
-10. **Production gate** — before declaring a task done, verify
-    `knowledge-base/07-production-readiness.md`. We are launching within days: **leave the app
-    shippable after every task** — no half-finished features on shared paths.
+## 4. Decide vs ask
+Decide and proceed for naming, structure, defaults, copy, refactors, test data — anything resolvable
+from the KB/conventions (note notable choices in `.claude/DECISIONS.md`). **Ask the owner** only when
+a choice is irreversible/costly, expands scope, conflicts with a prior requirement, or needs a secret.
 
-## 4. Decision-making autonomy
-The owner wants minimal involvement. **Decide and proceed** for: naming, folder placement,
-component structure, sensible defaults, copy/labels, validation messages, test data, refactors that
-preserve behaviour, and anything resolvable from the KB or conventions. Record notable choices in
-`DECISIONS.md`.
+## 5. Skills & agents (`.claude/`)
+- **Skills** (`.claude/skills/`): `feature-workflow`, `qa-review`, `db-change`, `browser-verify`, `find-skills`.
+- **Agents** (`.claude/agents/`, read-only): `context-gatherer`, `security-reviewer`, `quality-reviewer`, `professional-qa`. Spawn the reviewers at milestones (the `qa-review` skill).
+- **Hooks** (`.claude/hooks/`): block secret/credential writes; warn on the RSC client-import pitfall.
 
-**Only ask the owner** when a choice is (a) irreversible or costly to undo, (b) changes product
-scope or external-facing behaviour in a way the KB doesn't cover, or (c) needs a real-world secret
-or credential. Otherwise pick the best option, note it, and keep moving.
-
-## 5. Self-validation with subagents
-After a slice is implemented and green, spawn focused review subagents (general-purpose/Explore) —
-e.g. in parallel:
-- **Requirements auditor**: read `knowledge-base/06-requirements-changelog.md` + `04-…` and check
-  every relevant requirement is actually implemented in the diff; list gaps.
-- **Security/permissions auditor**: verify RLS + middleware + UI gating; hunt for salary/CNIC leaks
-  to employee/admin; check cron `CRON_SECRET`.
-- **Quality auditor**: pagination/empty/loading/error states, reused helpers, dead code, type
-  safety, business-rule regressions (non-netting, leave quotas).
-- **Professional QA (human-style)**: walk the WHOLE flow as an experienced HR/payroll-portal QA —
-  not just the diff. Judge against *intent*, not only the written spec. Surface (a) missing-but-
-  obviously-needed features (e.g. "no way to edit base salary", "no back button on an inner page",
-  "can't edit a check-in"), (b) features that exist but feel incomplete, and (c) rough UX. Give an
-  **honest, opinionated** list of what a real user would expect and what's absent. Keep the product
-  simple — meet the real need, don't gold-plate.
-
-Treat findings as a punch-list. **Fix the clear gaps yourself.** For anything that would expand
-scope, change agreed behaviour, or might conflict with the owner's intent, **ask the owner**
-("QA suggests X — want it?") instead of silently building it. Use subagents liberally for audits —
-they are cheap insurance for a production launch.
-
-## 6. Browser testing (this environment)
-There is no in-IDE clickable browser here, so we use **Playwright headless + screenshots**, which an
-agent can both run (terminal) and verify (read the PNGs). This is the recommended approach.
-- One-time: `npx playwright install chromium`.
-- Run: `npm run test:e2e` (config starts the dev server, logs in per role, exercises flows, writes
-  PNGs to `test-artifacts/`).
-- The agent then **reads the screenshots** to confirm layout/behaviour, and iterates.
-- For ad-hoc visual checks: `npm run dev` then a short Playwright script that navigates + screenshots
-  a page; read the PNG.
-- Alternative (optional): a Playwright **MCP server** gives interactive browser control; if the
-  owner enables it, prefer it for exploratory clicking. Until then, headless+screenshots is the
-  standard.
-
-## 7. Git & delivery
-- Identity is **local to this repo**: `sabi-hawk <miansabby516@gmail.com>` (already configured).
-- Commit **per slice/phase** with a clear message; end messages with the Co-Authored-By trailer.
-- **Do not push** unless the owner asks. Remote: `git@github.com:sabi-hawk/staffly.git`.
-- Never commit secrets; `.env.local`, `node_modules`, `.next`, `test-artifacts/`, uploaded avatars
-  are git-ignored.
-
-## 8. Commands cheat sheet
+## 6. Commands
 ```
-npm run dev            # run app (http://localhost:3000)
-npm run db:migrate     # apply supabase/migrations/*.sql to the cloud DB (idempotent)
-npm run storage:setup  # create/verify the public "avatars" Storage bucket
-npm run seed:test      # create demo/auth users + seed data + verification table
-npm test               # Vitest unit (pure logic)
-npm run test:rls       # RLS tests vs cloud
-npm run test:int       # integration flows vs cloud
+npm run dev            # app at http://localhost:3000
+npm run db:migrate     # apply supabase/migrations/*.sql to the cloud DB
+npm run storage:setup  # ensure the public "avatars" storage bucket
+npm run seed:test      # demo/auth users + seed data + verification table
+npm test | test:rls | test:int | report   # §14 suites (report = the gate)
 npm run test:e2e       # Playwright browser E2E → test-artifacts/ screenshots
-npm run report         # seed + unit + rls + integration → PASS/FAIL table
 ```
 
-## 9. Tracking files
-- `PROGRESS.md` — phase checklist. `DECISIONS.md` — choices + rationale. `RUNLOG.md` — running
-  journal of what was built/tested/stubbed. Keep these and the **knowledge base** current.
+## 7. Git & docs
+- Identity is local to this repo: `sabi-hawk <miansabby516@gmail.com>`; commit per slice, push when asked (`.claude/rules/git.md`). Never commit secrets / `CREDENTIALS.md`.
+- Tracking docs live in `.claude/`: `PROGRESS.md`, `RUNLOG.md`, `DECISIONS.md`. Keep them + the KB current in the same change as the code.
 
-## 10. How to prompt me (for the owner)
-You don't need to re-explain the product each time — I read the knowledge base. Just state the
-change ("add X to payroll", "fix Y on attendance"). I'll log it, decide the details, implement,
-test, self-validate, browser-check, update the KB, and keep the app shippable. Tell me only the
-*intent*; I'll own the rest. If you ever want me to ask more before acting, say "plan first".
+## 8. For the owner
+Just state the change in chat — I read the KB, log it, decide details, implement, test, browser-check,
+update the KB, and keep the app shippable. I'll only ask when it's genuinely your call.

@@ -1,0 +1,23 @@
+# Security Rules — {{PROJECT_NAME}}
+
+Enforced by `.claude/hooks/block-secret-writes.mjs` and the `security-reviewer` agent. Rewrite to this
+project's real model.
+
+## Secrets & credentials
+- Never read/write/print/commit `.env` / `.env.*` (only `.env.example`), `*.pem`, `*.key`, or any
+  local credentials doc. Config comes from env vars. {{Server-only secrets — name them and where they may be used.}}
+
+## Auth & access control
+- {{Describe the permission model (roles/scopes/tenants) and enforce it in depth: at the edge
+  (middleware/route guards), at the data layer ({{DB row security / query scoping}}), and in the UI.
+  Never trust client-supplied identity/role — resolve server-side.}}
+- {{List the most-sensitive data and who may see it.}}
+- {{If there's a DB with row-level security: every new table enables it + policies in the same migration.}}
+
+## Input & data
+- Validate all external input (request bodies, params, uploads) at the boundary. Validate uploads by type/size.
+- No PII/secrets in logs, tests, or screenshots — use synthetic data. {{Soft-delete vs hard-delete policy.}}
+
+## Review gate
+Before commit/push, the `security-reviewer` agent (and any built-in security review) scans the diff
+for secret leakage, missing access checks, unvalidated input, and data exposure. Fix blockers first.
