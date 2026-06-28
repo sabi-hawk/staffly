@@ -41,3 +41,6 @@ yarn-error.log*
 .claude/settings.local.json
 
 test-artifacts/
+
+# local-only secrets (never commit)
+CREDENTIALS.md
