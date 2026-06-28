@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { leaveSummary } from "@/lib/services/leaves";
 import { LeaveApplyForm } from "@/components/leaves/apply-form";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -13,16 +14,7 @@ const tone = (s: string) =>
 export default async function LeavesPage() {
   const profile = (await getCurrentProfile())!;
   const supabase = createClient();
-  const year = new Date().getFullYear();
-
-  const { data: balance } = await supabase
-    .from("leave_balances")
-    .select("*")
-    .eq("employee_id", profile.id)
-    .eq("year", year)
-    .order("casual_month", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const summary = await leaveSummary(supabase, profile.id);
 
   const { data: requests } = await supabase
     .from("leave_requests")
@@ -33,9 +25,9 @@ export default async function LeavesPage() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Annual remaining" value={balance ? balance.annual_total - balance.annual_used : 8} icon={CalendarDays} />
-        <StatCard label="Casual this month" value={balance ? Math.max(1 - balance.casual_used, 0) : 1} icon={CalendarDays} tone="success" />
-        <StatCard label="Unpaid taken (yr)" value={balance?.unpaid_used ?? 0} icon={CalendarDays} tone="warning" />
+        <StatCard label="Annual remaining" value={summary.annualRemaining} icon={CalendarDays} />
+        <StatCard label="Casual this month" value={summary.casualRemaining} icon={CalendarDays} tone="success" />
+        <StatCard label="Unpaid taken (yr)" value={summary.unpaidUsed} icon={CalendarDays} tone="warning" />
       </div>
 
       <LeaveApplyForm />

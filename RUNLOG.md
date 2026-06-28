@@ -56,6 +56,29 @@ Running journal of what was built, what was tested/passed, and what was stubbed.
 ## Final — `npm run report`: ALL §14 SUITES PASS
 (§14.2 14/14 · §14.3 10/10 · §14.4+sim 7/7 · §14.5 E2E-4 · §14.6 seed · §14.7 tsc/build)
 
+## v2 (Softonoma overhaul) — phases 1–10 + production audit  ✅
+- Branding + light theme; migrations 0004–0007; 7 real employees seeded with logins + ~90d
+  attendance + dynamic compensation; pagination everywhere; attendance v2 (edit both times,
+  per-employee filter, range tabs, summary); employees v2 (rich detail, per-employee shift,
+  compensation editor, avatars, read-only self-profile); leaves v2 (casual ≤2/mo, annual ≥21d,
+  missing-day→leave); reports v2; payroll v2 (dynamic additions, payslip + PDF, paid/pending +
+  history); audit logging + super-admin Logs panel.
+- Knowledge base + mature CLAUDE.md workflow + Playwright browser E2E (screenshots).
+
+### Production-readiness audit (3 review subagents) — findings fixed
+- **RSC pagination constant bug** (client→server import) → 0-row grids. Fixed (lib/pagination.ts).
+- **PII leak**: CNIC/bank were on `profiles` (anon-readable) → moved to `employee_private`
+  (self + super_admin only), migration 0007; all readers/editors/seed rewired.
+- **Attendance edit**: employees could rewrite own past check-in → route now restricts employees
+  to own current-day checkout only.
+- **Timezone**: lateness/missed-checkin used server clock → anchored to Asia/Karachi (correct on Vercel).
+- **Annual quota**: not enforced across the year → usage derived from leave_requests.
+- **Cron de-dup**: duplicate missed-checkin across UTC/Karachi midnight → company-day window + in-scan guard.
+- Payroll routes: explicit super_admin guards. Avatar upload: UUID validation. Removed duplicate
+  manual audit inserts (DB triggers own it). Overflow leave date-split. Leaves "Decided" pagination.
+  Copy fixes (casual 2/mo, 21-day notice, Softonoma email sender). Dashboard "Awaiting" clamp.
+- Final: `npm run report` all §14 PASS; `tsc` + `npm run build` clean; E2E green.
+
 ### Stubbed / deferred (honest list)
 - **Email**: console-only (RESEND_API_KEY blank) — by design; swaps to Resend when keyed.
 - **Browser E2E (Playwright)**: dependencies installed and flows scaffolded, but the

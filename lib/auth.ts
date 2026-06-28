@@ -18,3 +18,10 @@ export function isAdmin(role?: string) {
 export function isSuperAdmin(role?: string) {
   return role === "super_admin";
 }
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+/** Role of a user id via the given (request-scoped) client. */
+export async function roleOf(supabase: SupabaseClient, userId: string): Promise<string | undefined> {
+  const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+  return data?.role;
+}

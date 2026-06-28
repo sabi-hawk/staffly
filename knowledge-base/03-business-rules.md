@@ -32,8 +32,11 @@ These are the rules that define correctness. Tests enforce them; agents must not
 - Net = `base_salary + Σ additions − Σ deductions` for a period.
   - **Additions are dynamic** `compensation_components` (label, amount, description, recurring).
     There is no fixed OT/commission/benefit model anymore.
-  - Deductions = `(unpaid_days + unexcused_absent_days) × (base_salary / working_days_in_period)`.
-    Deficit hours are **not** auto-deducted.
+  - Deductions: **approved unpaid-leave days** are auto-deducted at `base_salary /
+    working_days_in_period` per day. Unexcused absences and deficit hours are **surfaced**
+    (reports/attendance summary) but **not** auto-deducted — the super admin adds a deduction
+    line on the payslip if they choose (avoids wrong deductions from incomplete attendance at
+    launch). [v2 decision]
 - A **payslip** is a `payroll_run` + its `payslip_components` (base / additions / deductions),
   editable per payslip (add/edit/delete lines, with descriptions).
 - Each run has a **payment_status** (`pending`/`paid`) with `paid_at`, `paid_amount`,

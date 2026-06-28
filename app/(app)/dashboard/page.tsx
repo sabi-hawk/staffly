@@ -1,6 +1,7 @@
 import { CalendarDays, TrendingUp, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { leaveSummary } from "@/lib/services/leaves";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { StatCard } from "@/components/ui/stat-card";
@@ -29,15 +30,7 @@ export default async function EmployeeDashboard() {
     .order("work_date", { ascending: false })
     .limit(7);
 
-  const year = new Date().getFullYear();
-  const { data: balance } = await supabase
-    .from("leave_balances")
-    .select("*")
-    .eq("employee_id", profile.id)
-    .eq("year", year)
-    .order("casual_month", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const summary = await leaveSummary(supabase, profile.id);
 
   const totalExtra = (recent ?? []).reduce((s, r) => s + Number(r.extra_hours || 0), 0);
   const totalDeficit = (recent ?? []).reduce((s, r) => s + Number(r.deficit_hours || 0), 0);
@@ -52,8 +45,8 @@ export default async function EmployeeDashboard() {
       <CheckWidget today={todayRow as any} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Annual leave left" value={balance ? balance.annual_total - balance.annual_used : 8} icon={CalendarDays} />
-        <StatCard label="Casual this month" value={balance ? Math.max(1 - balance.casual_used, 0) : 1} icon={CalendarDays} tone="success" />
+        <StatCard label="Annual leave left" value={summary.annualRemaining} icon={CalendarDays} />
+        <StatCard label="Casual this month" value={summary.casualRemaining} icon={CalendarDays} tone="success" />
         <StatCard label="Extra hours (7d)" value={formatHours(totalExtra)} icon={TrendingUp} tone="success" />
         <StatCard label="Deficit hours (7d)" value={formatHours(totalDeficit)} icon={AlertTriangle} tone="danger" />
       </div>

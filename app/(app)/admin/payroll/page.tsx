@@ -22,9 +22,16 @@ export default async function PayrollPage() {
   const linesByRun: Record<string, any[]> = {};
   for (const l of lines ?? []) (linesByRun[l.payroll_run_id] ??= []).push(l);
 
-  const { data: employees } = await supabase
-    .from("profiles").select("id, full_name, employee_code, bank_name, bank_account_number")
-    .eq("role", "employee").order("full_name");
+  const { data: empRows } = await supabase
+    .from("profiles").select("id, full_name, employee_code").eq("role", "employee").order("full_name");
+  const { data: privRows } = await supabase
+    .from("employee_private").select("employee_id, bank_name, bank_account_number");
+  const privById = new Map((privRows ?? []).map((p) => [p.employee_id, p]));
+  const employees = (empRows ?? []).map((e) => ({
+    ...e,
+    bank_name: privById.get(e.id)?.bank_name ?? null,
+    bank_account_number: privById.get(e.id)?.bank_account_number ?? null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -35,7 +42,7 @@ export default async function PayrollPage() {
       <PayrollClient
         initialRuns={runs ?? []}
         linesByRun={linesByRun}
-        employees={employees ?? []}
+        employees={employees}
         defaultFrom={from}
         defaultTo={to}
       />

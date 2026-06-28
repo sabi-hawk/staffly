@@ -1,4 +1,6 @@
-// Pure payroll math (PRD §12). Unit-tested in isolation. No I/O.
+// LEGACY pure payroll math (PRD §12 v1 fixed/OT/commission model). Retained only for unit-test
+// coverage of the deduction/benefit helpers. The LIVE payroll uses dynamic compensation in
+// lib/services/payroll.ts (base + Σ additions − deductions). Do not use computePayroll() in app code.
 import { round2 } from "./hours";
 
 export type SalaryType = "fixed" | "fixed_plus_overtime" | "commission";

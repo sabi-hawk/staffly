@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { EmployeeEditor } from "@/components/admin/employee-editor";
+import { PrivateEditor } from "@/components/admin/private-editor";
 import { ShiftEditor } from "@/components/admin/shift-editor";
 import { CompensationEditor } from "@/components/admin/compensation-editor";
 import { RangeTabs } from "@/components/range-tabs";
@@ -36,9 +37,11 @@ export default async function EmployeeDetail({
 
   let salary = null;
   let comps: any[] = [];
+  let priv = null;
   if (superAdmin) {
     salary = (await supabase.from("salary_structures").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle()).data;
     comps = (await supabase.from("compensation_components").select("*").eq("employee_id", params.id).eq("is_active", true).order("created_at")).data ?? [];
+    priv = (await supabase.from("employee_private").select("*").eq("employee_id", params.id).maybeSingle()).data;
   }
 
   return (
@@ -121,10 +124,21 @@ export default async function EmployeeDetail({
       <Card>
         <CardHeader>
           <CardTitle>Details</CardTitle>
-          <CardDescription>{superAdmin ? "Edit profile, bank & account details" : "Edit profile details"}</CardDescription>
+          <CardDescription>Edit profile details</CardDescription>
         </CardHeader>
-        <CardContent><EmployeeEditor profile={p} canSeeBank={superAdmin} /></CardContent>
+        <CardContent><EmployeeEditor profile={p} /></CardContent>
       </Card>
+
+      {/* Private PII (super admin only) */}
+      {superAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Private details</CardTitle>
+            <CardDescription>CNIC & bank/account details — visible to the employee and super admin only.</CardDescription>
+          </CardHeader>
+          <CardContent><PrivateEditor employeeId={p.id} data={priv} /></CardContent>
+        </Card>
+      )}
     </div>
   );
 }

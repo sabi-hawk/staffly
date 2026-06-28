@@ -27,8 +27,6 @@ export function LeaveApplyForm() {
     if (!res.ok) return toast.error(json.error ?? "Failed");
     if (json.overflowOffered)
       toast.warning(`Annual quota exceeded — ${json.unpaidPart} day(s) filed as unpaid.`);
-    else if (json.lateNotice)
-      toast.warning("Less than 2 weeks notice — admin override may be required.");
     else toast.success("Leave request submitted");
     setStart(""); setEnd(""); setReason("");
     router.refresh();
@@ -50,7 +48,7 @@ export function LeaveApplyForm() {
                 className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
               >
                 <option value="annual">Annual (8/yr)</option>
-                <option value="casual">Casual (1/mo)</option>
+                <option value="casual">Casual (2/mo)</option>
                 <option value="unpaid">Unpaid</option>
               </select>
             </div>

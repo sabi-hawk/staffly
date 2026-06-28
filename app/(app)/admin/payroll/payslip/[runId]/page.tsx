@@ -15,6 +15,7 @@ export default async function PayslipPage({ params }: { params: { runId: string 
   const { data: run } = await supabase.from("payroll_runs").select("*").eq("id", params.runId).single();
   if (!run) return <p className="text-text-secondary">Payslip not found.</p>;
   const { data: emp } = await supabase.from("profiles").select("*").eq("id", run.employee_id).single();
+  const { data: priv } = await supabase.from("employee_private").select("*").eq("employee_id", run.employee_id).maybeSingle();
   const { data: lines } = await supabase
     .from("payslip_components").select("*").eq("payroll_run_id", params.runId).order("kind");
   const { data: company } = await supabase.from("company_settings").select("company_name").eq("id", 1).maybeSingle();
@@ -44,7 +45,7 @@ export default async function PayslipPage({ params }: { params: { runId: string 
             <div><span className="text-text-secondary">Employee</span><div className="font-medium">{emp?.full_name} {formatCode(emp?.employee_code)}</div></div>
             <div><span className="text-text-secondary">Designation</span><div>{emp?.position ?? "—"}</div></div>
             <div><span className="text-text-secondary">Days worked / working</span><div className="tabular">{run.days_present}/{run.working_days}</div></div>
-            <div><span className="text-text-secondary">Bank</span><div>{emp?.bank_name ?? "—"} {emp?.bank_account_number ? `· ${emp.bank_account_number}` : ""}</div></div>
+            <div><span className="text-text-secondary">Bank</span><div>{priv?.bank_name ?? "—"} {priv?.bank_account_number ? `· ${priv.bank_account_number}` : ""}</div></div>
           </div>
 
           <table className="w-full text-sm">

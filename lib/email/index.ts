@@ -14,7 +14,7 @@ export interface EmailProvider {
   send(msg: EmailMessage): Promise<{ id: string }>;
 }
 
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Staffly <noreply@staffly.test>";
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Softonoma <noreply@softonoma.test>";
 
 class ConsoleEmailProvider implements EmailProvider {
   readonly name = "console";

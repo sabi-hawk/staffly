@@ -18,7 +18,6 @@ export interface Profile {
   role: UserRole;
   avatar_url: string | null;
   phone: string | null;
-  cnic: string | null;
   gender: string | null;
   employee_code: string | null;
   position: string | null;
@@ -31,11 +30,18 @@ export interface Profile {
   emergency_name: string | null;
   emergency_phone: string | null;
   emergency_relation: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Sensitive PII — separate table, readable only by the employee themselves or a super admin. */
+export interface EmployeePrivate {
+  employee_id: string;
+  cnic: string | null;
   bank_account_number: string | null;
   bank_account_title: string | null;
   bank_name: string | null;
   iban: string | null;
-  created_at: string;
   updated_at: string;
 }
 

@@ -1,37 +1,35 @@
-# Staffly — Build Progress
+# Softonoma Employee Portal — Build Progress
 
-Phases per PRD §17. Each phase advances only when its §14 gate tests pass against the
-cloud Supabase project. **All §14 suites pass** — see `npm run report`.
+> Detail lives in `knowledge-base/` (source of truth) and `RUNLOG.md`. This is the high-level
+> checklist.
 
-- [x] **Phase 1 — Scaffold, Supabase, auth, role middleware, layout/sidebar**
-  - Gate: Login + role gating — login 200, unauth→/login (307), employee→/admin redirect (middleware). ✅
-- [x] **Phase 2 — Schema + RLS + triggers + seed**
-  - Gate: §14.3 DB/RLS — **10/10**. ✅
-- [x] **Phase 3 — Profiles & shifts CRUD**
-  - Gate: Profile edit (self-update RLS), shift assign/list. ✅
-- [x] **Phase 4 — Check-in/out + work log + history**
-  - Gate: §14.4 flows 1–3 — idempotent check-in, checkout+log, edit+audit. ✅
-- [x] **Phase 5 — Alert crons + email**
-  - Gate: §14.4 flows 4–5 — missed check-in (once, de-duped), missed checkout then resolved. ✅
-- [x] **Phase 6 — Leave module**
-  - Gate: §14.4 flow 6 — annual over balance → unpaid overflow; approve → annual_used++. ✅
-- [x] **Phase 7 — Hours analytics + reports + export**
-  - Gate: §14.2 logic + report render (CSV export, gross non-netting totals). ✅
-- [x] **Phase 8 — Payroll + salary editor + payslip**
-  - Gate: §14.2 payroll + §14.5 E2E-4 — Ali run incl. overtime (1,600) → finalise. ✅
-- [x] **Phase 9 — Extras, PWA, audit, polish**
-  - Gate: §14.7 Definition of Done — tsc clean, production build green, audit_log on edits,
-    alerts feed, announcements/holidays tables, command-palette affordance. (PWA + Lighthouse:
-    see DECISIONS #8 — deferred polish.)
+## v1 (Staffly core) — ✅ complete & cloud-verified
+- [x] Schema + RLS + triggers + seed (§14.3)
+- [x] Hours/payroll pure logic + unit tests (§14.2)
+- [x] Auth + role middleware + app shell
+- [x] Attendance (check-in/out, work logs), leaves, reports, payroll, cron alerts
+- [x] §14 self-test protocol green
 
-## Final §14 result (`npm run report`)
-| Test | Result |
-|------|--------|
-| §14.2 Unit — hours & payroll (14/14) | PASS |
-| §14.3 DB / RLS (10/10) | PASS |
-| §14.4 Integration flows 1–6 + sim (7/7) | PASS |
-| §14.5 E2E-4 payroll incl. overtime → finalise | PASS |
-| §14.6 Seed-and-verify (canonical hours) | PASS |
-| §14.7 tsc --noEmit clean + build green | PASS |
+## v2 (Softonoma overhaul) — ✅ complete
+- [x] **Phase 1** — Softonoma branding + light/modern theme
+- [x] **Phase 2** — migration 0004 (employee fields, bank, dynamic compensation, payslips)
+- [x] **Phase 3** — 7 real employees + logins + ~90-day attendance + compensation seed
+- [x] **Phase 4** — reusable pagination + page-size; employee DOB/age; employees grid
+- [x] **Phase 5** — Attendance v2 (edit both times, per-employee filter, range tabs, summary cards)
+- [x] **Phase 6** — Employees v2 (rich detail, per-employee shift AM/PM, compensation editor,
+      avatars, read-only self-profile) + private PII table
+- [x] **Phase 7** — Leaves v2 (casual ≤2/mo, annual ≥21d, missing-day→leave conversion)
+- [x] **Phase 8** — Reports v2 (leaves/missing + pagination/page-size)
+- [x] **Phase 9** — Payroll v2 (dynamic additions + breakdown, payslip + PDF, paid/pending + history)
+- [x] **Phase 9.5** — Comprehensive audit logging + super-admin Logs panel
+- [x] **Phase 10** — repointed test suite to real employees + new rule tests; `npm run report` green
+- [x] **Knowledge base + CLAUDE.md workflow + browser E2E (Playwright)**
+- [x] **Production-readiness audit** (3 review subagents) + fixes (PII table, attendance-edit
+      guard, timezone, annual quota, payroll route guards, avatar validation, etc.)
 
-See `RUNLOG.md` for detail and `DECISIONS.md` for defaults chosen.
+## Gates
+- §14 suites: `npm run report` → all PASS (unit, RLS, integration+sim, seed, tsc).
+- Browser E2E: `npm run test:e2e` (screenshots → `test-artifacts/`).
+- Production readiness: `knowledge-base/07-production-readiness.md`.
+
+See `RUNLOG.md` (journal), `DECISIONS.md` (choices), `knowledge-base/` (full spec).

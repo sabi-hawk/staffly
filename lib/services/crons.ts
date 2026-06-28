@@ -50,11 +50,10 @@ export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date
     if (alertedThisRun.has(emp.id)) continue;
     if (!shift.days_of_week.includes(dow)) continue;
 
-    // shift start + buffer threshold (company-local wall clock applied to today)
-    const [h, m] = shift.start_time.split(":").map(Number);
-    const threshold = new Date(now);
-    threshold.setHours(h, m + shift.checkin_buffer_minutes, 0, 0);
-    if (now.getTime() <= threshold.getTime()) continue;
+    // shift start + buffer threshold, anchored to Karachi wall-clock (correct on any server tz)
+    const start = new Date(`${workDate}T${String(shift.start_time).slice(0, 8)}+05:00`).getTime();
+    const threshold = start + shift.checkin_buffer_minutes * 60_000;
+    if (now.getTime() <= threshold) continue;
 
     const { data: att } = await supabase
       .from("attendance")

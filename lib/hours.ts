@@ -79,16 +79,17 @@ export function summarisePeriod(days: DayHours[]): PeriodTotals {
   };
 }
 
-/** Is a check-in late given shift start + grace buffer (minutes)? */
+/**
+ * Is a check-in late given shift start + grace buffer (minutes)?
+ * Threshold is anchored to the company wall-clock (Asia/Karachi, +05:00) so it is correct
+ * regardless of the server timezone (e.g. UTC on Vercel). workDate must be YYYY-MM-DD.
+ */
 export function isLate(
   checkIn: Date | string,
   shiftStart: string,
   bufferMinutes: number,
-  workDate: Date | string
+  workDate: string
 ): boolean {
-  const d = new Date(workDate);
-  const [h, m] = shiftStart.split(":").map(Number);
-  const threshold = new Date(d);
-  threshold.setHours(h, (m || 0) + bufferMinutes, 0, 0);
-  return new Date(checkIn).getTime() > threshold.getTime();
+  const start = new Date(`${workDate}T${shiftStart.slice(0, 8)}+05:00`).getTime();
+  return new Date(checkIn).getTime() > start + bufferMinutes * 60_000;
 }

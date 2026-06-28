@@ -19,6 +19,8 @@ export default async function ProfilePage() {
   const supabase = createClient();
   const { data: shift } = await supabase
     .from("shifts").select("*").eq("employee_id", profile.id).eq("is_active", true).maybeSingle();
+  const { data: priv } = await supabase
+    .from("employee_private").select("*").eq("employee_id", profile.id).maybeSingle();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -47,7 +49,8 @@ export default async function ProfilePage() {
           <Row label="Email" value={profile.email} />
           {profile.email_secondary && <Row label="Email 2" value={profile.email_secondary} />}
           <Row label="Phone" value={profile.phone} />
-          <Row label="CNIC" value={profile.cnic} />
+          <Row label="CNIC" value={priv?.cnic} />
+          {priv?.bank_name && <Row label="Bank" value={`${priv.bank_name}${priv.bank_account_number ? ` · ${priv.bank_account_number}` : ""}`} />}
           <Row label="Date of birth" value={profile.date_of_birth ? `${profile.date_of_birth} (age ${ageFromDob(profile.date_of_birth)})` : "—"} />
           <Row label="Employment type" value={<span className="capitalize">{profile.employment_type}</span>} />
           <Row label="Joining date" value={profile.joining_date} />

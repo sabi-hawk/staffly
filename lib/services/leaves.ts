@@ -1,34 +1,88 @@
-// Leave business logic (PRD §11). Annual = 8/yr (approval needed), Casual = 1/mo (auto),
-// Unpaid = unlimited (recorded, deducted). Non-annual auto-approve; overflow → unpaid.
+// Leave business logic (PRD §11 + v2 rules).
+// Annual = 8/yr, approval needed, >=21-day notice (admin override). Casual = <=2/month, paid,
+// auto-approved. Unpaid = unlimited, recorded, deducted. Quota usage is derived from
+// leave_requests (the source of truth) — NOT from per-month counter rows — so it is correct
+// across months and across the year.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeaveType } from "@/lib/types";
 
+export const ANNUAL_TOTAL = 8;
+export const CASUAL_MONTHLY_LIMIT = 2;
+export const ANNUAL_NOTICE_DAYS = 21;
+
 async function workingDays(supabase: SupabaseClient, employeeId: string, start: string, end: string) {
-  const { data, error } = await supabase.rpc("working_days", {
-    p_employee: employeeId,
-    p_start: start,
-    p_end: end,
-  });
+  const { data, error } = await supabase.rpc("working_days", { p_employee: employeeId, p_start: start, p_end: end });
   if (error) throw new Error(error.message);
-  // fall back to inclusive day count if shift schedule yields 0
   const days = Number(data) || 0;
   if (days > 0) return days;
   const d = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1;
   return Math.max(d, 1);
 }
 
-async function currentBalance(supabase: SupabaseClient, employeeId: string) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+/** Approved annual days used in `year`. */
+export async function annualUsedThisYear(supabase: SupabaseClient, employeeId: string, year = new Date().getFullYear()) {
   const { data } = await supabase
-    .from("leave_balances")
-    .select("*")
-    .eq("employee_id", employeeId)
-    .eq("year", year)
-    .eq("casual_month", month)
-    .maybeSingle();
-  return { balance: data, year, month };
+    .from("leave_requests").select("days_count")
+    .eq("employee_id", employeeId).eq("type", "annual").eq("status", "approved")
+    .gte("start_date", `${year}-01-01`).lte("start_date", `${year}-12-31`);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
+/** Approved casual days used in the calendar month of `date`. */
+export async function casualUsedThisMonth(supabase: SupabaseClient, employeeId: string, date = new Date().toISOString().slice(0, 10)) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = d.getMonth(); // 0-based
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const start = `${y}-${pad(m + 1)}-01`;
+  const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`; // actual last day
+  const { data } = await supabase
+    .from("leave_requests").select("days_count")
+    .eq("employee_id", employeeId).eq("type", "casual").eq("status", "approved")
+    .gte("start_date", start).lte("start_date", end);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
+async function unpaidUsedThisYear(supabase: SupabaseClient, employeeId: string, year = new Date().getFullYear()) {
+  const { data } = await supabase
+    .from("leave_requests").select("days_count")
+    .eq("employee_id", employeeId).eq("type", "unpaid").eq("status", "approved")
+    .gte("start_date", `${year}-01-01`).lte("start_date", `${year}-12-31`);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
+/** Derived leave summary for display. */
+export async function leaveSummary(supabase: SupabaseClient, employeeId: string) {
+  const [annualUsed, casualUsed, unpaidUsed] = await Promise.all([
+    annualUsedThisYear(supabase, employeeId),
+    casualUsedThisMonth(supabase, employeeId),
+    unpaidUsedThisYear(supabase, employeeId),
+  ]);
+  return {
+    annualTotal: ANNUAL_TOTAL,
+    annualUsed,
+    annualRemaining: Math.max(ANNUAL_TOTAL - annualUsed, 0),
+    casualLimit: CASUAL_MONTHLY_LIMIT,
+    casualUsed,
+    casualRemaining: Math.max(CASUAL_MONTHLY_LIMIT - casualUsed, 0),
+    unpaidUsed,
+  };
+}
+
+/** Split [start,end] into the first `firstCount` working days (Mon–Fri) and the remainder. */
+function splitWorkingDates(start: string, end: string, firstCount: number) {
+  const dates: string[] = [];
+  const d = new Date(`${start}T00:00:00Z`);
+  const last = new Date(`${end}T00:00:00Z`);
+  while (d <= last) {
+    const dow = d.getUTCDay();
+    if (dow !== 0 && dow !== 6) dates.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  const first = dates.slice(0, firstCount);
+  const rest = dates.slice(firstCount);
+  const range = (arr: string[]) => (arr.length ? { start: arr[0], end: arr[arr.length - 1], days: arr.length } : null);
+  return { first: range(first), rest: range(rest) };
 }
 
 export interface RequestLeaveInput {
@@ -38,31 +92,6 @@ export interface RequestLeaveInput {
   reason?: string;
 }
 
-/**
- * Submit a leave request. Returns the created request(s) plus any overflow info.
- * - annual over remaining → annual (pending) for the remaining + unpaid (approved) for the overflow
- * - casual → auto-approved, casual_used incremented
- * - unpaid → approved, flagged for deduction, unpaid_used incremented
- */
-/** Sum of approved casual leave days in the calendar month of `date`. */
-async function casualDaysInMonth(supabase: SupabaseClient, employeeId: string, date: string) {
-  const d = new Date(date);
-  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-  const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
-  const { data } = await supabase
-    .from("leave_requests")
-    .select("days_count")
-    .eq("employee_id", employeeId)
-    .eq("type", "casual")
-    .eq("status", "approved")
-    .gte("start_date", monthStart)
-    .lte("start_date", monthEnd);
-  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
-}
-
-export const CASUAL_MONTHLY_LIMIT = 2;
-export const ANNUAL_NOTICE_DAYS = 21;
-
 export async function requestLeave(
   supabase: SupabaseClient,
   employeeId: string,
@@ -70,92 +99,57 @@ export async function requestLeave(
   opts: { allowShortNotice?: boolean } = {}
 ) {
   const daysCount = await workingDays(supabase, employeeId, input.start_date, input.end_date);
-  const { balance } = await currentBalance(supabase, employeeId);
 
-  // advance-notice rule for annual (§11.3 → 21 days). Admins may override.
   const today = new Date();
   const noticeCutoff = new Date(today.getTime() + ANNUAL_NOTICE_DAYS * 86400000);
   const lateNotice = input.type === "annual" && new Date(input.start_date) < noticeCutoff;
   if (lateNotice && !opts.allowShortNotice) {
-    throw new Error(
-      `Annual leave must be requested at least ${ANNUAL_NOTICE_DAYS} days in advance (admin override required).`
-    );
+    throw new Error(`Annual leave must be requested at least ${ANNUAL_NOTICE_DAYS} days in advance (admin override required).`);
   }
 
   if (input.type === "casual") {
-    // casual is capped at 2 days per calendar month
-    const used = await casualDaysInMonth(supabase, employeeId, input.start_date);
-    if (used + daysCount > CASUAL_MONTHLY_LIMIT) {
-      throw new Error(
-        `Casual leave is limited to ${CASUAL_MONTHLY_LIMIT} days per month (already used ${used}).`
-      );
-    }
-    const { data } = await supabase
-      .from("leave_requests")
+    const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
+    if (used + daysCount > CASUAL_MONTHLY_LIMIT)
+      throw new Error(`Casual leave is limited to ${CASUAL_MONTHLY_LIMIT} days per month (already used ${used}).`);
+    const { data } = await supabase.from("leave_requests")
       .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
-      .select()
-      .single();
-    if (balance) {
-      await supabase
-        .from("leave_balances")
-        .update({ casual_used: (balance.casual_used ?? 0) + daysCount })
-        .eq("id", balance.id);
-    }
+      .select().single();
     return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
   if (input.type === "unpaid") {
-    const { data } = await supabase
-      .from("leave_requests")
+    const { data } = await supabase.from("leave_requests")
       .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
-      .select()
-      .single();
-    if (balance) {
-      await supabase
-        .from("leave_balances")
-        .update({ unpaid_used: (balance.unpaid_used ?? 0) + daysCount })
-        .eq("id", balance.id);
-    }
-    return { requests: [data], overflowOffered: false, lateNotice };
+      .select().single();
+    return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
-  // annual
-  const remaining = balance ? balance.annual_total - balance.annual_used : 8;
+  // annual — quota derived from approved annual leaves this year
+  const used = await annualUsedThisYear(supabase, employeeId);
+  const remaining = Math.max(ANNUAL_TOTAL - used, 0);
   if (daysCount > remaining) {
-    const annualPart = Math.max(remaining, 0);
+    const annualPart = remaining;
     const unpaidPart = daysCount - annualPart;
+    const split = splitWorkingDates(input.start_date, input.end_date, annualPart);
     const created = [];
-    if (annualPart > 0) {
-      const { data } = await supabase
-        .from("leave_requests")
-        .insert({ ...base(employeeId, input, annualPart), type: "annual", status: "pending" })
-        .select()
-        .single();
+    if (split.first) {
+      const { data } = await supabase.from("leave_requests")
+        .insert({ employee_id: employeeId, type: "annual", start_date: split.first.start, end_date: split.first.end, days_count: split.first.days, reason: input.reason ?? null, status: "pending" })
+        .select().single();
       created.push(data);
     }
-    const { data: unpaid } = await supabase
-      .from("leave_requests")
-      .insert({
-        employee_id: employeeId,
-        type: "unpaid",
-        start_date: input.start_date,
-        end_date: input.end_date,
-        days_count: unpaidPart,
-        reason: (input.reason ?? "") + " (overflow beyond annual quota)",
-        status: "approved",
-        approved_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    created.push(unpaid);
+    if (split.rest) {
+      const { data } = await supabase.from("leave_requests")
+        .insert({ employee_id: employeeId, type: "unpaid", start_date: split.rest.start, end_date: split.rest.end, days_count: split.rest.days, reason: (input.reason ?? "") + " (overflow beyond annual quota)", status: "approved", approved_at: new Date().toISOString() })
+        .select().single();
+      created.push(data);
+    }
     return { requests: created, overflowOffered: true, annualPart, unpaidPart, remaining, lateNotice };
   }
 
-  const { data } = await supabase
-    .from("leave_requests")
+  const { data } = await supabase.from("leave_requests")
     .insert({ ...base(employeeId, input, daysCount), type: "annual", status: "pending" })
-    .select()
-    .single();
+    .select().single();
   return { requests: [data], overflowOffered: false, lateNotice };
 }
 
@@ -170,21 +164,14 @@ function base(employeeId: string, input: RequestLeaveInput, daysCount: number) {
   };
 }
 
-/** Approve/reject a leave. Approving annual increments annual_used. */
+/** Approve/reject a leave. Annual quota is derived from approved leaves, so no counter to update. */
 export async function decideLeave(
   supabase: SupabaseClient,
   leaveId: string,
   actorId: string,
   decision: { status: "approved" | "rejected"; note?: string }
 ) {
-  const { data: req, error } = await supabase
-    .from("leave_requests")
-    .select("*")
-    .eq("id", leaveId)
-    .single();
-  if (error || !req) throw new Error("Leave request not found");
-
-  const { data: updated, error: e2 } = await supabase
+  const { data: updated, error } = await supabase
     .from("leave_requests")
     .update({
       status: decision.status,
@@ -195,33 +182,7 @@ export async function decideLeave(
     .eq("id", leaveId)
     .select()
     .single();
-  if (e2) throw new Error(e2.message);
-
-  if (decision.status === "approved" && req.type === "annual") {
-    const year = new Date(req.start_date).getFullYear();
-    const month = new Date().getMonth() + 1;
-    const { data: bal } = await supabase
-      .from("leave_balances")
-      .select("*")
-      .eq("employee_id", req.employee_id)
-      .eq("year", year)
-      .eq("casual_month", month)
-      .maybeSingle();
-    if (bal) {
-      await supabase
-        .from("leave_balances")
-        .update({ annual_used: (bal.annual_used ?? 0) + req.days_count })
-        .eq("id", bal.id);
-    }
-  }
-
-  await supabase.from("audit_log").insert({
-    actor_id: actorId,
-    action: `leave.${decision.status}`,
-    entity: "leave_requests",
-    entity_id: leaveId,
-    after: updated,
-  });
-
+  if (error) throw new Error(error.message);
+  // audit captured by the record_audit() DB trigger on leave_requests.
   return { request: updated };
 }

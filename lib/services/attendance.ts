@@ -128,16 +128,7 @@ export async function editAttendance(
     .select()
     .single();
   if (error) throw new Error(error.message);
-
-  await supabase.from("audit_log").insert({
-    actor_id: actorId,
-    action: "attendance.edit",
-    entity: "attendance",
-    entity_id: attendanceId,
-    before,
-    after,
-  });
-
+  // audit is captured automatically by the record_audit() DB trigger on attendance.
   return { attendance: after };
 }
 

@@ -59,6 +59,9 @@ export default async function EmployeesPage({
                 </TD>
               </TR>
             ))}
+            {(people ?? []).length === 0 && (
+              <TR><TD className="py-6 text-center text-text-secondary">No employees found.</TD></TR>
+            )}
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

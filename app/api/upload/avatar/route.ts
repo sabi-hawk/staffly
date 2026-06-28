@@ -16,6 +16,8 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get("file") as File | null;
   const targetId = (form.get("employeeId") as string) || user.id;
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID.test(targetId)) return NextResponse.json({ error: "Invalid employee id" }, { status: 400 });
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
   if (!ALLOWED.includes(file.type)) return NextResponse.json({ error: "Use PNG, JPEG or WebP" }, { status: 400 });
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "Max 4MB" }, { status: 400 });

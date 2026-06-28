@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total staff" value={emps.length} icon={Users} />
         <StatCard label="Checked in" value={checkedIn} icon={UserCheck} tone="success" />
-        <StatCard label="Awaiting" value={emps.length - checkedIn - onLeave.size} icon={Clock} tone="warning" />
+        <StatCard label="Awaiting" value={Math.max(emps.length - checkedIn - onLeave.size, 0)} icon={Clock} tone="warning" />
         <StatCard label="On leave" value={onLeave.size} icon={Plane} tone="neutral" />
         <StatCard label="Remote" value={remote} icon={Wifi} tone="brand" />
       </div>

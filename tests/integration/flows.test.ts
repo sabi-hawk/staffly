@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { checkIn, checkOut, editAttendance } from "@/lib/services/attendance";
-import { requestLeave, decideLeave } from "@/lib/services/leaves";
+import { requestLeave, decideLeave, annualUsedThisYear } from "@/lib/services/leaves";
 import { scanMissedCheckin, scanMissedCheckout } from "@/lib/services/crons";
 import { companyToday, companyDow } from "@/lib/time";
 
@@ -43,16 +43,30 @@ describe("§14.4 integration flows (cloud)", () => {
     expect(Number(attendance.total_hours)).toBeGreaterThanOrEqual(0);
   });
 
-  it("flow 3 — edit both times: hours recomputed, is_edited, audit written", async () => {
+  it("flow 3 — edit both times: hours recomputed, is_edited set", async () => {
     const today = companyToday();
     const { data: row } = await admin.from("attendance").select("*").eq("employee_id", SHAIZA).eq("work_date", today).single();
-    const before = await admin.from("audit_log").select("id", { count: "exact", head: true }).eq("entity", "attendance");
     const newOut = new Date(new Date(row!.check_in_time).getTime() + 8 * 3600000).toISOString();
     const { attendance } = await editAttendance(admin, row!.id, FOUNDER, { check_out_time: newOut, edit_reason: "left early" });
     expect(attendance.is_edited).toBe(true);
     expect(Number(attendance.total_hours)).toBe(8);
-    const after = await admin.from("audit_log").select("id", { count: "exact", head: true }).eq("entity", "attendance");
-    expect((after.count ?? 0)).toBeGreaterThan(before.count ?? 0);
+  });
+
+  it("audit — an authenticated edit is logged with before/after (DB trigger)", async () => {
+    const anon = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    );
+    await anon.auth.signInWithPassword({ email: "founder@acme.test", password: "Test@12345" });
+    const before = await anon.from("audit_log").select("id", { count: "exact", head: true }).eq("entity", "profiles");
+    await anon.from("profiles").update({ department: "Engineering (audit " + Date.now() + ")" }).eq("id", AHMAD);
+    const after = await anon.from("audit_log").select("*").eq("entity", "profiles").order("created_at", { ascending: false }).limit(1);
+    expect((after.data ?? []).length).toBe(1);
+    expect(after.data![0].action).toBe("update");
+    expect(after.data![0].actor_email).toBe("founder@acme.test");
+    expect(after.data![0].before).toBeTruthy();
+    expect(after.data![0].after).toBeTruthy();
   });
 
   it("flow 4 — missed-checkin cron: alert once, de-duped", async () => {
@@ -60,7 +74,8 @@ describe("§14.4 integration flows (cloud)", () => {
     await admin.from("attendance").delete().eq("employee_id", AHMAD).eq("work_date", today);
     await admin.from("alerts_log").delete().eq("employee_id", AHMAD).eq("type", "missed_checkin");
     await admin.from("shifts").update({ days_of_week: [0, 1, 2, 3, 4, 5, 6] }).eq("employee_id", AHMAD);
-    const lateNow = new Date(); lateNow.setHours(23, 0, 0, 0);
+    // 15:00 Karachi today — safely past every shift start + buffer, same Karachi day
+    const lateNow = new Date(`${companyToday()}T15:00:00+05:00`);
     await scanMissedCheckin(admin, lateNow);
     let alerts = await admin.from("alerts_log").select("*").eq("employee_id", AHMAD).eq("type", "missed_checkin");
     expect(alerts.data!.length).toBe(1);
@@ -86,34 +101,27 @@ describe("§14.4 integration flows (cloud)", () => {
     expect(alerts.data!.length).toBe(1);
   });
 
-  it("flow 6 — annual over balance → unpaid overflow; approve increments annual_used", async () => {
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth() + 1;
-    await admin.from("leave_balances").update({ annual_used: 7, annual_total: 8 })
-      .eq("employee_id", AREEBA).eq("year", year).eq("casual_month", month);
+  it("flow 6 — annual over quota → unpaid overflow; approve consumes annual quota (derived)", async () => {
     await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
+    expect(await annualUsedThisYear(admin, AREEBA)).toBe(0); // remaining = 8
 
-    // a Monday at least 21 days out → 3 weekdays Mon..Wed.
-    // Build YYYY-MM-DD from LOCAL parts (toISOString would drift to UTC and shift the day).
+    // 10 working days (Mon..2nd Fri) at least 21 days out. Build YYYY-MM-DD from LOCAL parts.
     const ymd = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
     const d = new Date(); d.setDate(d.getDate() + 21);
     while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
     const start = ymd(d);
-    const endD = new Date(d); endD.setDate(endD.getDate() + 2);
+    const endD = new Date(d); endD.setDate(endD.getDate() + 11); // second Friday
     const end = ymd(endD);
 
     const res = await requestLeave(admin, AREEBA, { type: "annual", start_date: start, end_date: end, reason: "INT-TEST trip" });
     expect(res.overflowOffered).toBe(true);
-    expect(res.annualPart).toBe(1);
+    expect(res.annualPart).toBe(8);
     expect(res.unpaidPart).toBe(2);
     const annualReq = res.requests.find((r: any) => r.type === "annual");
     await decideLeave(admin, annualReq!.id, FOUNDER, { status: "approved" });
-    const { data: bal } = await admin.from("leave_balances").select("annual_used")
-      .eq("employee_id", AREEBA).eq("year", year).eq("casual_month", month).single();
-    expect(bal!.annual_used).toBe(8);
+    expect(await annualUsedThisYear(admin, AREEBA)).toBe(8); // quota now fully consumed
 
     await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
-    await admin.from("leave_balances").update({ annual_used: 0 }).eq("employee_id", AREEBA).eq("year", year).eq("casual_month", month);
   });
 
   it("rule — annual within 21 days is rejected", async () => {

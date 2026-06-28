@@ -15,7 +15,6 @@ const CORE: Field[] = [
   { key: "email", label: "Email" },
   { key: "email_secondary", label: "Email 2" },
   { key: "phone", label: "Phone" },
-  { key: "cnic", label: "CNIC" },
   { key: "gender", label: "Gender", type: "select", options: ["", "male", "female"] },
   { key: "date_of_birth", label: "Date of birth", type: "date" },
   { key: "joining_date", label: "Joining date", type: "date" },
@@ -25,16 +24,9 @@ const CORE: Field[] = [
   { key: "status", label: "Status", type: "select", options: ["active", "inactive"] },
 ];
 
-const BANK: Field[] = [
-  { key: "bank_account_title", label: "Account title" },
-  { key: "bank_account_number", label: "Account number" },
-  { key: "bank_name", label: "Bank" },
-  { key: "iban", label: "IBAN" },
-];
-
-export function EmployeeEditor({ profile, canSeeBank }: { profile: Profile; canSeeBank: boolean }) {
+export function EmployeeEditor({ profile }: { profile: Profile }) {
   const router = useRouter();
-  const fields = canSeeBank ? [...CORE, ...BANK] : CORE;
+  const fields = CORE;
   const [form, setForm] = useState<Record<string, string>>(
     Object.fromEntries(fields.map((f) => [f.key, ((profile[f.key] as string) ?? "")]))
   );
