@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { SettingsEditor } from "@/components/admin/settings-editor";
+import { HolidaysEditor } from "@/components/admin/holidays-editor";
 
 export default async function SettingsPage() {
   const profile = (await getCurrentProfile())!;
@@ -15,40 +16,20 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>Company settings</CardTitle></CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3 text-sm">
-          <Field label="Company" value={settings?.company_name} />
-          <Field label="Annual quota" value={settings?.annual_leave_quota} />
-          <Field label="Casual quota" value={settings?.casual_leave_quota} />
-          <Field label="Check-in buffer" value={`${settings?.default_checkin_buffer} min`} />
-          <Field label="Missed-checkout grace" value={`${settings?.missed_checkout_grace_hours} h`} />
-          <Field label="Overtime warning" value={`${settings?.overtime_warning_hours} h`} />
-        </CardContent>
+        <CardHeader>
+          <CardTitle>Company settings</CardTitle>
+          <CardDescription>Leave quotas and alert thresholds. Quotas drive the leave rules.</CardDescription>
+        </CardHeader>
+        <CardContent><SettingsEditor settings={settings ?? {}} /></CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Holidays</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <THead><TR><TH>Name</TH><TH>Date</TH><TH>Year</TH></TR></THead>
-            <TBody>
-              {(holidays ?? []).map((h) => (
-                <TR key={h.id}><TD>{h.name}</TD><TD className="tabular">{h.holiday_date}</TD><TD className="tabular">{h.year}</TD></TR>
-              ))}
-              {(holidays ?? []).length === 0 && <TR><TD className="py-6 text-center text-text-secondary">No holidays defined.</TD></TR>}
-            </TBody>
-          </Table>
-        </CardContent>
+        <CardHeader>
+          <CardTitle>Holidays</CardTitle>
+          <CardDescription>Excluded from working-day math for attendance, leave and payroll.</CardDescription>
+        </CardHeader>
+        <CardContent><HolidaysEditor holidays={holidays ?? []} /></CardContent>
       </Card>
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <span className="text-text-secondary">{label}</span>
-      <div className="text-text-primary">{value ?? "—"}</div>
     </div>
   );
 }

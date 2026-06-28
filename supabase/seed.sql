@@ -4,8 +4,9 @@
 -- ~90 days of attendance + leaves. Canonical test subject = Muzammal Faiz (...0026).
 
 -- ---------- company settings ----------
-insert into company_settings (id, company_name) values (1, 'Softonoma')
-on conflict (id) do update set company_name = excluded.company_name;
+insert into company_settings (id, company_name, annual_leave_quota, casual_leave_quota) values (1, 'Softonoma', 8, 2)
+on conflict (id) do update set company_name = excluded.company_name,
+  annual_leave_quota = excluded.annual_leave_quota, casual_leave_quota = excluded.casual_leave_quota;
 
 -- ---------- profiles ----------
 -- Admins log in by email; employees by username. Only Shaiza is remote. DOB not provided → null.

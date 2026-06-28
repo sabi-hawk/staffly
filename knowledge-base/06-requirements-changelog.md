@@ -82,4 +82,19 @@ Every edit on the platform must be logged and viewable by the super admin:
   Engineers' conditional bonuses (Aizaz "50,000 (invesp)", Muzammil "50,000 if 4 extra hrs/day")
   recorded as non-recurring compensation notes; Hamza none.
 
+## 2026-06-28 — QA-driven additions (owner-approved)
+A professional-QA subagent reviewed the whole flow vs intent. Owner approved building:
+- **Add-employee flow** (`/admin/employees/new` + `POST /api/admin/employees`): admin onboards a
+  hire — auto-generates 4-digit code, `first.last` username, `Softonoma@<code>` password, and
+  creates the auth login + profile + default shift + base salary + leave balance + credentials.
+- **Editable company settings + holidays** (super admin); leave quotas now read from
+  `company_settings` (annual/casual) and holidays drive working-day math.
+- **Leave hardening**: employees can **cancel** their own pending request
+  (`/api/leaves/[id]/cancel`); overlapping leave ranges are blocked; annual-overflow unpaid part
+  is now **pending** (decided with the annual part, not auto-approved). Missing-day self-logging
+  is via the apply form (past dates allowed).
+- Small QA fixes: employee can edit today's checkout after checking out; demo-login buttons are
+  dev-only; deactivated users see an "account deactivated" message on login.
+- Deferred (owner): employee self-service password change (kept admin-only).
+
 <!-- New requirements go below this line. -->

@@ -47,6 +47,13 @@ Status legend: ✅ done · 🔄 in progress · ⏳ planned.
   filterable by employee + month range.
 - **Printable payslip + PDF** download. Employee-code column.
 
+## QA-driven additions ✅ (2026-06-28)
+- **Add employee** UI + API (auto code/username/`Softonoma@<code>` password + login + profile +
+  shift + salary + credentials). **Editable settings + holidays** (quotas drive leave math).
+  **Leave hardening** (employee cancel pending, overlap guard, annual-overflow pending).
+- Usernames + credentials management, deactivate enforcement, alerts-feed redesign, sidebar
+  circular collapse, payslip template upgrade, real bank data, BD commission policies.
+
 ## Cross-cutting ⏳ (Phase 10 + audit)
 - Repoint/extend the §14 test suite to real employees; add unit tests for new rules.
 - Browser E2E (Playwright) for the critical flows.

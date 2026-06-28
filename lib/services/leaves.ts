@@ -10,6 +10,29 @@ export const ANNUAL_TOTAL = 8;
 export const CASUAL_MONTHLY_LIMIT = 2;
 export const ANNUAL_NOTICE_DAYS = 21;
 
+/** Quotas from company_settings (fall back to the defaults above). */
+async function quotas(supabase: SupabaseClient) {
+  const { data } = await supabase
+    .from("company_settings").select("annual_leave_quota, casual_leave_quota").eq("id", 1).maybeSingle();
+  return {
+    annual: Number(data?.annual_leave_quota) || ANNUAL_TOTAL,
+    casual: Number(data?.casual_leave_quota) || CASUAL_MONTHLY_LIMIT,
+  };
+}
+
+/** Any non-rejected/cancelled leave overlapping [start,end] for this employee. */
+async function hasOverlap(supabase: SupabaseClient, employeeId: string, start: string, end: string) {
+  const { data } = await supabase
+    .from("leave_requests")
+    .select("id")
+    .eq("employee_id", employeeId)
+    .in("status", ["pending", "approved"])
+    .lte("start_date", end)
+    .gte("end_date", start)
+    .limit(1);
+  return (data ?? []).length > 0;
+}
+
 async function workingDays(supabase: SupabaseClient, employeeId: string, start: string, end: string) {
   const { data, error } = await supabase.rpc("working_days", { p_employee: employeeId, p_start: start, p_end: end });
   if (error) throw new Error(error.message);
@@ -53,18 +76,19 @@ async function unpaidUsedThisYear(supabase: SupabaseClient, employeeId: string, 
 
 /** Derived leave summary for display. */
 export async function leaveSummary(supabase: SupabaseClient, employeeId: string) {
-  const [annualUsed, casualUsed, unpaidUsed] = await Promise.all([
+  const [annualUsed, casualUsed, unpaidUsed, q] = await Promise.all([
     annualUsedThisYear(supabase, employeeId),
     casualUsedThisMonth(supabase, employeeId),
     unpaidUsedThisYear(supabase, employeeId),
+    quotas(supabase),
   ]);
   return {
-    annualTotal: ANNUAL_TOTAL,
+    annualTotal: q.annual,
     annualUsed,
-    annualRemaining: Math.max(ANNUAL_TOTAL - annualUsed, 0),
-    casualLimit: CASUAL_MONTHLY_LIMIT,
+    annualRemaining: Math.max(q.annual - annualUsed, 0),
+    casualLimit: q.casual,
     casualUsed,
-    casualRemaining: Math.max(CASUAL_MONTHLY_LIMIT - casualUsed, 0),
+    casualRemaining: Math.max(q.casual - casualUsed, 0),
     unpaidUsed,
   };
 }
@@ -99,6 +123,10 @@ export async function requestLeave(
   opts: { allowShortNotice?: boolean } = {}
 ) {
   const daysCount = await workingDays(supabase, employeeId, input.start_date, input.end_date);
+  const q = await quotas(supabase);
+
+  if (await hasOverlap(supabase, employeeId, input.start_date, input.end_date))
+    throw new Error("This range overlaps an existing leave request.");
 
   const today = new Date();
   const noticeCutoff = new Date(today.getTime() + ANNUAL_NOTICE_DAYS * 86400000);
@@ -109,8 +137,8 @@ export async function requestLeave(
 
   if (input.type === "casual") {
     const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
-    if (used + daysCount > CASUAL_MONTHLY_LIMIT)
-      throw new Error(`Casual leave is limited to ${CASUAL_MONTHLY_LIMIT} days per month (already used ${used}).`);
+    if (used + daysCount > q.casual)
+      throw new Error(`Casual leave is limited to ${q.casual} days per month (already used ${used}).`);
     const { data } = await supabase.from("leave_requests")
       .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
       .select().single();
@@ -126,7 +154,7 @@ export async function requestLeave(
 
   // annual — quota derived from approved annual leaves this year
   const used = await annualUsedThisYear(supabase, employeeId);
-  const remaining = Math.max(ANNUAL_TOTAL - used, 0);
+  const remaining = Math.max(q.annual - used, 0);
   if (daysCount > remaining) {
     const annualPart = remaining;
     const unpaidPart = daysCount - annualPart;
@@ -139,8 +167,9 @@ export async function requestLeave(
       created.push(data);
     }
     if (split.rest) {
+      // overflow is also pending so admin decides it alongside the annual part
       const { data } = await supabase.from("leave_requests")
-        .insert({ employee_id: employeeId, type: "unpaid", start_date: split.rest.start, end_date: split.rest.end, days_count: split.rest.days, reason: (input.reason ?? "") + " (overflow beyond annual quota)", status: "approved", approved_at: new Date().toISOString() })
+        .insert({ employee_id: employeeId, type: "unpaid", start_date: split.rest.start, end_date: split.rest.end, days_count: split.rest.days, reason: (input.reason ?? "") + " (overflow beyond annual quota)", status: "pending" })
         .select().single();
       created.push(data);
     }

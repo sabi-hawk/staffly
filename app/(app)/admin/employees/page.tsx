@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +26,11 @@ export default async function EmployeesPage({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>Employees ({count ?? 0})</CardTitle>
+        <Button asChild size="sm">
+          <Link href="/admin/employees/new"><UserPlus className="size-4" /> Add employee</Link>
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>

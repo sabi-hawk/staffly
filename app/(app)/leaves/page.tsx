@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { leaveSummary } from "@/lib/services/leaves";
 import { LeaveApplyForm } from "@/components/leaves/apply-form";
+import { CancelLeaveButton } from "@/components/leaves/cancel-button";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -40,7 +41,7 @@ export default async function LeavesPage() {
           <Table>
             <THead>
               <TR>
-                <TH>Type</TH><TH>From</TH><TH>To</TH><TH>Days</TH><TH>Status</TH><TH>Reason</TH>
+                <TH>Type</TH><TH>From</TH><TH>To</TH><TH>Days</TH><TH>Status</TH><TH>Reason</TH><TH></TH>
               </TR>
             </THead>
             <TBody>
@@ -52,6 +53,7 @@ export default async function LeavesPage() {
                   <TD className="tabular">{r.days_count}</TD>
                   <TD><Badge tone={tone(r.status) as any}>{r.status}</Badge></TD>
                   <TD className="text-text-secondary">{r.reason ?? "—"}</TD>
+                  <TD>{r.status === "pending" && <CancelLeaveButton id={r.id} />}</TD>
                 </TR>
               ))}
               {(requests ?? []).length === 0 && (
