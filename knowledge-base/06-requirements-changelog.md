@@ -97,4 +97,28 @@ A professional-QA subagent reviewed the whole flow vs intent. Owner approved bui
   dev-only; deactivated users see an "account deactivated" message on login.
 - Deferred (owner): employee self-service password change (kept admin-only).
 
+## 2026-06-28 — QA round 3 (BambooHR-style attendance, leave accrual, probation, alerts)
+- **Multi-session check-in/out (breaks)**: an employee can check in/out multiple times a day;
+  the dashboard timer resumes and accumulates; day total = sum of checked-in sessions; final
+  checkout ends the day. (Replaces single check-in/out per day.)
+- **Employee dashboard**: BambooHR-style top block with the live running timer + check-in/out;
+  show available holidays, annual leaves available, casual available this month.
+- **Casual leave**: 1 per month, **use-it-or-lose-it** (no carry-forward); resets monthly.
+  (Supersedes the earlier "2/month".)  [confirm]
+- **Annual leave (post-probation)**: accrues **1 per month up to 8**, **carried forward within
+  the calendar year**, resets on Jan 1.  [confirm — was "8 granted up front"]
+- **Probation vs permanent** contract flag on employees. Probation = **0 annual**, **1 casual
+  per 3 months**, everything else unpaid. Probation length 3 months from joining date.
+  Set Ahmad Roshan, Areeba Zaidi, Fatima Sultan = probation.  [confirm]
+- **Admin alerts/notifications module** (shown to admin/super-admin): probation-period-ended
+  (review for permanent), and a **payslip-compilation reminder around the 25th–26th** each month.
+- **Shared calendar** (all roles): admin marks public/national/company holidays; everyone sees
+  holidays + who is on approved leave on each day (availability).
+- **Birthday alerts** (super-admin) based on DOB — upcoming birthdays surfaced in advance.
+- **Announcements board**: admin/super-admin post announcements; all employees see them.
+- **Test employee account** for the owner to explore the employee view (added to CREDENTIALS.md).
+- **Employee handbook** (nav item, all roles): current company policies — leave types & quotas,
+  probation rules, unpaid leave, annual accrual/carry, casual no-carry, attendance, payroll.
+  Living document; seed with current business rules.
+
 <!-- New requirements go below this line. -->

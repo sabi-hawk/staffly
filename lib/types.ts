@@ -25,6 +25,7 @@ export interface Profile {
   department: string | null;
   reports_to: string | null;
   employment_type: EmploymentType;
+  contract_type: "permanent" | "probation";
   status: EmployeeStatus;
   joining_date: string | null;
   date_of_birth: string | null;

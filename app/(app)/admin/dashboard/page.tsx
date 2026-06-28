@@ -1,6 +1,8 @@
-import { Users, UserCheck, Clock, Plane, Wifi } from "lucide-react";
+import Link from "next/link";
+import { Users, UserCheck, Clock, Plane, Wifi, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { companyToday } from "@/lib/time";
+import { refreshAdminNotifications, getAdminNotifications } from "@/lib/services/notifications";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -33,6 +35,9 @@ export default async function AdminDashboard() {
     .from("alerts_log").select("*, profiles(full_name)")
     .order("triggered_at", { ascending: false }).limit(8);
 
+  await refreshAdminNotifications(supabase);
+  const notifications = await getAdminNotifications(supabase);
+
   function statusFor(empId: string) {
     if (onLeave.has(empId)) return <StatusBadge status="on_leave" />;
     const a = attByEmp.get(empId);
@@ -50,6 +55,23 @@ export default async function AdminDashboard() {
         <StatCard label="On leave" value={onLeave.size} icon={Plane} tone="neutral" />
         <StatCard label="Remote" value={remote} icon={Wifi} tone="brand" />
       </div>
+
+      {notifications.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="size-4" /> Notifications ({notifications.length})</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {notifications.map((n: any) => (
+              <Link key={n.id} href={n.link ?? "#"} className="flex items-start gap-3 rounded-md p-2 hover:bg-surface">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.severity === "warning" ? "bg-warning" : "bg-brand-primary"}`} />
+                <div>
+                  <div className="text-sm text-text-primary">{n.message}</div>
+                  <div className="text-[11px] text-text-secondary capitalize">{n.type.replace(/_/g, " ")}</div>
+                </div>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

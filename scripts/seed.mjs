@@ -27,6 +27,8 @@ const USERS = [
   { id: "00000000-0000-0000-0000-000000000025", email: "muhammad.aizaz0900@gmail.com",  full_name: "Muhammad Aizaz Ansab", role: "employee", password: empPw(5028) },
   { id: "00000000-0000-0000-0000-000000000026", email: "muzammilfaiz.dev@gmail.com",    full_name: "Muzammal Faiz",        role: "employee", password: empPw(6193) },
   { id: "00000000-0000-0000-0000-000000000027", email: "hamzailyas311@gmail.com",       full_name: "Muhammad Hamza Ilyas", role: "employee", password: empPw(7451) },
+  // test account for exploring the employee view
+  { id: "00000000-0000-0000-0000-000000000099", email: "test.employee@softonoma.com",    full_name: "Test Employee",        role: "employee", password: empPw(9999) },
 ];
 
 // Legacy v1 fake employees to remove. (The old acme admin accounts at fixed UUIDs are

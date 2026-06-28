@@ -4,7 +4,7 @@
 -- ~90 days of attendance + leaves. Canonical test subject = Muzammal Faiz (...0026).
 
 -- ---------- company settings ----------
-insert into company_settings (id, company_name, annual_leave_quota, casual_leave_quota) values (1, 'Softonoma', 8, 2)
+insert into company_settings (id, company_name, annual_leave_quota, casual_leave_quota) values (1, 'Softonoma', 8, 1)
 on conflict (id) do update set company_name = excluded.company_name,
   annual_leave_quota = excluded.annual_leave_quota, casual_leave_quota = excluded.casual_leave_quota;
 
@@ -20,7 +20,8 @@ insert into profiles (id, full_name, email, username, email_secondary, role, emp
 ('00000000-0000-0000-0000-000000000024','Areeba Zaidi','areebazaidi027@gmail.com','areeba.zaidi','areebasoftonoma@gmail.com','employee','4765','female','onsite','Internee Business Developer','Business Development','03425807691','2026-05-21'),
 ('00000000-0000-0000-0000-000000000025','Muhammad Aizaz Ansab','muhammad.aizaz0900@gmail.com','aizaz.ansab',null,'employee','5028','male','onsite','Software Engineer','Engineering','03090464711','2025-12-08'),
 ('00000000-0000-0000-0000-000000000026','Muzammal Faiz','muzammilfaiz.dev@gmail.com','muzammil.faiz',null,'employee','6193','male','onsite','Sr. Software Engineer','Engineering','03304014980','2026-02-24'),
-('00000000-0000-0000-0000-000000000027','Muhammad Hamza Ilyas','hamzailyas311@gmail.com','hamza.ilyas',null,'employee','7451','male','onsite','UI/UX Designer','Design','03210191191','2026-02-02')
+('00000000-0000-0000-0000-000000000027','Muhammad Hamza Ilyas','hamzailyas311@gmail.com','hamza.ilyas',null,'employee','7451','male','onsite','UI/UX Designer','Design','03210191191','2026-02-02'),
+('00000000-0000-0000-0000-000000000099','Test Employee','test.employee@softonoma.com','test.employee',null,'employee','9999','male','onsite','QA Tester','QA','03000000000','2025-01-01')
 on conflict (id) do update set
   full_name=excluded.full_name, email=excluded.email, username=excluded.username,
   email_secondary=excluded.email_secondary, role=excluded.role, employee_code=excluded.employee_code,
@@ -50,7 +51,8 @@ insert into employee_credentials (employee_id, portal_password) values
 ('00000000-0000-0000-0000-000000000024','Softonoma@4765'),
 ('00000000-0000-0000-0000-000000000025','Softonoma@5028'),
 ('00000000-0000-0000-0000-000000000026','Softonoma@6193'),
-('00000000-0000-0000-0000-000000000027','Softonoma@7451')
+('00000000-0000-0000-0000-000000000027','Softonoma@7451'),
+('00000000-0000-0000-0000-000000000099','Softonoma@9999')
 on conflict (employee_id) do update set portal_password=excluded.portal_password;
 
 -- ---------- BD commission policies (sheet col K) ----------
@@ -64,9 +66,15 @@ insert into commission_policies (employee_id, label, rate, description) values
 ('00000000-0000-0000-0000-000000000023','Own deals', 2, 'Commission on her own closed deals'),
 ('00000000-0000-0000-0000-000000000024','Own deals', 2, 'Commission on her own closed deals');
 
+-- ---------- contract type: Ahmad, Fatima, Areeba are on probation ----------
+update profiles set contract_type = 'probation'
+  where id in ('00000000-0000-0000-0000-000000000022','00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024');
+update profiles set contract_type = 'permanent'
+  where role = 'employee' and id not in ('00000000-0000-0000-0000-000000000022','00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024');
+
 -- ---------- shifts (per-employee) ----------
 delete from shifts where employee_id >= '00000000-0000-0000-0000-000000000021'
-  and employee_id <= '00000000-0000-0000-0000-000000000027';
+  and employee_id <= '00000000-0000-0000-0000-000000000099';
 insert into shifts (employee_id, start_time, end_time, days_of_week, checkin_buffer_minutes) values
 ('00000000-0000-0000-0000-000000000021','10:00','19:00','{1,2,3,4,5}',90),
 ('00000000-0000-0000-0000-000000000022','10:00','19:00','{1,2,3,4,5}',90),
@@ -74,11 +82,12 @@ insert into shifts (employee_id, start_time, end_time, days_of_week, checkin_buf
 ('00000000-0000-0000-0000-000000000024','11:00','16:00','{1,2,3,4,5}',60),
 ('00000000-0000-0000-0000-000000000025','10:00','19:00','{1,2,3,4,5}',90),
 ('00000000-0000-0000-0000-000000000026','10:00','19:00','{1,2,3,4,5}',90),
-('00000000-0000-0000-0000-000000000027','10:00','18:00','{1,2,3,4,5}',60);
+('00000000-0000-0000-0000-000000000027','10:00','18:00','{1,2,3,4,5}',60),
+('00000000-0000-0000-0000-000000000099','10:00','19:00','{1,2,3,4,5}',90);
 
 -- ---------- salary structures (base only; additions are dynamic) ----------
 delete from salary_structures where employee_id >= '00000000-0000-0000-0000-000000000021'
-  and employee_id <= '00000000-0000-0000-0000-000000000027';
+  and employee_id <= '00000000-0000-0000-0000-000000000099';
 insert into salary_structures (employee_id, type, base_salary, currency) values
 ('00000000-0000-0000-0000-000000000021','fixed', 70000,'PKR'),
 ('00000000-0000-0000-0000-000000000022','fixed',130000,'PKR'),
@@ -86,7 +95,8 @@ insert into salary_structures (employee_id, type, base_salary, currency) values
 ('00000000-0000-0000-0000-000000000024','fixed', 20000,'PKR'),
 ('00000000-0000-0000-0000-000000000025','fixed',100000,'PKR'),
 ('00000000-0000-0000-0000-000000000026','fixed',150000,'PKR'),
-('00000000-0000-0000-0000-000000000027','fixed', 70000,'PKR');
+('00000000-0000-0000-0000-000000000027','fixed', 70000,'PKR'),
+('00000000-0000-0000-0000-000000000099','fixed', 60000,'PKR');
 
 -- ---------- dynamic compensation components ----------
 delete from compensation_components where employee_id >= '00000000-0000-0000-0000-000000000021'

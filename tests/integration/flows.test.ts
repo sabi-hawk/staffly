@@ -1,7 +1,17 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { checkIn, checkOut, editAttendance } from "@/lib/services/attendance";
-import { requestLeave, decideLeave, annualUsedThisYear } from "@/lib/services/leaves";
+import { requestLeave, decideLeave, annualUsedThisYear, leaveSummary } from "@/lib/services/leaves";
+
+const ymd = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+// build a date range covering exactly `n` weekdays, starting at the next Monday ≥21 days out
+function weekdayRange(n: number) {
+  const d = new Date(); d.setDate(d.getDate() + 21);
+  while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
+  let count = 0; const cur = new Date(d); let last = new Date(d);
+  while (count < n) { const dow = cur.getDay(); if (dow !== 0 && dow !== 6) { count++; last = new Date(cur); } cur.setDate(cur.getDate() + 1); }
+  return { start: ymd(d), end: ymd(last) };
+}
 import { scanMissedCheckin, scanMissedCheckout } from "@/lib/services/crons";
 import { companyToday, companyDow } from "@/lib/time";
 
@@ -25,6 +35,7 @@ beforeAll(() => {
 describe("§14.4 integration flows (cloud)", () => {
   it("flow 1 — check-in idempotency", async () => {
     const today = companyToday();
+    await admin.from("attendance_sessions").delete().eq("employee_id", SHAIZA).eq("work_date", today);
     await admin.from("attendance").delete().eq("employee_id", SHAIZA).eq("work_date", today);
     const first = await checkIn(admin, SHAIZA);
     expect(first.alreadyCheckedIn).toBe(false);
@@ -101,27 +112,22 @@ describe("§14.4 integration flows (cloud)", () => {
     expect(alerts.data!.length).toBe(1);
   });
 
-  it("flow 6 — annual over quota → unpaid overflow; approve consumes annual quota (derived)", async () => {
-    await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
-    expect(await annualUsedThisYear(admin, AREEBA)).toBe(0); // remaining = 8
+  it("flow 6 — annual over available → unpaid overflow; approve consumes accrued (permanent)", async () => {
+    // SHAIZA is permanent; available = accrued-to-date − used.
+    await admin.from("leave_requests").delete().eq("employee_id", SHAIZA).like("reason", "INT-TEST%");
+    const remaining = (await leaveSummary(admin, SHAIZA)).annualRemaining;
+    expect(remaining).toBeGreaterThan(0);
 
-    // 10 working days (Mon..2nd Fri) at least 21 days out. Build YYYY-MM-DD from LOCAL parts.
-    const ymd = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
-    const d = new Date(); d.setDate(d.getDate() + 21);
-    while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
-    const start = ymd(d);
-    const endD = new Date(d); endD.setDate(endD.getDate() + 11); // second Friday
-    const end = ymd(endD);
-
-    const res = await requestLeave(admin, AREEBA, { type: "annual", start_date: start, end_date: end, reason: "INT-TEST trip" });
+    const { start, end } = weekdayRange(remaining + 4); // request more than available
+    const res = await requestLeave(admin, SHAIZA, { type: "annual", start_date: start, end_date: end, reason: "INT-TEST trip" });
     expect(res.overflowOffered).toBe(true);
-    expect(res.annualPart).toBe(8);
-    expect(res.unpaidPart).toBe(2);
+    expect(res.annualPart).toBe(remaining);
+    expect(res.unpaidPart).toBe(4);
     const annualReq = res.requests.find((r: any) => r.type === "annual");
     await decideLeave(admin, annualReq!.id, FOUNDER, { status: "approved" });
-    expect(await annualUsedThisYear(admin, AREEBA)).toBe(8); // quota now fully consumed
+    expect(await annualUsedThisYear(admin, SHAIZA)).toBe(remaining);
 
-    await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
+    await admin.from("leave_requests").delete().eq("employee_id", SHAIZA).like("reason", "INT-TEST%");
   });
 
   it("rule — annual within 21 days is rejected", async () => {
@@ -133,19 +139,14 @@ describe("§14.4 integration flows (cloud)", () => {
     await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
   });
 
-  it("rule — casual capped at 2 per month", async () => {
-    const year = new Date().getFullYear();
-    const month = new Date().getMonth() + 1;
+  it("rule — casual capped per month (permanent, 1/month)", async () => {
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
-    await admin.from("leave_balances").update({ casual_used: 0 }).eq("employee_id", HAMZA).eq("year", year).eq("casual_month", month);
     const base = new Date(); base.setDate(10);
-    const day = (n: number) => { const x = new Date(base); x.setDate(10 + n); return x.toISOString().slice(0, 10); };
+    const day = (n: number) => { const x = new Date(base); x.setDate(10 + n); return ymd(x); };
     await requestLeave(admin, HAMZA, { type: "casual", start_date: day(0), end_date: day(0), reason: "INT-CAS 1" });
-    await requestLeave(admin, HAMZA, { type: "casual", start_date: day(1), end_date: day(1), reason: "INT-CAS 2" });
     await expect(
-      requestLeave(admin, HAMZA, { type: "casual", start_date: day(2), end_date: day(2), reason: "INT-CAS 3" })
-    ).rejects.toThrow(/2 days per month/);
+      requestLeave(admin, HAMZA, { type: "casual", start_date: day(2), end_date: day(2), reason: "INT-CAS 2" })
+    ).rejects.toThrow(/per month/);
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
-    await admin.from("leave_balances").update({ casual_used: 0 }).eq("employee_id", HAMZA).eq("year", year).eq("casual_month", month);
   });
 });

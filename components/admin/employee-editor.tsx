@@ -20,7 +20,8 @@ const CORE: Field[] = [
   { key: "joining_date", label: "Joining date", type: "date" },
   { key: "position", label: "Designation" },
   { key: "department", label: "Department" },
-  { key: "employment_type", label: "Type", type: "select", options: ["onsite", "remote"] },
+  { key: "employment_type", label: "Work type", type: "select", options: ["onsite", "remote"] },
+  { key: "contract_type", label: "Contract", type: "select", options: ["permanent", "probation"] },
   { key: "status", label: "Status", type: "select", options: ["active", "inactive"] },
 ];
 

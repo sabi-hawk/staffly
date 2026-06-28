@@ -2,6 +2,7 @@ import { CalendarDays, TrendingUp, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { leaveSummary } from "@/lib/services/leaves";
+import { todayAttendance } from "@/lib/services/attendance";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { StatCard } from "@/components/ui/stat-card";
@@ -9,19 +10,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatHours } from "@/lib/utils";
-import { workLogPreview } from "@/components/work-log-editor";
+import { workLogPreview } from "@/lib/worklog";
 
 export default async function EmployeeDashboard() {
   const profile = (await getCurrentProfile())!;
   const supabase = createClient();
-  const today = companyToday();
-
-  const { data: todayRow } = await supabase
-    .from("attendance")
-    .select("*")
-    .eq("employee_id", profile.id)
-    .eq("work_date", today)
-    .maybeSingle();
+  const todayData = await todayAttendance(supabase, profile.id);
 
   const { data: recent } = await supabase
     .from("attendance")
@@ -31,6 +25,8 @@ export default async function EmployeeDashboard() {
     .limit(7);
 
   const summary = await leaveSummary(supabase, profile.id);
+  const { data: upcomingHolidays } = await supabase
+    .from("holidays").select("*").gte("holiday_date", companyToday()).order("holiday_date").limit(4);
 
   const totalExtra = (recent ?? []).reduce((s, r) => s + Number(r.extra_hours || 0), 0);
   const totalDeficit = (recent ?? []).reduce((s, r) => s + Number(r.deficit_hours || 0), 0);
@@ -42,7 +38,7 @@ export default async function EmployeeDashboard() {
         <p className="text-caption text-text-secondary">Here's your day at a glance.</p>
       </div>
 
-      <CheckWidget today={todayRow as any} />
+      <CheckWidget today={todayData as any} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Annual leave left" value={summary.annualRemaining} icon={CalendarDays} />
@@ -50,6 +46,20 @@ export default async function EmployeeDashboard() {
         <StatCard label="Extra hours (7d)" value={formatHours(totalExtra)} icon={TrendingUp} tone="success" />
         <StatCard label="Deficit hours (7d)" value={formatHours(totalDeficit)} icon={AlertTriangle} tone="danger" />
       </div>
+
+      {(upcomingHolidays ?? []).length > 0 && (
+        <Card>
+          <CardHeader><CardTitle>Upcoming holidays</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {(upcomingHolidays ?? []).map((h) => (
+              <span key={h.id} className="rounded-md border border-border px-3 py-1.5 text-caption">
+                <span className="font-medium text-text-primary">{h.name}</span>
+                <span className="text-text-secondary"> · {h.holiday_date}</span>
+              </span>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

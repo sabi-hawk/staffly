@@ -20,6 +20,48 @@ async function quotas(supabase: SupabaseClient) {
   };
 }
 
+export const PROBATION_MONTHS = 3;
+
+/** Employee leave context. */
+async function leaveCtx(supabase: SupabaseClient, employeeId: string) {
+  const { data } = await supabase
+    .from("profiles").select("contract_type, joining_date").eq("id", employeeId).maybeSingle();
+  return { contract_type: data?.contract_type ?? "permanent", joining_date: data?.joining_date ?? null };
+}
+
+function addMonths(d: Date, n: number) {
+  const x = new Date(d);
+  x.setMonth(x.getMonth() + n);
+  return x;
+}
+
+/** Probation end date (joining + PROBATION_MONTHS) or null if no joining date. */
+export function probationEnd(joining: string | null): Date | null {
+  return joining ? addMonths(new Date(joining), PROBATION_MONTHS) : null;
+}
+
+/** Annual leaves accrued so far this calendar year: 1/month (from Jan 1 or probation end,
+ *  whichever is later), capped at the yearly quota. Probation → 0. */
+function annualAccrued(ctx: { contract_type: string; joining_date: string | null }, cap: number, now = new Date()) {
+  if (ctx.contract_type === "probation") return 0;
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const pEnd = probationEnd(ctx.joining_date);
+  const start = pEnd && pEnd > jan1 ? pEnd : jan1;
+  if (start > now) return 0;
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1;
+  return Math.max(0, Math.min(months, cap));
+}
+
+/** Approved casual days taken during the current probation window (since joining). */
+async function casualUsedInProbation(supabase: SupabaseClient, employeeId: string, joining: string | null) {
+  if (!joining) return 0;
+  const { data } = await supabase
+    .from("leave_requests").select("days_count")
+    .eq("employee_id", employeeId).eq("type", "casual").eq("status", "approved")
+    .gte("start_date", joining);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
 /** Any non-rejected/cancelled leave overlapping [start,end] for this employee. */
 async function hasOverlap(supabase: SupabaseClient, employeeId: string, start: string, end: string) {
   const { data } = await supabase
@@ -74,21 +116,32 @@ async function unpaidUsedThisYear(supabase: SupabaseClient, employeeId: string, 
   return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
 }
 
-/** Derived leave summary for display. */
+/** Derived leave summary for display (accrual + probation aware). */
 export async function leaveSummary(supabase: SupabaseClient, employeeId: string) {
-  const [annualUsed, casualUsed, unpaidUsed, q] = await Promise.all([
+  const [annualUsed, casualMonth, unpaidUsed, q, ctx] = await Promise.all([
     annualUsedThisYear(supabase, employeeId),
     casualUsedThisMonth(supabase, employeeId),
     unpaidUsedThisYear(supabase, employeeId),
     quotas(supabase),
+    leaveCtx(supabase, employeeId),
   ]);
+  const probation = ctx.contract_type === "probation";
+  const accrued = annualAccrued(ctx, q.annual);
+
+  // casual: probation → 1 per probation window; permanent → q.casual per month (no carry)
+  const casualUsed = probation ? await casualUsedInProbation(supabase, employeeId, ctx.joining_date) : casualMonth;
+  const casualLimit = probation ? 1 : q.casual;
+
   return {
+    probation,
+    probationEnd: probationEnd(ctx.joining_date)?.toISOString().slice(0, 10) ?? null,
     annualTotal: q.annual,
+    annualAccrued: accrued,
     annualUsed,
-    annualRemaining: Math.max(q.annual - annualUsed, 0),
-    casualLimit: q.casual,
+    annualRemaining: Math.max(accrued - annualUsed, 0),
+    casualLimit,
     casualUsed,
-    casualRemaining: Math.max(q.casual - casualUsed, 0),
+    casualRemaining: Math.max(casualLimit - casualUsed, 0),
     unpaidUsed,
   };
 }
@@ -124,6 +177,8 @@ export async function requestLeave(
 ) {
   const daysCount = await workingDays(supabase, employeeId, input.start_date, input.end_date);
   const q = await quotas(supabase);
+  const ctx = await leaveCtx(supabase, employeeId);
+  const probation = ctx.contract_type === "probation";
 
   if (await hasOverlap(supabase, employeeId, input.start_date, input.end_date))
     throw new Error("This range overlaps an existing leave request.");
@@ -135,10 +190,19 @@ export async function requestLeave(
     throw new Error(`Annual leave must be requested at least ${ANNUAL_NOTICE_DAYS} days in advance (admin override required).`);
   }
 
+  if (probation && input.type === "annual")
+    throw new Error("Employees on probation don't have annual leave — please file it as unpaid.");
+
   if (input.type === "casual") {
-    const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
-    if (used + daysCount > q.casual)
-      throw new Error(`Casual leave is limited to ${q.casual} days per month (already used ${used}).`);
+    if (probation) {
+      const used = await casualUsedInProbation(supabase, employeeId, ctx.joining_date);
+      if (used + daysCount > 1)
+        throw new Error("During probation only 1 casual leave is allowed — please file it as unpaid.");
+    } else {
+      const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
+      if (used + daysCount > q.casual)
+        throw new Error(`Casual leave is limited to ${q.casual} day(s) per month (already used ${used}).`);
+    }
     const { data } = await supabase.from("leave_requests")
       .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
       .select().single();
@@ -152,9 +216,9 @@ export async function requestLeave(
     return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
-  // annual — quota derived from approved annual leaves this year
+  // annual — available = accrued-to-date (1/month, carried within year) minus used
   const used = await annualUsedThisYear(supabase, employeeId);
-  const remaining = Math.max(q.annual - used, 0);
+  const remaining = Math.max(annualAccrued(ctx, q.annual) - used, 0);
   if (daysCount > remaining) {
     const annualPart = remaining;
     const unpaidPart = daysCount - annualPart;

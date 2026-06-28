@@ -14,14 +14,15 @@ const FIELDS: { key: string; label: string; type?: string; options?: string[]; r
   { key: "gender", label: "Gender", type: "select", options: ["", "male", "female"] },
   { key: "position", label: "Designation" },
   { key: "department", label: "Department" },
-  { key: "employment_type", label: "Type", type: "select", options: ["onsite", "remote"] },
+  { key: "employment_type", label: "Work type", type: "select", options: ["onsite", "remote"] },
+  { key: "contract_type", label: "Contract", type: "select", options: ["permanent", "probation"] },
   { key: "joining_date", label: "Joining date", type: "date" },
   { key: "base_salary", label: "Base salary (PKR)", type: "number" },
 ];
 
 export function AddEmployeeForm() {
   const router = useRouter();
-  const [form, setForm] = useState<Record<string, string>>({ employment_type: "onsite" });
+  const [form, setForm] = useState<Record<string, string>>({ employment_type: "onsite", contract_type: "permanent" });
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {

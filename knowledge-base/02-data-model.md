@@ -19,6 +19,18 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   (portal_password; admin/super/self read), `commission_policies` (BD %, super-admin),
   `resolve_login_email(identifier)` RPC (username→email, pre-auth), `profiles` read tightened to
   authenticated only.
+- `0009_sessions_probation_notifications.sql` — `attendance_sessions` (multi check-in/out; day
+  total = sum of completed sessions, via reworked `compute_attendance_hours` + `recompute_attendance_day`
+  trigger), `profiles.contract_type` (permanent|probation), `admin_notifications` (probation/
+  payslip/birthday, dedup_key), `holidays.type`, `announcements.body_text`.
+
+## Leave rules (current)
+- Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
+  resets Jan 1. Derived from approved annual leaves; `requestLeave`/`leaveSummary` in
+  `lib/services/leaves.ts`. Probation → 0 annual.
+- Casual: 1/month (company_settings.casual_leave_quota), use-it-or-lose-it. Probation → 1 per
+  3-month probation window.
+- Unpaid: unlimited, deducted. Overlap-guarded; annual-overflow filed as pending unpaid.
 
 ## Enums
 `user_role(employee|admin|super_admin)`, `employment_type(onsite|remote)`,

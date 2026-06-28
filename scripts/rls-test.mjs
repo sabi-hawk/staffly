@@ -68,7 +68,7 @@ async function main() {
 
   const founder = await asUser(SUPER_EMAIL, SUPER_PW);
   const fSal = await founder.from("salary_structures").select("*");
-  check("super_admin: salary_structures → all (7 seeded)", (fSal.data?.length ?? 0) === 7, `${fSal.data?.length ?? 0} rows`);
+  check("super_admin: salary_structures → all (8 incl. test acct)", (fSal.data?.length ?? 0) === 8, `${fSal.data?.length ?? 0} rows`);
   const fAudit = await founder.from("audit_log").select("id").limit(1);
   check("super_admin: audit_log → readable", !fAudit.error);
 

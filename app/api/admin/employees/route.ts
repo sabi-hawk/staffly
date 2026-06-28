@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     position: b.position || null,
     department: b.department || null,
     employment_type: b.employment_type === "remote" ? "remote" : "onsite",
+    contract_type: b.contract_type === "probation" ? "probation" : "permanent",
     joining_date: b.joining_date || null,
     status: "active",
   }).eq("id", id);

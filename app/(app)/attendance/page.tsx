@@ -1,13 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { companyToday } from "@/lib/time";
+import { todayAttendance } from "@/lib/services/attendance";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatHours } from "@/lib/utils";
-import { workLogPreview } from "@/components/work-log-editor";
+import { workLogPreview } from "@/lib/worklog";
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -16,9 +17,7 @@ export default async function AttendancePage() {
   const profile = (await getCurrentProfile())!;
   const supabase = createClient();
   const today = companyToday();
-
-  const { data: todayRow } = await supabase
-    .from("attendance").select("*").eq("employee_id", profile.id).eq("work_date", today).maybeSingle();
+  const todayData = await todayAttendance(supabase, profile.id);
 
   const { data: history } = await supabase
     .from("attendance").select("*").eq("employee_id", profile.id)
@@ -26,7 +25,7 @@ export default async function AttendancePage() {
 
   return (
     <div className="space-y-6">
-      <CheckWidget today={todayRow as any} />
+      <CheckWidget today={todayData as any} />
       <Card>
         <CardHeader><CardTitle>Attendance history</CardTitle></CardHeader>
         <CardContent>
