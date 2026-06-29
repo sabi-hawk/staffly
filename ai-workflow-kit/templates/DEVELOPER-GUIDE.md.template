@@ -1,0 +1,62 @@
+# Developer Guide — working with Claude on {{PROJECT_NAME}}
+
+The operating manual for every developer (and for Claude). Short version: **describe what you want in
+plain language; Claude grounds in the knowledge base, agrees the scope with you, builds it, proves it
+works, and keeps the knowledge base current.** No FRDs/tickets required.
+
+## 1. Mental model
+1. **The knowledge base is the source of truth** (`.claude/knowledgebase/` + `.claude/database/`),
+   read before work and updated in the *same change* as the code — so any session resumes with full context.
+2. **Every change runs one loop** (the `feature-workflow` skill): capture → ground → decide →
+   implement → self-test → review → verify → sync KB → commit.
+3. **Lightweight by default** — requirements come from you in chat; ceremony is added only when the work justifies it.
+
+## 2. Do we need an FRD?
+No. The value of an FRD (a captured, agreed requirement) is kept lighter:
+- a dated line in the **requirements changelog** for every request;
+- a one-page **`plans/<NN-name>/plan.md`** for bigger initiatives (a one-page FRD + plan combined).
+
+Say **"write this up as a plan first"** to get the FRD feel: Claude drafts the one-pager, you approve, then build.
+
+## 3. Two tiers
+- **Tier 1 — small change (default):** describe it → Claude logs, implements, runs the gate ({{GATE}}),
+  verifies for real, updates the KB, commits. No plan folder.
+- **Tier 2 — feature/initiative:** discuss first, then the plan lifecycle (the folder = the status):
+  ```
+  DISCUSS ─▶ plan.md ─▶ plans/upcoming/ ─▶ plans/inprogress/ (+tasks.md) ─▶ plans/done/
+  ```
+  Two gates Claude asks at: (1) "shall I write this up as a plan?" (2) "shall I move it to in-progress
+  and start?". On completion, durable knowledge is folded into the KB and the folder moves to `done/`.
+
+## 4. How to phrase a request
+Describe the **problem and the outcome**, not the implementation. Claude asks clarifying questions,
+proposes an approach (drafts the plan for Tier 2), decides reversible details itself, and only asks you
+on irreversible/costly/scope-expanding/conflicting/secret-needing choices.
+
+## 5. Under the hood (ask by name if you want)
+- **Skills**: `feature-workflow`, `qa-review`{{, db-change, browser-verify, find-skills}} — Claude uses these; you can request them.
+- **Review agents**: `security-reviewer`, `quality-reviewer`, `professional-qa` — "run a full QA pass" spawns them.
+- **Hooks**: secret/credential writes blocked automatically; {{project pitfall}} flagged.
+
+## 6. The "done" gate
+Type-check + build clean · {{GATE}} all-PASS · the behaviour verified for real · KB updated in the same change.
+Claude won't claim done on green tests alone.
+
+## 7. Git & shipping
+Commit per slice on {{DEFAULT_BRANCH}} as {{GIT_IDENTITY}}; **push only when asked**; no auto-PRs;
+never commit secrets; staged paths are checked before commit.
+
+## 8. CLI vs other surfaces
+Drive it anywhere, but the **terminal (Claude Code CLI)** is where hooks, per-project permissions, and
+the custom agents/skills are *enforced* (see `ai-workflow-kit/WHY-TERMINAL.md`). Run from the repo root.
+
+## 9. Cheat sheet
+| You want to… | Say… |
+|---|---|
+| Make a small change | just describe it |
+| Spec something bigger | "write this up as a plan" |
+| Start a planned feature | "move it to in-progress and build it" |
+| Get a review/QA pass | "run a full QA pass before we ship" |
+| Verify a UI | "browser-verify the X screen" |
+| Ship it | "push it" |
+| Know the state | "what's the status?" |

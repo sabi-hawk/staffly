@@ -60,3 +60,5 @@ npm run test:e2e       # Playwright browser E2E → test-artifacts/ screenshots
 ## 8. For the owner
 Just state the change in chat — I read the KB, log it, decide details, implement, test, browser-check,
 update the KB, and keep the app shippable. I'll only ask when it's genuinely your call.
+**New here / training a dev?** Read `.claude/DEVELOPER-GUIDE.md` — how to drive this workflow (the two
+tiers, the plan lifecycle, how to phrase requests, and the FRD question).

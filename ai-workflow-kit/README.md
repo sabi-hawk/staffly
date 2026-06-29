@@ -14,6 +14,7 @@ ai-workflow-kit/
 ├── README.md          ← you are here
 ├── INSTALL.md         ← give THIS to the target project's Claude; it bootstraps everything
 ├── WHY-TERMINAL.md    ← why running Claude in the terminal unlocks this workflow
+├── templates/DEVELOPER-GUIDE.md.template  ← the human's operating manual (train developers with this)
 └── templates/         ← generic templates (placeholders like {{PROJECT_NAME}}, {{TEST_CMD}})
     ├── CLAUDE.md.template
     ├── settings.json.template

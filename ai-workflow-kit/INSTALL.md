@@ -40,7 +40,8 @@ don't apply (e.g. no DB → skip `database/` + `db-change`; no browser UI → sk
 └── plans/                 ← README + backlog/upcoming/inprogress/done (keep empty; optional)
 ```
 Also create/refresh the root **`CLAUDE.md`** (from `CLAUDE.md.template`) as the map that points into
-`.claude/`. Add the secrets/credentials patterns to `.gitignore`.
+`.claude/`, and generate **`.claude/DEVELOPER-GUIDE.md`** (from `DEVELOPER-GUIDE.md.template`) — the
+human's operating manual for the workflow. Add the secrets/credentials patterns to `.gitignore`.
 
 ## Step 4 — Seed the knowledge base from reality
 This is the highest-value step. Populate `.claude/knowledgebase/` and `.claude/database/database.md`
