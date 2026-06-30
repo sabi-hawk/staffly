@@ -22,7 +22,7 @@ ai-workflow-kit/
     ├── rules/                (security · testing · conventions · git)
     ├── agents/               (context-gatherer · security-reviewer · quality-reviewer · professional-qa)
     ├── skills/               (feature-workflow · db-change · browser-verify · find-skills)
-    ├── knowledgebase/        (README.template — one folder/doc per module)
+    ├── knowledgebase/        (README.template — one folder/doc per module; frds/ for large initiatives)
     ├── database/             (database.md.template — schema index)
     └── plans/                (README — optional lightweight plan lifecycle)
 ```
@@ -46,5 +46,6 @@ That's it. The result is a project that any future Claude session can pick up wi
   implement small slices → self-test → review with subagents → verify in a browser → sync the KB → commit.
 - **Guardrails as code**: hooks block secret writes; rules encode the non-negotiables; review agents
   catch regressions before commit.
-- **Lightweight by default.** No FRDs/tickets required — requirements come from the owner in chat.
-  Add the optional plan lifecycle only for multi-step initiatives.
+- **Lightweight by default.** No FRDs/tickets required for everyday changes — requirements come from
+  the owner in chat. Add the optional plan lifecycle for multi-step initiatives, and **per-module FRDs**
+  (`knowledgebase/frds/`) only for large, multi-module initiatives that need requirements agreed before code.

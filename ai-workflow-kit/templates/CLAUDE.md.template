@@ -20,7 +20,8 @@ model, data-integrity rules, and any framework pitfall the team keeps hitting.}}
 Every change follows `.claude/skills/feature-workflow/SKILL.md`:
 capture the requirement → ground in the KB/code → decide (record notable choices; ask the owner only
 on big/irreversible/conflicting calls) → implement small slices → self-test ({{GATE}}) → review with
-subagents → verify for real → sync the KB → commit (push when asked).
+subagents → verify for real → sync the KB → commit (push when asked). Large, multi-module initiatives
+mature a per-module **FRD** (`knowledgebase/frds/`) before becoming a plan; small changes skip it.
 
 ## 4. Commands
 ```

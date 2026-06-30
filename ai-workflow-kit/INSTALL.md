@@ -18,6 +18,8 @@ Read existing docs (`README`, `CONTRIBUTING`, an existing `CLAUDE.md`) and any o
 ## Step 2 — Confirm the few things you can't infer
 Ask the owner, batched, only what matters:
 - How do requirements arrive (chat / tickets / FRDs)? → sets how heavy the plan lifecycle should be.
+  If the owner expects **large, multi-module initiatives**, keep `knowledgebase/frds/` (per-module
+  specs that mature before becoming plans); if it's only small chat-sized changes, you can drop it.
 - What's the gate for "done" (a test command, coverage %, manual check)?
 - Git identity + whether to push / open PRs, and the default branch.
 - Any hard rules (security/compliance, things that must never break).
@@ -36,6 +38,7 @@ don't apply (e.g. no DB → skip `database/` + `db-change`; no browser UI → sk
 ├── agents/                ← context-gatherer + the review agents (adapt tools/model + checklists)
 ├── skills/                ← feature-workflow (your core loop) + db-change / browser-verify / find-skills as relevant
 ├── knowledgebase/         ← README + ONE doc/folder per real module (fill from the codebase, Step 4)
+│   └── frds/              ← per-module requirement specs for large initiatives (keep if multi-module work is expected; else drop)
 ├── database/database.md   ← schema index (skip if no DB)
 └── plans/                 ← README + backlog/upcoming/inprogress/done (keep empty; optional)
 ```

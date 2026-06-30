@@ -13,11 +13,17 @@ Fill these from the actual codebase. Suggested starting set:
 5. `04-testing-and-validation.md` — how we test and self-verify.
 6. `05-requirements-changelog.md` — dated log of every requirement the owner gives. **Append first, then build.**
 7. One folder per substantial **module** (e.g. `billing/`, `auth/`) holding its own knowledge.
+8. `frds/` — **Functional Requirements Documents**: per-module specs that mature from the changelog
+   before becoming plans. Only for **large, multi-module initiatives** (skip for small changes). See
+   `frds/README.md`.
 
 The database schema lives in the sibling `../database/database.md`; delivery plans (optional) in `../plans/`.
 
 ## Rules for keeping it current
 - **New requirement?** Append a dated entry to the changelog *first*, then implement.
+- **Requirement for a large/multi-module initiative?** After logging it, fold it into the module's FRD
+  in `frds/` (create one from the template if none exists); mature it (Draft → In Review → Approved)
+  before promoting to a plan.
 - **Schema change?** Update `../database/database.md` in the same change.
 - **New/changed feature or rule?** Update the relevant doc in the same change.
 - Concise + factual; cite real file paths; link between docs with relative paths.

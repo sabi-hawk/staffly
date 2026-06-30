@@ -14,6 +14,11 @@ Be pragmatic; don't add ceremony. Run the phases in order; don't skip verify + K
 ## 1. Capture
 Log the requirement (dated) in the knowledge base before implementing, so intent is never lost.
 
+**Large/multi-module initiatives:** after logging to the changelog, also consolidate the requirement
+into its **FRD** under `knowledgebase/frds/` (create one from the template if the module has none).
+Mature the FRD with the owner (Draft → In Review → Approved); only an **Approved** FRD is promoted to a
+plan and built. See `frds/README.md`. (Small Tier-1 changes skip FRDs — changelog + build.)
+
 ## 2. Ground
 Read the relevant KB docs + the code you'll touch. **Reuse** existing helpers/services. For a large
 or uncertain change, spawn the **context-gatherer** agent first.

@@ -121,4 +121,13 @@ A professional-QA subagent reviewed the whole flow vs intent. Owner approved bui
   probation rules, unpaid leave, annual accrual/carry, casual no-carry, attendance, payroll.
   Living document; seed with current business rules.
 
+## 2026-06-30 — CRM expansion kickoff (workflow: FRDs)
+The portal is expanding from an HR/attendance/payroll app into a **business CRM** to manage
+Softonoma's business data. This is a large, multi-module initiative, so the workflow now uses
+**FRDs** (Functional Requirements Documents) as the maturing stage between this changelog and plans:
+incremental instructions are logged here, then consolidated into a per-module FRD in
+[`frds/`](frds/README.md) (Draft → In Review → Approved → Promoted), and only an **Approved** FRD is
+promoted to a `plans/` plan and built. Created `frds/` (README + template) and `FRD-00-crm-vision.md`
+(umbrella/module map). CRM module requirements will be appended below and folded into their FRDs.
+
 <!-- New requirements go below this line. -->

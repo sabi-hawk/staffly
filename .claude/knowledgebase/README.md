@@ -19,12 +19,18 @@ code, and must **update** them when requirements or architecture change.
 6. [`05-testing-and-validation.md`](05-testing-and-validation.md) — how we test & self-validate.
 7. [`06-requirements-changelog.md`](06-requirements-changelog.md) — chronological log of every
    requirement the owner has given. **Append here whenever a new requirement arrives.**
+8. [`frds/`](frds/README.md) — **Functional Requirements Documents**: per-module specs that mature
+   from the changelog before becoming plans. Used for the **CRM expansion** and other large
+   initiatives. Read the relevant FRD before planning/building a CRM module.
 
 `source/` holds original artifacts (the original Staffly PRD, brand source images).
 
 ## Rules for keeping it current (agents MUST follow)
 - **New requirement from the owner?** Append a dated entry to
   [`06-requirements-changelog.md`](06-requirements-changelog.md) *first*, then implement.
+- **Requirement for a CRM (or other large) module?** After logging it to the changelog, fold it into
+  the module's FRD in [`frds/`](frds/README.md) (create one from the template if none exists). Mature
+  the FRD (Draft → In Review → Approved) before promoting it to a plan.
 - **Changed the schema?** Update [`../database/database.md`](../database/database.md) in the same change.
 - **Changed a business rule / added a feature?** Update `03`/`04` in the same change.
 - Keep entries concise and factual. Link between docs with relative paths.

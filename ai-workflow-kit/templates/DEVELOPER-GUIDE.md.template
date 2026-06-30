@@ -12,21 +12,27 @@ works, and keeps the knowledge base current.** No FRDs/tickets required.
 3. **Lightweight by default** — requirements come from you in chat; ceremony is added only when the work justifies it.
 
 ## 2. Do we need an FRD?
-No. The value of an FRD (a captured, agreed requirement) is kept lighter:
-- a dated line in the **requirements changelog** for every request;
-- a one-page **`plans/<NN-name>/plan.md`** for bigger initiatives (a one-page FRD + plan combined).
-
-Say **"write this up as a plan first"** to get the FRD feel: Claude drafts the one-pager, you approve, then build.
+**It depends on the size of the work.**
+- **Small change (default):** no FRD. The captured-requirement value is kept lighter — a dated line in
+  the **requirements changelog** for every request, and a one-page **`plans/<NN-name>/plan.md`** for a
+  bigger one-off (a one-page FRD + plan combined). Say **"write this up as a plan first"** for that feel.
+- **Large, multi-module initiative:** **yes, FRDs.** You feed requirements incrementally (or as a doc);
+  Claude logs each to the changelog and **consolidates them into an FRD per module** that matures with
+  you (Draft → In Review → Approved) before any plan/code. Only an **Approved** FRD is promoted to a
+  plan. See `knowledgebase/frds/README.md`.
 
 ## 3. Two tiers
 - **Tier 1 — small change (default):** describe it → Claude logs, implements, runs the gate ({{GATE}}),
-  verifies for real, updates the KB, commits. No plan folder.
-- **Tier 2 — feature/initiative:** discuss first, then the plan lifecycle (the folder = the status):
+  verifies for real, updates the KB, commits. No plan folder, no FRD.
+- **Tier 2 — feature/initiative:** discuss first. For a **single** feature, go straight to the plan
+  lifecycle. For a **large, multi-module** initiative, mature an **FRD per module** first, then promote
+  it to a plan (the plan folder = the status):
   ```
-  DISCUSS ─▶ plan.md ─▶ plans/upcoming/ ─▶ plans/inprogress/ (+tasks.md) ─▶ plans/done/
+  INSTRUCTIONS ─▶ changelog ─▶ [FRD: Draft→InReview→Approved] ─▶ plans/upcoming/ ─▶ plans/inprogress/ (+tasks.md) ─▶ plans/done/
   ```
-  Two gates Claude asks at: (1) "shall I write this up as a plan?" (2) "shall I move it to in-progress
-  and start?". On completion, durable knowledge is folded into the KB and the folder moves to `done/`.
+  Gates Claude asks at: (1) "mark this FRD Approved?" (multi-module only) (2) "shall I promote it to a
+  plan?" (3) "move it to in-progress and start?". On completion, durable knowledge folds into the KB and
+  the folder moves to `done/`.
 
 ## 4. How to phrase a request
 Describe the **problem and the outcome**, not the implementation. Claude asks clarifying questions,
@@ -54,7 +60,9 @@ the custom agents/skills are *enforced* (see `ai-workflow-kit/WHY-TERMINAL.md`).
 | You want to… | Say… |
 |---|---|
 | Make a small change | just describe it |
-| Spec something bigger | "write this up as a plan" |
+| Feed requirements for a big new module | just describe them — "log this to the <module> FRD" |
+| Lock a module's requirements | "mark the <module> FRD approved" |
+| Spec something bigger | "write this up as a plan" (or "promote the FRD to a plan") |
 | Start a planned feature | "move it to in-progress and build it" |
 | Get a review/QA pass | "run a full QA pass before we ship" |
 | Verify a UI | "browser-verify the X screen" |

@@ -6,7 +6,7 @@ straight to `main` under the repo's git identity, and the gate is `npm run repor
 
 ## 0. Prime directive — read `.claude/` first
 Before non-trivial work, read:
-- `.claude/knowledgebase/README.md` → product, architecture, **business rules**, current status, the **requirements changelog**.
+- `.claude/knowledgebase/README.md` → product, architecture, **business rules**, current status, the **requirements changelog**, and **`frds/`** (per-module specs for the CRM expansion — read the relevant FRD before planning a CRM module).
 - `.claude/database/database.md` → tables, RLS, triggers, migrations (keep it current with every schema change).
 - `.claude/rules/` → `security.md`, `testing.md`, `conventions.md`, `git.md`.
 Ground every decision in these; don't re-derive from memory. If something isn't covered, decide

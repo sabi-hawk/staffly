@@ -1,0 +1,73 @@
+# FRD-NN — <Module name>
+
+| | |
+|---|---|
+| **Status** | Draft · In Review · Approved · Promoted *(keep one)* |
+| **Module** | <module / subsystem name> |
+| **Created** | YYYY-MM-DD |
+| **Updated** | YYYY-MM-DD |
+| **Plan** | — *(link to `plans/…/plan.md` once promoted)* |
+| **Changelog refs** | <dates of the related entries in the requirements changelog> |
+
+> One-paragraph summary: what this module is and the problem it solves, in plain language.
+
+---
+
+## 1. Background & context
+Why this module now; what exists today it relates to (other modules/subsystems); constraints from the
+current architecture.
+
+## 2. Goals & non-goals
+- **Goals** — the outcomes this module must achieve.
+- **Non-goals** — explicitly out of scope (so scope doesn't creep). See also the final section.
+
+## 3. Users & roles
+Who uses it and what each can do. Note any new roles or role-scoped access this module introduces, and
+how they map onto the project's existing permission model.
+
+## 4. Functional requirements
+The core of the FRD. Numbered so we can reference them.
+- **FR-1** — …
+- **FR-2** — …
+
+## 5. Data model (high level)
+Entities, key fields, and relationships — enough to plan a schema later (real DDL + access control
+comes in the plan / DB-change step). Note links to existing tables/entities.
+
+| Entity | Key fields | Relationships |
+|--------|-----------|---------------|
+| … | … | … |
+
+## 6. Permissions & security
+Who can read/write what; access-control expectations; any sensitive data (PII, financial) and where it
+must live. Mirror the project's defense-in-depth model.
+
+## 7. Screens & UX
+The screens/flows this needs (list + one line each) and key user journeys. Reuse existing UI patterns
+(pagination, empty states, feedback, navigation).
+
+## 8. Business rules
+Rules that must always hold (validation, calculations, state transitions). Be explicit — these become tests.
+
+## 9. Integrations & dependencies
+Other modules this depends on or feeds; any external services.
+
+## 10. Acceptance criteria
+Concrete, checkable "done" statements that guide the plan's verification.
+- [ ] …
+
+## 11. Reporting / analytics (if any)
+What needs to be summarized, exported, or surfaced.
+
+## 12. Open questions
+The discussion list — every unresolved decision. Resolve these to move Draft → In Review → Approved.
+- [ ] …
+
+## 13. Out of scope / future
+Deliberately deferred — captured so it isn't forgotten.
+
+---
+
+## Change Log
+Dated entries when agreed scope changes after first draft (never silently rewrite requirements).
+- YYYY-MM-DD — created.

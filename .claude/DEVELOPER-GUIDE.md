@@ -27,17 +27,23 @@ Three things are always true:
 
 ## 2. Do we need an FRD?
 
-**No.** An FRD (Functional Requirements Document) is a formal "what this feature must do" spec. We
-don't write them. But the *value* of an FRD — a captured, agreed statement of the requirement so it's
-never lost — is kept in two lighter forms:
+**It depends on the size of the work** — we now run two modes:
 
 | Need | We use | When |
 |------|--------|------|
-| Record "you asked for X" | a dated line in `knowledgebase/06-requirements-changelog.md` | every requirement |
-| A short, agreed spec before building something big | a one-page `plans/<NN-name>/plan.md` | multi-step initiatives |
+| Record "you asked for X" | a dated line in `knowledgebase/06-requirements-changelog.md` | **every** requirement |
+| A maturing, agreed **per-module spec** | an FRD in `knowledgebase/frds/FRD-NN-<module>.md` | **large/multi-module initiatives** (the CRM) |
+| The technical approach + tracking | a `plans/<NN-name>/plan.md` (+ `tasks.md`) | anything built across sessions |
 
-If you ever want the FRD feel, say **"write this up as a plan first"** — Claude drafts the one-pager
-from your description, you approve it, then build. It's an FRD in spirit, one page instead of ten.
+- **Small change (Tier 1):** no FRD. Describe it → Claude logs it to the changelog → builds. (See §3.)
+- **Large initiative (Tier 2), e.g. the CRM build-out:** **yes, FRDs.** You feed requirements
+  incrementally (or as a doc); Claude logs each to the changelog and **consolidates them into an FRD
+  per module** that matures with you (Draft → In Review → Approved) before any plan/code. See
+  [`knowledgebase/frds/README.md`](knowledgebase/frds/README.md).
+
+The FRD is the captured, agreed "what this module must do." Only an **Approved** FRD is promoted to a
+plan (the "how"). You can still say **"write this up as a plan first"** for a mid-size thing that
+doesn't warrant a full FRD.
 
 ---
 
@@ -50,22 +56,26 @@ updates the KB → commits. You'll get a summary; push when you ask.
 
 > You don't need to do anything special. Tier 1 is the default.
 
-### Tier 2 — a real feature / initiative (the plan lifecycle)
-Something multi-step, cross-cutting, or worth tracking across sessions. This is where we discuss
-first and use the plan folders. It flows through four states — **the folder a plan lives in IS its
-status**:
+### Tier 2 — a real feature / initiative (FRD → plan lifecycle)
+Something multi-step, cross-cutting, or worth tracking across sessions (the **CRM expansion** is the
+big one). This is where we discuss first, mature an **FRD**, then use the plan folders. The full flow:
 
 ```
- DISCUSS ─▶ CAPTURE (plan.md) ─▶ plans/upcoming/ ─▶ plans/inprogress/ (+tasks.md) ─▶ plans/done/
-    │            │                     │                   │                            │
- we talk,   Claude writes a       agreed but           actively built               shipped; durable
- Claude     one-page spec;        not started yet      via feature-workflow          knowledge folded
- asks Qs    you approve it                             (gate + browser verify)       into knowledgebase/
+ INSTRUCTIONS ─▶ CHANGELOG ─▶ FRD (frds/FRD-NN-*.md) ─▶ plans/upcoming/ ─▶ plans/inprogress/ ─▶ plans/done/
+   (you, chat)    (dated log)   Draft→InReview→Approved    (plan.md)         (+tasks.md)          (shipped)
+       │              │              │                          │                  │                  │
+   any form       never lost    consolidated, agreed       technical approach   actively built    durable
+   per module                   per-module spec (the WHAT)  + acceptance(the HOW) (gate+browser)   knowledge
+                                                                                                   → knowledgebase/
 ```
 
-**The two decision gates** (Claude will ask; you decide):
-1. After discussing → *"Shall I write this up as a plan?"* → creates `plans/upcoming/NN-name/plan.md`.
-2. When you're ready to build → *"Shall I move it to in-progress and start?"* → moves to
+For a **mid-size** Tier 2 thing that isn't a whole module, you can skip the FRD and go straight to a
+plan ("write this up as a plan"). FRDs are for the large, multi-module CRM work.
+
+**The decision gates** (Claude will ask; you decide):
+1. While maturing requirements → *"This FRD looks complete — mark it Approved?"* → status flips to Approved.
+2. After an FRD is Approved → *"Shall I promote this to a plan?"* → creates `plans/upcoming/NN-name/plan.md` (links the FRD).
+3. When you're ready to build → *"Shall I move it to in-progress and start?"* → moves to
    `plans/inprogress/`, adds a `tasks.md` checklist, and implementation begins.
 
 On completion, Claude folds the durable knowledge into `knowledgebase/<module>` + `database.md` and
@@ -166,7 +176,10 @@ features (see `ai-workflow-kit/WHY-TERMINAL.md`). Recommended once you switch:
 | You want to… | Say… |
 |---|---|
 | Make a small change | just describe it |
-| Spec something bigger first | "write this up as a plan" |
+| Feed CRM/module requirements | just describe them — "log this to the <module> FRD" |
+| See where a module's requirements stand | "show me the <module> FRD" / check `knowledgebase/frds/` |
+| Lock a module's requirements | "mark the <module> FRD approved" |
+| Spec something bigger first | "write this up as a plan" (or "promote the FRD to a plan") |
 | Start building a planned feature | "move it to in-progress and build it" |
 | Get a quality/security/QA pass | "run a full QA pass before we ship" |
 | Check a UI actually works | "browser-verify the X screen" |

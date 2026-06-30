@@ -17,6 +17,12 @@ phases in order; don't skip the verify + KB-sync steps.
 Append the owner's requirement (dated) to `.claude/knowledgebase/06-requirements-changelog.md` before
 implementing, so intent is never lost. Convert relative dates to absolute.
 
+**Large/multi-module initiatives (the CRM expansion):** after logging to the changelog, also
+consolidate the requirement into its **FRD** under `.claude/knowledgebase/frds/` (create one from
+`_TEMPLATE.md` if the module has none). Mature the FRD with the owner (Draft → In Review → Approved);
+only an **Approved** FRD is promoted to a `plans/` plan and built. See `frds/README.md`. (Small Tier-1
+changes skip FRDs — changelog + build.)
+
 ## 2. Ground
 Read the relevant KB docs (`.claude/knowledgebase/*`, `.claude/database/database.md`) and the code
 you'll touch. **Reuse** existing helpers/services (`lib/time.ts`, `lib/utils.ts`, `lib/services/*`,
