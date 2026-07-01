@@ -6,7 +6,7 @@
 | **Module** | CRM · Profiles |
 | **Created** | 2026-06-30 |
 | **Updated** | 2026-07-01 |
-| **Plan** | [plans/upcoming/01-crm-profiles-foundation](../../plans/upcoming/01-crm-profiles-foundation/plan.md) |
+| **Plan** | [plans/done/01-crm-profiles-foundation](../../plans/done/01-crm-profiles-foundation/plan.md) |
 | **Changelog refs** | 2026-06-30 (CRM business model + first batch) |
 
 > A central registry of **marketable developer profiles**. One real developer can have several profiles

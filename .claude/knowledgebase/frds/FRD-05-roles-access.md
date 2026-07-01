@@ -6,7 +6,7 @@
 | **Module** | CRM · Access foundation (cross-cutting) |
 | **Created** | 2026-06-30 |
 | **Updated** | 2026-07-01 |
-| **Plan** | [plans/upcoming/01-crm-profiles-foundation](../../plans/upcoming/01-crm-profiles-foundation/plan.md) |
+| **Plan** | [plans/done/01-crm-profiles-foundation](../../plans/done/01-crm-profiles-foundation/plan.md) |
 | **Changelog refs** | 2026-06-30 (CRM business model + first batch) |
 
 > The access foundation the whole CRM sits on: only **Business-Development (BD)** employees see the CRM,
