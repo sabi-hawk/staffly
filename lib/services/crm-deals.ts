@@ -29,6 +29,7 @@ async function upd(supabase: SupabaseClient, table: string, id: string, row: Rec
 }
 
 export async function createDeal(supabase: SupabaseClient, input: Record<string, unknown>) {
+  if (!input.lead_id) throw new Error("Select the lead this deal came from");
   return ins(supabase, "deals", pick(input, DEAL_FIELDS));
 }
 export async function updateDeal(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {

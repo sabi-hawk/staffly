@@ -27,6 +27,7 @@ export function InterviewForm({
   company,
   developers,
   initial,
+  defaultDeveloper,
   onDone,
 }: {
   id?: string;
@@ -35,9 +36,12 @@ export function InterviewForm({
   company?: string | null;
   developers: Opt[];
   initial?: Partial<Record<string, string | null>>;
+  defaultDeveloper?: string | null; // round-1 developer — later rounds default to the same person (FRD-02)
   onDone?: () => void;
 }) {
   const router = useRouter();
+  // For a NEW round on an existing lead, default the developer to round 1's (the same-developer rule).
+  const devDefault = id ? "" : defaultDeveloper ?? "";
   const [form, setForm] = useState<Record<string, string>>({
     job_title: initial?.job_title ?? "",
     company: initial?.company ?? company ?? "",
@@ -45,8 +49,8 @@ export function InterviewForm({
     status: initial?.status ?? "scheduled",
     round: initial?.round ?? "1st",
     outcome: initial?.outcome ?? "pending",
-    given_by: initial?.given_by ?? "",
-    whom_should_give: initial?.whom_should_give ?? "",
+    given_by: initial?.given_by ?? devDefault,
+    whom_should_give: initial?.whom_should_give ?? devDefault,
     interview_at: toLocalInput(initial?.interview_at),
     notes: initial?.notes ?? "",
     notes2: initial?.notes2 ?? "",

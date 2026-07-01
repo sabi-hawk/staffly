@@ -8,7 +8,11 @@ import { parsePaging } from "@/lib/pagination";
 import { LogsTable } from "@/components/admin/logs-table";
 
 const ENTITIES = ["all", "profiles", "attendance", "leave_requests", "salary_structures",
-  "compensation_components", "payroll_runs", "payslip_components", "shifts"];
+  "compensation_components", "payroll_runs", "payslip_components", "shifts",
+  // CRM entities
+  "departments", "dev_stacks", "dev_profiles", "dev_profile_documents",
+  "leads", "interviews", "assessments", "assessment_documents",
+  "deals", "deal_documents", "receiving_accounts", "payment_methods"];
 
 export default async function LogsPage({
   searchParams,

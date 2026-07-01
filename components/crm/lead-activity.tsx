@@ -34,6 +34,9 @@ export function LeadActivity({
   const [iEdit, setIEdit] = useState<string | null>(null); // interview id or "new"
   const [aEdit, setAEdit] = useState<string | null>(null); // assessment id or "new"
   const devName = (id: string | null) => developers.find((d) => d.id === id)?.label ?? "—";
+  // Same-developer-across-rounds (FRD-02): a new round defaults to round 1's (or the earliest) developer.
+  const firstDeveloper =
+    interviews.find((i) => i.round === "1st")?.given_by ?? interviews[0]?.given_by ?? null;
 
   async function del(kind: "interviews" | "assessments", id: string) {
     if (!confirm("Delete this record?")) return;
@@ -53,7 +56,7 @@ export function LeadActivity({
         </div>
         {iEdit === "new" && (
           <div className="rounded-md border border-border p-3">
-            <InterviewForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} onDone={() => setIEdit(null)} />
+            <InterviewForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} defaultDeveloper={firstDeveloper} onDone={() => setIEdit(null)} />
           </div>
         )}
         <div className="space-y-2">
@@ -65,7 +68,7 @@ export function LeadActivity({
                   {iv.round && <Badge tone="neutral">{iv.round}</Badge>}
                   <Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge>
                   {iv.outcome && <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge>}
-                  <span className="text-text-secondary">· {devName(iv.given_by)} · {fmt(iv.interview_at)}</span>
+                  <span className="text-text-secondary">· given {devName(iv.given_by)}{iv.whom_should_give ? ` → next ${devName(iv.whom_should_give)}` : ""} · {fmt(iv.interview_at)}</span>
                 </div>
                 <span className="flex shrink-0 gap-1">
                   <Button variant="outline" size="sm" onClick={() => setIEdit(iEdit === iv.id ? null : iv.id)}><Pencil className="size-4" /></Button>

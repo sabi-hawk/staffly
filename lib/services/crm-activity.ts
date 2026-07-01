@@ -72,6 +72,8 @@ export async function requalifyLead(supabase: SupabaseClient, id: string) {
 
 // ── Interviews ──
 export async function createInterview(supabase: SupabaseClient, input: Record<string, unknown>) {
+  if (!(input.job_title as string)?.trim() && !(input.company as string)?.trim())
+    throw new Error("Add a job title or company");
   return insert(supabase, "interviews", pick(input as never, INTERVIEW_FIELDS as never));
 }
 export async function updateInterview(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {
@@ -80,6 +82,8 @@ export async function updateInterview(supabase: SupabaseClient, id: string, inpu
 
 // ── Assessments ──
 export async function createAssessment(supabase: SupabaseClient, input: Record<string, unknown>) {
+  if (!(input.job_title as string)?.trim() && !(input.company as string)?.trim())
+    throw new Error("Add a job title or company");
   return insert(supabase, "assessments", pick(input as never, ASSESSMENT_FIELDS as never));
 }
 export async function updateAssessment(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {

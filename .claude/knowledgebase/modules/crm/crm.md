@@ -50,6 +50,17 @@ shares. Requirements-of-record: [FRD-00](../../frds/FRD-00-crm-vision.md) + FRD-
   client); new tables ship RLS in the same migration; follow `../../reference/01-architecture-and-conventions.md`
   + `../../../rules/conventions.md`.
 
+## Known follow-ups (from the 2026-07-02 multi-agent CRM audit; 0 blockers)
+Fixed in the audit pass: filters+search on all 5 list pages; same-developer-across-rounds default
+(FRD-02); assessment-delete storage cleanup; FK `on delete set null` for activity person-refs; CRM
+entities in the Logs filter; `dev_stacks` audited; minimal required-field validation. **Still deferred:**
+- **CRM RLS cases in the `report` suite** (`scripts/rls-test.mjs`) — the E2E already proves owner-scoping
+  + admin-only-deals + non-BD-block adversarially; adding DB-level RLS assertions to the gate is a follow-up.
+- **BD performance analytics** (interviews/leads per BD; disqualified excluded) — a later analytics scope.
+- **Storage RLS policies for `crm-docs`** — access is currently server-mediated (service-role upload +
+  signed-URL download after an app-layer RLS check); documenting/adding bucket policies is a hardening follow-up.
+- Minor UX: completion_date↔status coupling on assessments; richer per-record history (→ Plan 04 Activity Log).
+
 ## Delivery (see `../../../plans/`)
 Plan 01 = Access + Profiles · Plan 02 = Leads + Interviews + Assessments · Plan 03 = Deals ·
 Plan 04 = Activity Log. Build order: Profiles+access → activity → deals → audit UI.

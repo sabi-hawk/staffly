@@ -3,17 +3,20 @@ import { ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { isAdminRole } from "@/lib/crm/access";
+import { bdOptions } from "@/lib/crm/options";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { parsePaging } from "@/lib/pagination";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmProfilesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; pageSize?: string };
+  searchParams: { page?: string; pageSize?: string; owner?: string; stack?: string; status?: string; q?: string };
 }) {
   const me = await getCurrentProfile();
   const canManage = isAdminRole(me?.role);
@@ -21,66 +24,55 @@ export default async function CrmProfilesPage({
   const { page, pageSize, from, to } = parsePaging(searchParams);
 
   // RLS scopes the rows: admins/BD-Leads see all; a plain BD sees only profiles they own.
-  const { data: rows, count } = await supabase
+  let query = supabase
     .from("dev_profiles")
-    .select("id, name, email, mobile, status, stack:dev_stacks(name), owner:profiles(full_name)", {
-      count: "exact",
-    })
-    .order("name", { ascending: true })
-    .range(from, to);
+    .select("id, name, email, mobile, status, stack:dev_stacks(name), owner:profiles(full_name)", { count: "exact" });
+  if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
+  if (searchParams.stack) query = query.eq("stack_id", searchParams.stack);
+  if (searchParams.status) query = query.eq("status", searchParams.status);
+  if (searchParams.q) query = query.or(`name.ilike.%${searchParams.q}%,email.ilike.%${searchParams.q}%`);
+  const { data: rows, count } = await query.order("name", { ascending: true }).range(from, to);
 
-  type Row = {
-    id: string;
-    name: string;
-    email: string | null;
-    mobile: string | null;
-    status: string;
-    stack: { name: string } | null;
-    owner: { full_name: string } | null;
-  };
-  // Supabase infers embedded to-one relations as arrays; at runtime they're single objects.
-  const list = (rows ?? []) as unknown as Row[];
+  const [bds, { data: stacks }] = await Promise.all([
+    bdOptions(supabase),
+    supabase.from("dev_stacks").select("id, name").eq("is_active", true).order("sort_order"),
+  ]);
+  const list = (rows ?? []) as any[];
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>CRM Profiles ({count ?? 0})</CardTitle>
         {canManage && (
-          <Button asChild size="sm">
-            <Link href="/crm/profiles/new"><Plus className="size-4" /> Add profile</Link>
-          </Button>
+          <Button asChild size="sm"><Link href="/crm/profiles/new"><Plus className="size-4" /> Add profile</Link></Button>
         )}
       </CardHeader>
       <CardContent>
+        <CrmFilterBar
+          filters={[
+            { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+            { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
+            { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
+          ]}
+          search={{ key: "q", placeholder: "Search name or email" }}
+        />
         <Table>
           <THead>
-            <TR>
-              <TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH>
-            </TR>
+            <TR><TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
           </THead>
           <TBody>
             {list.map((p) => (
               <TR key={p.id} className="cursor-pointer">
-                <TD>
-                  <Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">
-                    {p.name}
-                  </Link>
-                </TD>
+                <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
                 <TD>{p.stack?.name ?? "—"}</TD>
                 <TD>{p.owner?.full_name ?? <span className="text-text-secondary">Unassigned</span>}</TD>
                 <TD className="text-text-secondary">{p.email ?? "—"}</TD>
                 <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
                 <TD><Badge tone={p.status === "active" ? "success" : "neutral"}>{p.status}</Badge></TD>
-                <TD className="text-right">
-                  <Link href={`/crm/profiles/${p.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open">
-                    <ChevronRight className="size-4" />
-                  </Link>
-                </TD>
+                <TD className="text-right"><Link href={`/crm/profiles/${p.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
               </TR>
             ))}
-            {list.length === 0 && (
-              <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No profiles yet.</TD></TR>
-            )}
+            {list.length === 0 && <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

@@ -1,36 +1,36 @@
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { bdOptions, crmProfileOptions } from "@/lib/crm/options";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { parsePaging } from "@/lib/pagination";
-import { labelize, statusTone } from "@/lib/crm/constants";
+import { labelize, statusTone, LEAD_STATUS } from "@/lib/crm/constants";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmLeadsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; pageSize?: string };
+  searchParams: { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
 }) {
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
 
-  const { data: rows, count } = await supabase
+  let query = supabase
     .from("leads")
-    .select(
-      "id, company, role, status, profile:dev_profiles(name), owner:profiles!leads_owner_bd_id_fkey(full_name)",
-      { count: "exact" }
-    )
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    .select("id, company, role, status, profile:dev_profiles(name), owner:profiles!leads_owner_bd_id_fkey(full_name)", { count: "exact" });
+  if (searchParams.status) query = query.eq("status", searchParams.status);
+  if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
+  if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
+  if (searchParams.q) query = query.ilike("company", `%${searchParams.q}%`);
+  const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
 
-  type Row = {
-    id: string; company: string; role: string | null; status: string;
-    profile: { name: string } | null; owner: { full_name: string } | null;
-  };
-  const list = (rows ?? []) as unknown as Row[];
+  const [bds, profiles] = await Promise.all([bdOptions(supabase), crmProfileOptions(supabase)]);
+  const list = (rows ?? []) as any[];
 
   return (
     <Card>
@@ -39,6 +39,14 @@ export default async function CrmLeadsPage({
         <Button asChild size="sm"><Link href="/crm/leads/new"><Plus className="size-4" /> New lead</Link></Button>
       </CardHeader>
       <CardContent>
+        <CrmFilterBar
+          filters={[
+            { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+            { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+            { key: "profile", label: "Profile", options: profiles.map((p) => ({ value: p.id, label: p.label })) },
+          ]}
+          search={{ key: "q", placeholder: "Search company" }}
+        />
         <Table>
           <THead>
             <TR><TH>Company</TH><TH>Role</TH><TH>Profile</TH><TH>Owner (BD)</TH><TH>Status</TH><TH></TH></TR>
@@ -54,7 +62,7 @@ export default async function CrmLeadsPage({
                 <TD className="text-right"><Link href={`/crm/leads/${l.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
               </TR>
             ))}
-            {list.length === 0 && <TR><TD colSpan={6} className="py-6 text-center text-text-secondary">No leads yet.</TD></TR>}
+            {list.length === 0 && <TR><TD colSpan={6} className="py-6 text-center text-text-secondary">No leads match.</TD></TR>}
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

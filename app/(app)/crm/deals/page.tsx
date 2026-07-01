@@ -9,22 +9,24 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
+import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatPKR } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string } }) {
+export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string } }) {
   const me = await getCurrentProfile();
   if (!me || !isAdminRole(me.role)) redirect("/dashboard");
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
 
-  const { data: rows, count } = await supabase
+  let query = supabase
     .from("deals")
-    .select("id, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    .select("id, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
+  if (searchParams.status) query = query.eq("status", searchParams.status);
+  if (searchParams.q) query = query.ilike("designation", `%${searchParams.q}%`);
+  const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
   const list = (rows ?? []) as any[];
 
   return (
@@ -37,6 +39,10 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
         </div>
       </CardHeader>
       <CardContent>
+        <CrmFilterBar
+          filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
+          search={{ key: "q", placeholder: "Search designation" }}
+        />
         <Table>
           <THead>
             <TR><TH>Company</TH><TH>Designation</TH><TH>Profile</TH><TH>Working dev</TH><TH>Salary</TH><TH>Joining</TH><TH>Status</TH><TH></TH></TR>
