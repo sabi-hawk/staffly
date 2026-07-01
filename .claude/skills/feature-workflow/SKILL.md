@@ -60,7 +60,7 @@ Commit per slice with a clear message (Co-Authored-By trailer). Push only when t
 (`.claude/rules/git.md`). Don't open/merge PRs unless asked.
 
 ## 10. Production gate
-Before calling a milestone done, verify `.claude/knowledgebase/07-production-readiness.md`.
+Before calling a milestone done, verify `.claude/knowledgebase/reference/07-production-readiness.md`.
 
 ## Optional bigger initiatives
 For a multi-step initiative the owner wants tracked, drop a short note folder under

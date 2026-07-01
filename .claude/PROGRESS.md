@@ -30,6 +30,6 @@
 ## Gates
 - §14 suites: `npm run report` → all PASS (unit, RLS, integration+sim, seed, tsc).
 - Browser E2E: `npm run test:e2e` (screenshots → `test-artifacts/`).
-- Production readiness: `knowledge-base/07-production-readiness.md`.
+- Production readiness: `knowledgebase/reference/07-production-readiness.md`.
 
 See `RUNLOG.md` (journal), `DECISIONS.md` (choices), `knowledge-base/` (full spec).

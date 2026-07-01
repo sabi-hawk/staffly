@@ -41,7 +41,7 @@ Owner QA feedback (logged in as super admin). Implemented across phases 1–9:
   validation (subagents) + browser testing, makes sensible decisions when unspecified, and needs
   minimal owner involvement.
 - **Going live in a few days** → every change must leave the app **production-ready** (no known
-  bugs/missing pieces). See [`07-production-readiness.md`](07-production-readiness.md).
+  bugs/missing pieces). See [`reference/07-production-readiness.md`](reference/07-production-readiness.md).
 
 ## 2026-06-27 — Comprehensive audit logging + super-admin Logs panel
 Every edit on the platform must be logged and viewable by the super admin:
@@ -129,5 +129,81 @@ incremental instructions are logged here, then consolidated into a per-module FR
 [`frds/`](frds/README.md) (Draft → In Review → Approved → Promoted), and only an **Approved** FRD is
 promoted to a `plans/` plan and built. Created `frds/` (README + template) and `FRD-00-crm-vision.md`
 (umbrella/module map). CRM module requirements will be appended below and folded into their FRDs.
+
+## 2026-06-30 — CRM: business model + first requirements batch (Profiles, Interviews, Assessments, Leads/Deals)
+Owner walked through the current Drive/Sheets-based workflow (8 screenshots) and the target CRM.
+**Business model:** Softonoma is a software staffing/services business. It maintains marketable
+**developer profiles** (one real person → multiple profiles, one per stack: FS/BE/FE/SEO/DE/MERN/
+WordPress/Data-Eng/AI-ML…). **Business Developers (BDs, a.k.a. VDs)** apply on those profiles' behalf
+to job posts across LinkedIn/Indeed/etc. Responses become **interviews** and **assessments** (tracked
+today per-BD per-month in Google Sheets). When a lead clears all interviews/assessments it becomes a
+**closed deal**, and the engagement details are recorded. Everything is scattered across Drive folders
++ Sheets; the owner wants it **centralized** in the portal as a business CRM. This is a large,
+multi-module initiative → tracked via FRDs in [`frds/`](frds/README.md) (see `FRD-00-crm-vision.md`).
+
+**Modules captured (each gets an FRD):**
+- **Profiles** — developer profiles: stack, **owner = a BD** (or Unassigned), email, mobile, **DOB**,
+  status flags (e.g. "LinkedIn banned"), and a **password that is admin/super-admin-only** (owner
+  applies it on the BD's machine himself; BDs never see it). Each profile has a **primary resume +
+  multiple secondary resumes** (e.g. a FS person also has FE-only, BE-only, Python resumes) + cover
+  letter, stored on-platform. Admin manages profiles and **assigns profiles to BDs** (assigning =
+  giving them the resume + details, minus the password). A BD sees only their assigned profiles' data.
+  NOTE naming collision: the existing `profiles` table = auth user profiles; CRM developer profiles
+  need a distinct name (e.g. `dev_profiles`).
+- **Employee types / departments** — only **BD-department** employees can see the CRM; admin/super-
+  admin see everything; other employee types cannot see it. Needs an employee-type/department concept.
+- **Interviews** (per BD, was a monthly sheet) — columns: profile, lead owner (BD), job title,
+  company, job post URL, status (scheduled/completed/pending), **given by** (which developer gave it),
+  **whom should give** (which developer should give the next rounds — must match the first round's
+  developer), interview time, date, notes, notes-2. Plus a **Round** column (rename the second
+  "status" col: 1st/2nd/3rd/final round) — distinct from the scheduled/completed status.
+- **Assessments** (per BD, was a sheet tab) — profile, lead owner, job title, company, status
+  (completed/pending/in-progress), entry date, deadline, **completion date** (filled by developer),
+  mail subject, job post URL, job description, **completed by** (developer), priority (high/med/low),
+  budget, assessment link, **duration (NEW — important; e.g. 15m/30m/1h/1.5h — devs pick by duration)**,
+  notes, resume/CV link, extra.
+- **Leads / Deals** — a lead = the interview/assessment thread for one job/company. When all rounds
+  clear, mark the deal **closed**. A closed deal records: designation, joining date, **selected
+  profile**, the **developer who will work**, salary, payment method, **receiving account name**, and
+  the profile's DOB; plus documents (PDFs/images/notes). **Deals are admin/super-admin ONLY** (critical
+  business/financial info) — never visible to BDs or other employees.
+- **Visibility & analytics** — admin sees all BDs' interviews/assessments/profiles/resumes; BD
+  performance (interviews brought per BD → credibility), ongoing leads, filtering.
+
+**Permissions summary:** BD (BD-department employee) → sees/manages only their assigned profiles'
+interviews & assessments + views assigned profile data **except password**. Admin/Super-admin → all
+profiles (incl. password) + all BDs' CRM data + the **Deals** workflow (admin-only). Other employees →
+no CRM access. Defense in depth (middleware + RLS + UI) as per `rules/security.md`.
+
+## 2026-07-01 — CRM: false-lead flagging (leads)
+A BD may log something as a lead that later turns out **not to be a real lead** — a fake job, poor pay,
+or an unpaid "collaboration". The owner wants to mark such a lead as **"Not a lead / False lead"
+(disqualified)** with a **required feedback reason**, so it is **excluded from that BD's lead count /
+performance analytics**. Captured in [FRD-04](frds/FRD-04-leads-deals.md) (lead qualification) and
+reflected in BD analytics ([FRD-02](frds/FRD-02-interviews.md)/[FRD-05](frds/FRD-05-roles-access.md)).
+
+## 2026-07-01 — CRM: owner/brother positioning, BD Lead role, base-pay-zero
+- **Owner + brother positioning:** the two founders run the business but also act as **developers**
+  assigned to interviews/assessments, while needing full access. Decision (see [FRD-05](frds/FRD-05-roles-access.md)):
+  they keep a **single super-admin/admin account**, and the interview/assessment **developer picker is not
+  restricted to Engineering** — it can select **any portal user flagged as a developer** (Engineering
+  employees + the founder admins). Avoids dual accounts. (Confirming exact modelling with the owner.)
+- **BD Lead** (new position): the owner can promote one or more BDs to **BD Lead**. A BD Lead can see the
+  **leads/interviews/assessments AND deals of ALL BDs** (not just their own) — an elevated tier between BD
+  and admin. Modelled via a per-employee flag (e.g. `is_bd_lead`), reflected in RLS. Scope (view-only vs
+  manage; whether they see deal financials) — see [FRD-05](frds/FRD-05-roles-access.md) open questions.
+- **Base pay = 0** (HR/payroll, standalone): an employee may have **base salary 0** (commission-only /
+  categories-only). The add-employee + salary flows must allow a zero base without breaking payroll math.
+
+## 2026-07-01 — BD Lead = view+manage; comprehensive Activity Log module (FRD-06)
+- **BD Lead powers:** a BD Lead can **view AND manage** all BDs' CRM data (a senior editing a junior's
+  lead on their behalf is allowed). Resolved in [FRD-05](frds/FRD-05-roles-access.md) Q5.
+- **Activity Log / change history (big module):** the owner wants **every change across every module**
+  logged and viewable in a **rich, clear** log screen — organised **per module** (e.g. Interviews,
+  Assessments, Leads, Deals, Profiles, plus existing HR modules), showing **who** changed **what**, **when**,
+  **using which account**, **role**, **time**, and machine info, with **human-readable field-level
+  before→after** (not cryptic one-liners) and **per-record history**. Strong filtering/search. This extends
+  the portal's existing audit backbone (DB `record_audit()` triggers → `audit_log` + the super-admin Logs
+  panel) into a comprehensive, well-designed module → new **[FRD-06](frds/FRD-06-activity-log.md)**.
 
 <!-- New requirements go below this line. -->

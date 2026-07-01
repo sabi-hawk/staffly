@@ -1,0 +1,41 @@
+# CRM · Leads & Deals
+
+Requirements: [FRD-04](../../frds/FRD-04-leads-deals.md). Delivery: Plan 02 (leads) + Plan 03 (deals).
+Schema: `../../../database/database.md`.
+
+## What it is
+- A **lead** = one job opportunity (company + role + profile) a BD is pursuing — the thread that groups
+  its [interviews](interviews.md) + [assessments](assessments.md).
+- A **deal** = a landed lead, with engagement + financial details + documents. **Admin/super-admin only.**
+
+## Data model
+- **`leads`** — id, company, role, `dev_profile_id`, `owner_bd_id`, **status**
+  (open|interviewing|assessment|won|lost|**disqualified**), disqualified_category
+  (fake_job|low_pay|unpaid_collab|other), disqualified_note, disqualified_by, disqualified_at, timestamps.
+  Interviews/assessments carry `lead_id`.
+- **`deals`** — id, `lead_id`, designation, joining_date, `dev_profile_id`, **working_developer**
+  (employee; may differ from the profile's nominal person), salary, `receiving_account_id`,
+  `payment_method_id`, profile_dob, status, timestamps.
+- **`receiving_accounts`** — managed list (holder_name = owner/brother/…, bank_name, account_number,
+  notes, active). **admin/super-admin only** (sensitive financial).
+- **`payment_methods`** — dynamically extendable lookup (Direct bank / Payoneer / Wise / Other).
+- **`deal_documents`** — private `crm-docs` bucket (signed-URL, download-logged).
+
+## Rules
+- **Disqualify ("not a lead"):** BD **or** admin marks a lead `disqualified` with a required category +
+  note. Excluded from that BD's lead-count/performance analytics; **retained + audited**; admin can
+  re-qualify (audited).
+- **Closing is manual** (admin/super-admin), **anytime** — no precondition that rounds are resolved. A
+  deal is created only from a won lead.
+- Receiving account + payment method are picked from **managed lists** (not free text).
+- v1: a deal is just **recorded** — it does **not** auto-feed commissions/payroll/invoicing (future).
+
+## Permissions
+- **Leads:** BD sees/manages **own** (`owner_bd_id = auth.uid()`); BD Lead all; admin/super all.
+- **Deals + deal_documents + receiving_accounts:** **admin/super-admin only** (BD Lead financial scope =
+  FRD-04/FRD-05 Q6). Payment methods lookup: read by CRM users, write admin.
+- Salary/account = sensitive; never to BDs; no PII in logs/screenshots.
+
+## Screens
+`CRM → Leads` (BD own pipeline by status; admin/BD-Lead all) with disqualify action. `CRM → Deals`
+(admin): list + detail with documents; "close → deal" action on a won lead; manage accounts/methods.

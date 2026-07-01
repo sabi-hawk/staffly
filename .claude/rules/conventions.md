@@ -1,7 +1,7 @@
 # Code Conventions — Softonoma Employee Portal
 
 Next.js 14 (App Router, TS strict) + Supabase (Postgres + Auth + RLS) + Tailwind/shadcn-style UI.
-Full architecture: `.claude/knowledgebase/01-architecture.md`.
+Full architecture: `.claude/knowledgebase/reference/01-architecture-and-conventions.md`.
 
 ## Structure
 - Business logic in `lib/services/**` (reused by routes, scripts, tests); pure math in `lib/{hours,payroll}.ts`. Keep routes/UI thin.

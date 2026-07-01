@@ -9,7 +9,7 @@ You are a read-only quality reviewer for the Softonoma Employee Portal. Report f
 You may run `npx tsc --noEmit` / `npm run build`.
 
 ## Checklist
-1. **Business rules** (`.claude/knowledgebase/03-business-rules.md`): non-netting hours; leave accrual/casual-no-carry/probation; payroll = base + additions − deductions; multi-session day total = sum of sessions. No regressions.
+1. **Business rules** (`.claude/knowledgebase/reference/03-business-rules.md`): non-netting hours; leave accrual/casual-no-carry/probation; payroll = base + additions − deductions; multi-session day total = sum of sessions. No regressions.
 2. **RSC boundary**: no value/const/function imported from a `"use client"` module into a server file (client-reference proxy bug — caused 0-row grids + "not a function"). Shared helpers belong in `lib/*`.
 3. **Timezone/rounding**: "today"/thresholds use Asia/Karachi helpers (`lib/time.ts`), not server-local `new Date().toISOString().slice(0,10)`; money/hours via `lib/utils.ts`.
 4. **UX completeness**: large grids have pagination + empty states; mutations show toasts; inner pages have a back link; loading/error states exist.

@@ -1,45 +1,55 @@
-# Softonoma Employee Portal — Knowledge Base
+# Softonoma Portal — Knowledge Base
 
-This folder is the **single source of truth** for what we are building, why, and how. Every
-agent (and human) working on this repo must read the relevant files here **before** writing
-code, and must **update** them when requirements or architecture change.
+The **single source of truth** for what we're building, why, and how. Read the relevant parts **before**
+writing code; **update** them in the same change as the code. (If `CLAUDE.md` is "how we work", this is
+"what we're building".)
 
-> If `CLAUDE.md` is "how we work", the knowledge base is "what we're building". Keep them in sync.
+## Layout — three parts + the changelog
 
-## How to use this knowledge base
+```
+knowledgebase/
+├── README.md                     ← this index
+├── 06-requirements-changelog.md  ← dated log of every requirement (append FIRST, then build)
+├── modules/    ← DURABLE living knowledge: how each module works now (the real KB)
+│   ├── modules.md   (index)   and  crm/  (crm.md + one doc per CRM module)
+├── frds/       ← requirements MATURATION per feature (Draft → In Review → Approved → Promoted)
+│   └── README.md (the FRD process + index)
+└── reference/  ← ORIGIN / provenance: where it started (read-once, not day-to-day)
+    ├── 00-product-overview.md · 01-architecture-and-conventions.md · 03-business-rules.md (v1)
+    ├── 04-v2-softonoma-overhaul.md · 05-testing-and-validation.md · 07-production-readiness.md
+    └── source/  (original Staffly PRD, brand assets)
+```
 
-**At the start of any task**, read in this order:
-1. [`00-product-overview.md`](00-product-overview.md) — what the product is, who uses it.
-2. [`01-architecture-and-conventions.md`](01-architecture-and-conventions.md) — stack, folder
-   structure, coding conventions, how data flows.
-3. [`../database/database.md`](../database/database.md) — tables, columns, RLS, triggers, enums.
-4. [`03-business-rules.md`](03-business-rules.md) — the rules that must never be violated
-   (hours math, leave quotas, payroll, permissions).
-5. [`04-v2-softonoma-overhaul.md`](04-v2-softonoma-overhaul.md) — the v2 feature set & status.
-6. [`05-testing-and-validation.md`](05-testing-and-validation.md) — how we test & self-validate.
-7. [`06-requirements-changelog.md`](06-requirements-changelog.md) — chronological log of every
-   requirement the owner has given. **Append here whenever a new requirement arrives.**
-8. [`frds/`](frds/README.md) — **Functional Requirements Documents**: per-module specs that mature
-   from the changelog before becoming plans. Used for the **CRM expansion** and other large
-   initiatives. Read the relevant FRD before planning/building a CRM module.
+Sibling areas: **`../database/database.md`** (schema — kept current on every DB change) and
+**`../plans/`** (delivery: `upcoming → inprogress → done`).
 
-`source/` holds original artifacts (the original Staffly PRD, brand source images).
+## How the three parts relate (the workflow)
+1. **A requirement arrives** → append a dated line to `06-requirements-changelog.md`.
+2. For a **large/multi-module initiative**, consolidate it into an **FRD** in `frds/` and mature it
+   (Draft → Approved). Only an Approved FRD is **promoted to a plan** (`../plans/`).
+3. When a plan ships, its durable "how it works" knowledge is **folded into `modules/`** (+ `database.md`).
+   The FRD stays as the requirements-of-record; the module doc becomes **current truth**.
+4. `reference/` holds the **origin** docs (v1 product overview, architecture, v1 rules, source) for
+   provenance — they don't change day-to-day.
 
-## Rules for keeping it current (agents MUST follow)
-- **New requirement from the owner?** Append a dated entry to
-  [`06-requirements-changelog.md`](06-requirements-changelog.md) *first*, then implement.
-- **Requirement for a CRM (or other large) module?** After logging it to the changelog, fold it into
-  the module's FRD in [`frds/`](frds/README.md) (create one from the template if none exists). Mature
-  the FRD (Draft → In Review → Approved) before promoting it to a plan.
-- **Changed the schema?** Update [`../database/database.md`](../database/database.md) in the same change.
-- **Changed a business rule / added a feature?** Update `03`/`04` in the same change.
-- Keep entries concise and factual. Link between docs with relative paths.
-- Never delete history from the changelog — supersede with a new entry instead.
+> **In short:** `frds/` = the agreed *what* (per feature) · `modules/` = the durable *how it works* (per
+> module) · `reference/` = *where it started* · `06-…changelog` = *the running record of asks*.
+
+## Read order for a task
+1. The relevant **`modules/<module>`** doc (current truth) — or its **`frds/`** FRD if it's still pre-build.
+2. **`../database/database.md`** (schema).
+3. **`reference/03-business-rules.md`** for the v1 non-negotiables; module docs for their own rules.
+4. **`06-requirements-changelog.md`** for recent asks.
+
+## Rules for keeping it current
+- **New requirement?** Append to `06-requirements-changelog.md` *first*, then implement.
+- **Large/multi-module?** Fold it into its FRD in `frds/`; mature before promoting to a plan.
+- **Shipped a change?** Update the `modules/<module>` doc + `../database/database.md` in the same change.
+- Concise + factual; cite real file paths; link between docs with relative paths.
+- No secrets, no PII. Never delete changelog history — supersede with a new entry.
 
 ## Quick facts
-- Product: **Softonoma Employee Portal** (HR / attendance / leave / payroll).
-- Stack: Next.js 14 (App Router, TS strict) · Supabase (Postgres 17 + Auth + RLS) ·
-  Tailwind + shadcn-style UI.
-- DB is a **cloud** Supabase project; migrations applied via `npm run db:migrate`.
-- Logins after seed: super admin `founder@acme.test` / admin `hr@acme.test` (`Test@12345`);
-  employees use their email + `Softonoma@123`.
+- Product: **Softonoma Portal** — HR (attendance/leave/payroll) **+ a business CRM** (staffing/services:
+  profiles, interviews, assessments, leads/deals). See [`modules/crm/crm.md`](modules/crm/crm.md).
+- Stack: Next.js 14 (App Router, TS strict) · Supabase (Postgres 17 + Auth + RLS) · Tailwind/shadcn UI.
+- DB is a **cloud** Supabase project; migrations via `npm run db:migrate`.

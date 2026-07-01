@@ -6,16 +6,20 @@ straight to `main` under the repo's git identity, and the gate is `npm run repor
 
 ## 0. Prime directive — read `.claude/` first
 Before non-trivial work, read:
-- `.claude/knowledgebase/README.md` → product, architecture, **business rules**, current status, the **requirements changelog**, and **`frds/`** (per-module specs for the CRM expansion — read the relevant FRD before planning a CRM module).
+- `.claude/knowledgebase/README.md` → the KB map. It has three parts: **`modules/`** (durable "how each
+  module works now" — the real KB, incl. `modules/crm/`), **`frds/`** (per-feature requirement specs that
+  mature Draft→Approved→Promoted — read the FRD before planning a not-yet-built module), and
+  **`reference/`** (origin/provenance: v1 overview, architecture, v1 business rules, source). Plus
+  `06-requirements-changelog.md` (the running log of asks).
 - `.claude/database/database.md` → tables, RLS, triggers, migrations (keep it current with every schema change).
 - `.claude/rules/` → `security.md`, `testing.md`, `conventions.md`, `git.md`.
 Ground every decision in these; don't re-derive from memory. If something isn't covered, decide
-sensibly and **write it down** in the KB.
+sensibly and **write it down** in the KB (module doc if it's current truth; FRD if it's a maturing spec).
 
 ## 1. What this is
 **Softonoma Employee Portal** — internal HR/attendance/leave/payroll app. Roles: Employee, Admin/HR,
 Super Admin. Next.js 14 (App Router, TS strict) + Supabase (Postgres 17 + Auth + RLS) + Tailwind/
-shadcn-style UI. Cloud DB. Full detail in `.claude/knowledgebase/00-product-overview.md`.
+shadcn-style UI. Cloud DB. Full detail in `.claude/knowledgebase/reference/00-product-overview.md`.
 
 ## 2. Golden rules (never violate — detail in `.claude/rules/`)
 1. **Non-netting hours**; **multi-session** day total = sum of worked sessions.
@@ -31,7 +35,7 @@ Every change follows `.claude/skills/feature-workflow/SKILL.md`:
 → **decide** (record in `.claude/DECISIONS.md`; ask the owner only for big/irreversible/conflicting)
 → **implement** small slices → **self-test** (`tsc`, `build`, `npm run report`) → **validate** with
 review subagents → **browser-verify** (Playwright screenshots) → **sync the KB** → **commit**
-(push when asked). Production gate: `.claude/knowledgebase/07-production-readiness.md`.
+(push when asked). Production gate: `.claude/knowledgebase/reference/07-production-readiness.md`.
 
 ## 4. Decide vs ask
 Decide and proceed for naming, structure, defaults, copy, refactors, test data — anything resolvable

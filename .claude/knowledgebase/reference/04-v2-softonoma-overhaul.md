@@ -9,7 +9,7 @@ Status legend: ✅ done · 🔄 in progress · ⏳ planned.
   "Softonoma Employee Portal".
 
 ## Data & seed ✅
-- Migrations `0004`/`0005` (see [`../database/database.md`](../database/database.md)).
+- Migrations `0004`/`0005` (see [`../../database/database.md`](../../database/database.md)).
 - 7 real employees seeded with logins (`Softonoma@123`), 4-digit codes, bank details, DOB,
   per-employee shifts, base salaries, dynamic compensation, and ~90 days of attendance.
 - Admin logins: `founder@acme.test` (super admin), `hr@acme.test` (admin).

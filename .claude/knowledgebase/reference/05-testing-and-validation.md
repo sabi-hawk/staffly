@@ -17,7 +17,7 @@ We test at three levels and self-validate with subagents + a browser pass before
   check-in/out, leave apply/approve, payroll generate/finalise; **captures screenshots** to
   `test-artifacts/` so the agent can visually verify (read the PNGs) and the human can review.
 - One-time: `npx playwright install chromium`. Run: `npm run test:e2e`. See
-  [`../CLAUDE.md`](../CLAUDE.md) "Browser testing" for how the agent uses screenshots.
+  [`../../CLAUDE.md`](../../CLAUDE.md) "Browser testing" for how the agent uses screenshots.
 
 ## Aggregate
 - `npm run report` runs seed + unit + RLS + integration and prints a PASS/FAIL table.
@@ -28,7 +28,7 @@ We test at three levels and self-validate with subagents + a browser pass before
 ## Self-validation with subagents (agent workflow)
 After implementing a slice, the lead agent spawns review subagents to audit the diff against this
 knowledge base (requirements coverage, RLS/permission leaks, missing pagination, broken business
-rules, dead code). Findings are fixed before commit. See [`../CLAUDE.md`](../CLAUDE.md).
+rules, dead code). Findings are fixed before commit. See [`../../CLAUDE.md`](../../CLAUDE.md).
 
 ## Test data rules
 - Never point tests at ad-hoc data; rely on `npm run seed:test` (deterministic canonical block for
