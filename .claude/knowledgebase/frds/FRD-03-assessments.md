@@ -6,7 +6,7 @@
 | **Module** | CRM · Assessments |
 | **Created** | 2026-06-30 |
 | **Updated** | 2026-07-01 |
-| **Plan** | [plans/upcoming/02-crm-activity](../../plans/upcoming/02-crm-activity/plan.md) |
+| **Plan** | [plans/done/02-crm-activity](../../plans/done/02-crm-activity/plan.md) |
 | **Changelog refs** | 2026-06-30 (CRM business model + first batch) |
 
 > Track take-home/technical assessments a BD secures while applying on a profile's behalf. Replaces the
