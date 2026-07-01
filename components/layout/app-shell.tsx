@@ -5,9 +5,10 @@ import { Topbar } from "./topbar";
 import { navForRole } from "@/lib/nav";
 import type { Profile } from "@/lib/types";
 
+const TITLE_OVERRIDES: Record<string, string> = { logs: "Activity Log", crm: "CRM" };
 function titleFromPath(path: string): string {
   const seg = path.replace(/^\/admin\//, "").replace(/^\//, "").split("/")[0] || "dashboard";
-  return seg.charAt(0).toUpperCase() + seg.slice(1);
+  return TITLE_OVERRIDES[seg] ?? seg.charAt(0).toUpperCase() + seg.slice(1);
 }
 
 export function AppShell({ profile, children }: { profile: Profile; children: React.ReactNode }) {

@@ -11,6 +11,7 @@ import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatPKR } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
+import { RecordHistory } from "@/components/audit/record-history";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DealDetail({ params }: { params: { id: string } }) {
@@ -82,6 +83,13 @@ export default async function DealDetail({ params }: { params: { id: string } })
           />
         </CardContent>
       </Card>
+
+      {me.role === "super_admin" && (
+        <Card>
+          <CardHeader><CardTitle>History</CardTitle></CardHeader>
+          <CardContent><RecordHistory entity="deals" id={d.id} /></CardContent>
+        </Card>
+      )}
     </div>
   );
 }

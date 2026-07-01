@@ -63,8 +63,11 @@ async function main() {
   check("admin: salary_structures → 0 rows (admin excluded from payroll)", (hiraSal.data?.length ?? 0) === 0);
   const hiraPay = await hira.from("payroll_runs").select("*");
   check("admin: payroll_runs → 0 rows", (hiraPay.data?.length ?? 0) === 0);
-  const hiraAudit = await hira.from("audit_log").select("*");
-  check("admin: audit_log → 0 rows (super-admin only)", (hiraAudit.data?.length ?? 0) === 0);
+  // audit_log is now SCOPED (FRD-06): admin/BD-Lead see non-financial entries; financial stays super-admin-only.
+  const hiraAuditFin = await hira.from("audit_log").select("*").eq("entity", "salary_structures");
+  check("admin: audit_log financial (salary) → 0 rows (still hidden)", (hiraAuditFin.data?.length ?? 0) === 0);
+  const hiraAuditOps = await hira.from("audit_log").select("id").eq("entity", "profiles").limit(1);
+  check("admin: audit_log non-financial (profiles) → readable (scoped, no error)", !hiraAuditOps.error);
 
   const founder = await asUser(SUPER_EMAIL, SUPER_PW);
   const fSal = await founder.from("salary_structures").select("*");

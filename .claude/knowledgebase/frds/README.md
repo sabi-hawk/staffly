@@ -68,6 +68,6 @@ Unlike plans (whose folder = status), an FRD stays in `frds/` permanently as the
 | [03](FRD-03-assessments.md) | Assessments | Promoted | [plan 02](../../plans/done/02-crm-activity/plan.md) |
 | [04](FRD-04-leads-deals.md) | Leads & Deals | Promoted | [plan 02](../../plans/done/02-crm-activity/plan.md) + [03](../../plans/upcoming/03-crm-deals/plan.md) |
 | [05](FRD-05-roles-access.md) | Roles, Departments & CRM access | Promoted | [plan 01](../../plans/done/01-crm-profiles-foundation/plan.md) |
-| [06](FRD-06-activity-log.md) | Activity Log & Audit (change history) | Promoted | [plan 04](../../plans/upcoming/04-activity-log/plan.md) |
+| [06](FRD-06-activity-log.md) | Activity Log & Audit (change history) | Promoted | [plan 04](../../plans/done/04-activity-log/plan.md) |
 
 > Keep this table current whenever an FRD is added or changes status.

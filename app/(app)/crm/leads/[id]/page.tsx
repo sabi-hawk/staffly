@@ -12,6 +12,7 @@ import { labelize, statusTone } from "@/lib/crm/constants";
 import { LeadForm } from "@/components/crm/lead-form";
 import { DisqualifyPanel } from "@/components/crm/disqualify-panel";
 import { LeadActivity } from "@/components/crm/lead-activity";
+import { RecordHistory } from "@/components/audit/record-history";
 import type { Interview, Assessment } from "@/lib/types";
 import type { AssessmentDoc } from "@/components/crm/assessment-docs";
 
@@ -113,6 +114,11 @@ export default async function LeadDetail({ params }: { params: { id: string } })
             initial={{ company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id, status: lead.status, owner_bd_id: lead.owner_bd_id }}
           />
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>History</CardTitle></CardHeader>
+        <CardContent><RecordHistory entity="leads" id={lead.id} /></CardContent>
       </Card>
     </div>
   );

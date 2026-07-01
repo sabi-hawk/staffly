@@ -36,3 +36,20 @@ browsing, and per-record timelines.
 ## Rules
 Append-only (no edit/delete of audit); only **mutations** logged (not reads); updates show only changed
 fields; UTC→Asia/Karachi; secrets/passwords never in payloads; retention = keep indefinitely (for now).
+
+## As-built (Plan 04, 2026-07-02) — shipped
+- Migration `0017`: audit coverage for the remaining sensitive tables; audit_log indexes; **scoped
+  `audit_read` RLS** — super-admin all; **admin + BD-Lead** see non-financial entries (financial denylist:
+  salary/payroll/compensation/payslip/deals/deal_documents/receiving_accounts/employee_private/
+  employee_credentials/commission_policies); a **plain BD** sees their own CRM records' history via the
+  `owner_bd_id` in the row snapshot.
+- **Readable rendering** (`lib/audit/labels.ts`): friendly entity + field labels, plain-English
+  summaries ("X updated lead (5 fields)"), value formatting (dates→Karachi, bools, UUID truncation),
+  password/secret masking. Powers the enhanced `components/admin/logs-table.tsx`.
+- **Activity Log page** (`/admin/logs`, now **admin-accessible**, in `adminNav`): per-module + action +
+  actor + date-range filters; login-activity section super-admin-only.
+- **Per-record history** (`components/audit/record-history.tsx`): a "History" card on CRM profile / lead /
+  deal detail pages — RLS gives a BD their own record's trail, admins/BD-Leads the full one.
+- **Download events** already logged (Plans 01/03). **Deferred (FRD-06):** "System" attribution for
+  cron/service-role writes (kept skipped to avoid seed noise); a global Activity Log nav entry for BD-Leads
+  (they use per-record history — the page lives under `/admin/*`); curated diff labels for more modules.

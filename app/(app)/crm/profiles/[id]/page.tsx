@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProfileForm } from "@/components/crm/profile-form";
 import { PasswordPanel } from "@/components/crm/password-panel";
 import { DocumentsPanel, type Doc } from "@/components/crm/documents-panel";
+import { RecordHistory } from "@/components/audit/record-history";
 
 export default async function CrmProfileDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
@@ -105,6 +106,11 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
           </Card>
         </>
       )}
+
+      <Card>
+        <CardHeader><CardTitle>History</CardTitle></CardHeader>
+        <CardContent><RecordHistory entity="dev_profiles" id={p.id} /></CardContent>
+      </Card>
     </div>
   );
 }

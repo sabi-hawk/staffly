@@ -45,12 +45,12 @@ const adminNav: NavItem[] = [
   { label: "Calendar", href: "/calendar", icon: CalendarRange },
   { label: "Announcements", href: "/announcements", icon: Megaphone },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { label: "Activity Log", href: "/admin/logs", icon: ScrollText },
   { label: "Handbook", href: "/handbook", icon: BookOpen },
 ];
 
 const superAdminNav: NavItem[] = [
   { label: "Payroll", href: "/admin/payroll", icon: Wallet },
-  { label: "Logs", href: "/admin/logs", icon: ScrollText },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

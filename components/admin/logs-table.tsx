@@ -4,96 +4,95 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { AuditLog } from "@/lib/types";
+import { entityLabel, fieldLabel, formatValue, summaryLine, actionVerb } from "@/lib/audit/labels";
 
-// Fields not worth showing in a diff.
 const SKIP = new Set(["updated_at", "created_at", "id"]);
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 function diffFields(before: any, after: any): { key: string; from: any; to: any }[] {
   const keys = Array.from(new Set(Object.keys(before ?? {}).concat(Object.keys(after ?? {}))));
   const out: { key: string; from: any; to: any }[] = [];
   for (const k of keys) {
     if (SKIP.has(k)) continue;
-    const f = before?.[k];
-    const t = after?.[k];
-    if (JSON.stringify(f) !== JSON.stringify(t)) out.push({ key: k, from: f, to: t });
+    if (JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k])) out.push({ key: k, from: before?.[k], to: after?.[k] });
   }
   return out;
 }
 
-const fmt = (v: any) => (v === null || v === undefined || v === "" ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v));
+function snapshotFields(snap: any): { key: string; value: any }[] {
+  return Object.keys(snap ?? {})
+    .filter((k) => !SKIP.has(k) && snap[k] !== null && snap[k] !== undefined && snap[k] !== "")
+    .map((k) => ({ key: k, value: snap[k] }));
+}
 
 const actionTone = (a: string) =>
-  a.includes("delete") ? "danger" : a.includes("insert") || a.includes("approved") ? "success" : "warning";
+  a.includes("delete") ? "danger" : a.includes("insert") ? "success" : a.includes("download") ? "brand" : "warning";
+
+// Module-scope row so React keeps identity across parent re-renders (no remount on expand/collapse).
+function AuditRow({ r, expanded, onToggle }: { r: AuditLog; expanded: boolean; onToggle: () => void }) {
+  const fields = r.action === "update" ? diffFields(r.before, r.after) : [];
+  const snapshot = r.action === "insert" ? r.after : r.action === "delete" ? r.before : null;
+  const hasDetail = fields.length > 0 || !!snapshot;
+  return (
+    <>
+      <TR>
+        <TD>
+          {hasDetail ? (
+            <button onClick={onToggle} className="text-text-secondary hover:text-brand-primary" aria-label="Toggle details">
+              {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+            </button>
+          ) : null}
+        </TD>
+        <TD className="tabular text-caption whitespace-nowrap">{new Date(r.created_at).toLocaleString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</TD>
+        <TD className="text-sm">{r.actor_email ?? "System"}<span className="ml-1 text-caption text-text-secondary capitalize">{r.actor_role ? `(${r.actor_role.replace("_", " ")})` : ""}</span></TD>
+        <TD><Badge tone={actionTone(r.action) as any}>{actionVerb(r.action)}</Badge></TD>
+        <TD className="text-sm">{entityLabel(r.entity)}</TD>
+        <TD className="text-caption text-text-secondary">{summaryLine({ actor_email: r.actor_email, action: r.action, entity: r.entity, changedCount: fields.length })}</TD>
+      </TR>
+      {expanded && hasDetail && (
+        <TR>
+          <TD colSpan={6} className="bg-surface">
+            {fields.length > 0 && (
+              <table className="w-full text-caption">
+                <thead><tr className="text-text-secondary"><th className="py-1 text-left">Field</th><th className="py-1 text-left">Previous</th><th className="py-1 text-left">New</th></tr></thead>
+                <tbody>
+                  {fields.map((f) => (
+                    <tr key={f.key} className="border-t border-border">
+                      <td className="py-1 pr-3 font-medium">{fieldLabel(f.key)}</td>
+                      <td className="py-1 pr-3 text-danger">{formatValue(f.key, f.from)}</td>
+                      <td className="py-1 text-success">{formatValue(f.key, f.to)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {snapshot && (
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-caption sm:grid-cols-3">
+                {snapshotFields(snapshot).map((f) => (
+                  <div key={f.key}><dt className="text-text-secondary">{fieldLabel(f.key)}</dt><dd>{formatValue(f.key, f.value)}</dd></div>
+                ))}
+              </dl>
+            )}
+          </TD>
+        </TR>
+      )}
+    </>
+  );
+}
 
 export function LogsTable({ rows }: { rows: AuditLog[] }) {
   const [open, setOpen] = useState<string | null>(null);
-
   return (
     <Table>
       <THead>
-        <TR><TH></TH><TH>When</TH><TH>Actor</TH><TH>Action</TH><TH>Entity</TH><TH>Changes</TH></TR>
+        <TR><TH></TH><TH>When</TH><TH>Who</TH><TH>Action</TH><TH>What</TH><TH>Summary</TH></TR>
       </THead>
       <TBody>
-        {rows.map((r) => {
-          const expanded = open === r.id;
-          const fields = r.action === "update" ? diffFields(r.before, r.after) : [];
-          const snapshot = r.action === "insert" ? r.after : r.action === "delete" ? r.before : null;
-          return (
-            <RowFragment
-              key={r.id}
-              r={r}
-              expanded={expanded}
-              onToggle={() => setOpen(expanded ? null : r.id)}
-              fields={fields}
-              snapshot={snapshot}
-            />
-          );
-        })}
-        {rows.length === 0 && <TR><TD className="py-6 text-center text-text-secondary">No activity logged yet.</TD></TR>}
+        {rows.map((r) => (
+          <AuditRow key={r.id} r={r} expanded={open === r.id} onToggle={() => setOpen(open === r.id ? null : r.id)} />
+        ))}
+        {rows.length === 0 && <TR><TD colSpan={6} className="py-6 text-center text-text-secondary">No activity yet.</TD></TR>}
       </TBody>
     </Table>
   );
-
-  function RowFragment({ r, expanded, onToggle, fields, snapshot }: any) {
-    return (
-      <>
-        <TR className="cursor-pointer" >
-          <TD>
-            <button onClick={onToggle} className="text-text-secondary hover:text-brand-primary">
-              {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-            </button>
-          </TD>
-          <TD className="tabular text-caption">{new Date(r.created_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}</TD>
-          <TD>{r.actor_email ?? "—"}<span className="ml-1 text-caption text-text-secondary capitalize">{r.actor_role ? `(${r.actor_role.replace("_", " ")})` : ""}</span></TD>
-          <TD><Badge tone={actionTone(r.action) as any}>{r.action}</Badge></TD>
-          <TD className="text-text-secondary">{r.entity}</TD>
-          <TD className="text-caption text-text-secondary">{r.action === "update" ? `${fields.length} field(s)` : r.action}</TD>
-        </TR>
-        {expanded && (
-          <TR>
-            <TD colSpan={6} className="bg-surface">
-              {r.action === "update" && (
-                <table className="w-full text-caption">
-                  <thead><tr className="text-text-secondary"><th className="py-1 text-left">Field</th><th className="py-1 text-left">Previous</th><th className="py-1 text-left">New</th></tr></thead>
-                  <tbody>
-                    {fields.map((f: any) => (
-                      <tr key={f.key} className="border-t border-border">
-                        <td className="py-1 pr-3 font-medium">{f.key}</td>
-                        <td className="py-1 pr-3 text-danger">{fmt(f.from)}</td>
-                        <td className="py-1 text-success">{fmt(f.to)}</td>
-                      </tr>
-                    ))}
-                    {fields.length === 0 && <tr><td className="py-1 text-text-secondary" colSpan={3}>No field changes.</td></tr>}
-                  </tbody>
-                </table>
-              )}
-              {snapshot && (
-                <pre className="overflow-auto whitespace-pre-wrap text-[11px] text-text-secondary">{JSON.stringify(snapshot, null, 2)}</pre>
-              )}
-            </TD>
-          </TR>
-        )}
-      </>
-    );
-  }
 }

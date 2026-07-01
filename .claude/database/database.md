@@ -39,6 +39,14 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0014_crm_deals.sql` — **CRM Deals** (admin/super-admin only): `receiving_accounts`, `payment_methods`
   (+seed), `deals`, `deal_documents`; RLS (deals/docs/accounts = admin/super only; payment_methods =
   read-any, write-admin) + audit + updated_at.
+- `0015_deal_review_fixes.sql` — deals.salary `CHECK (>= 0)`; `ON DELETE SET NULL` on the deal FKs.
+- `0016_crm_audit_fixes.sql` — `ON DELETE SET NULL` on activity person-refs (interviews.given_by/
+  whom_should_give, assessments.completed_by, leads.disqualified_by); audit `dev_stacks`.
+- `0017_activity_log.sql` — **Activity Log** (FRD-06): audit coverage for employee_private/
+  employee_credentials/commission_policies/company_settings; audit_log indexes; **scoped `audit_read`
+  RLS** — super-admin all; **admin + BD-Lead** non-financial entries; a **BD** their own CRM records
+  (`owner_bd_id` in the row snapshot). Financial (salary/payroll/comp/deals/accounts/PII/credentials)
+  stays super-admin-only.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

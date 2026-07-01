@@ -6,7 +6,7 @@
 | **Module** | Platform-wide · Activity Log / Audit (cross-cutting) |
 | **Created** | 2026-07-01 |
 | **Updated** | 2026-07-01 |
-| **Plan** | [plans/upcoming/04-activity-log](../../plans/upcoming/04-activity-log/plan.md) |
+| **Plan** | [plans/done/04-activity-log](../../plans/done/04-activity-log/plan.md) |
 | **Changelog refs** | 2026-06-27 (audit backbone), 2026-07-01 (comprehensive Activity Log) |
 
 > A comprehensive, **readable** change-history for the **whole platform** (HR + CRM). Every mutation is
