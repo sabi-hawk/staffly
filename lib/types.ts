@@ -48,6 +48,66 @@ export interface Department {
   updated_at: string;
 }
 
+export interface Lead {
+  id: string;
+  company: string;
+  role: string | null;
+  dev_profile_id: string | null;
+  owner_bd_id: string;
+  status: "open" | "interviewing" | "assessment" | "won" | "lost" | "disqualified";
+  disqualified_category: "fake_job" | "low_pay" | "unpaid_collab" | "other" | null;
+  disqualified_note: string | null;
+  disqualified_by: string | null;
+  disqualified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Interview {
+  id: string;
+  lead_id: string | null;
+  dev_profile_id: string | null;
+  owner_bd_id: string;
+  job_title: string | null;
+  company: string | null;
+  job_post_url: string | null;
+  status: "pending" | "scheduled" | "completed" | "cancelled";
+  given_by: string | null;
+  whom_should_give: string | null;
+  interview_at: string | null;
+  round: "1st" | "2nd" | "3rd" | "final" | null;
+  outcome: "pending" | "selected" | "rejected" | "on_hold" | null;
+  notes: string | null;
+  notes2: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Assessment {
+  id: string;
+  lead_id: string | null;
+  dev_profile_id: string | null;
+  owner_bd_id: string;
+  job_title: string | null;
+  company: string | null;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+  entry_date: string | null;
+  deadline: string | null;
+  completion_date: string | null;
+  mail_subject: string | null;
+  job_post_url: string | null;
+  job_description: string | null;
+  completed_by: string | null;
+  priority: "high" | "medium" | "low" | null;
+  budget: string | null;
+  assessment_link: string | null;
+  duration: string | null;
+  notes: string | null;
+  extra: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Sensitive PII — separate table, readable only by the employee themselves or a super admin. */
 export interface EmployeePrivate {
   employee_id: string;

@@ -12,6 +12,9 @@ import {
   Settings,
   ScrollText,
   Contact,
+  Briefcase,
+  MessageSquare,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
@@ -56,7 +59,12 @@ type NavProfile = Pick<Profile, "role" | "department" | "is_bd_lead">;
  * A single /crm/profiles route serves everyone — RLS scopes the rows (a BD sees only their own). */
 function crmNavFor(p: NavProfile): NavItem[] {
   if (!canSeeCrm(p)) return [];
-  return [{ label: "CRM Profiles", href: "/crm/profiles", icon: Contact }];
+  return [
+    { label: "CRM Profiles", href: "/crm/profiles", icon: Contact },
+    { label: "CRM Leads", href: "/crm/leads", icon: Briefcase },
+    { label: "Interviews", href: "/crm/interviews", icon: MessageSquare },
+    { label: "Assessments", href: "/crm/assessments", icon: ClipboardCheck },
+  ];
 }
 
 export function navForRole(p: NavProfile): NavItem[] {

@@ -31,3 +31,10 @@ range; upload resume/extra via the crm-doc route. BD own; BD-Lead/admin all.
 
 ## Relationships
 Belongs to a [lead](leads-deals.md); references a [profile](profiles.md). Access → [access.md](access.md).
+
+## As-built (Plan 02, 2026-07-01) — shipped
+- Tables `assessments` + `assessment_documents` (migration `0013`), owner-scoped RLS. Duration is free
+  text from a preset list; budget free text; `completed_by` = an `is_developer` employee. Docs in the
+  private `crm-docs` bucket (`assessments/<id>/…`), signed-URL + audit-logged downloads.
+- Managed on the **lead detail** (`lead-activity.tsx` + `assessment-form.tsx` + `assessment-docs.tsx`);
+  flat grid `/crm/assessments` with **overdue** highlight (deadline < today Asia/Karachi & not completed).

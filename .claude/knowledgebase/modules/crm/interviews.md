@@ -32,3 +32,10 @@ date; time shown Asia/Karachi; per-record history drawer. BD sees own; BD-Lead/a
 
 ## Relationships
 Belongs to a [lead](leads-deals.md); references a [profile](profiles.md); developer = an employee.
+
+## As-built (Plan 02, 2026-07-01) — shipped
+- Table `interviews` (migration `0013`), owner-scoped RLS (BD own · BD-Lead/admin all). `given_by`/
+  `whom_should_give` reference employees flagged `is_developer`. `interview_at` stored UTC, entered/shown
+  as **Asia/Karachi** (+5, no DST) — the form round-trips via `toUtcIso`/`toLocalInput`.
+- Managed on the **lead detail** (`components/crm/lead-activity.tsx` + `interview-form.tsx`); flat
+  read grid at `/crm/interviews`. Service `lib/services/crm-activity.ts`; routes `app/api/crm/interviews/*`.

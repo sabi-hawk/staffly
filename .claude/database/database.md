@@ -31,6 +31,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0011_crm_profiles.sql` — **CRM Profiles**: `dev_stacks` (+seed), `dev_profiles`,
   `dev_profile_secrets` (account password; **not audited**), `dev_profile_documents` (resume|
   cover_letter; one primary resume via partial unique index); RLS + audit triggers.
+- `0012_crm_fixes.sql` — review fixes: guard the text `department` too; `dev_profile_documents.updated_at`;
+  atomic `crm_set_primary_document()`.
+- `0013_crm_leads_activity.sql` — **CRM Leads/Interviews/Assessments**: `leads`, `interviews`,
+  `assessments`, `assessment_documents`; **owner-scoped** RLS (BD manages own; BD-Lead/admin all) + audit
+  + updated_at triggers.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
@@ -94,6 +99,21 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   file_path (private `crm-docs` bucket), file_name, uploaded_by. One primary resume per profile
   (partial unique index). RLS: same visibility as parent profile; write admin/super. Audited.
   Downloads are logged as `audit_log` action=`download` from the download route.
+- **leads** — id, company, role, dev_profile_id→dev_profiles, owner_bd_id→profiles (a BD), status
+  (open|interviewing|assessment|won|lost|**disqualified**), disqualified_category
+  (fake_job|low_pay|unpaid_collab|other), disqualified_note/by/at. Groups interviews+assessments.
+- **interviews** — id, lead_id→leads, dev_profile_id, owner_bd_id, job_title, company, job_post_url,
+  status(pending|scheduled|completed|cancelled), given_by/whom_should_give→profiles (is_developer),
+  interview_at (UTC), **round**(1st|2nd|3rd|final), **outcome**(pending|selected|rejected|on_hold),
+  notes, notes2.
+- **assessments** — id, lead_id, dev_profile_id, owner_bd_id, job_title, company, status(pending|
+  in_progress|completed|cancelled), entry_date, deadline, completion_date, mail_subject, job_post_url,
+  job_description, completed_by→profiles, priority(high|medium|low), budget(text), assessment_link,
+  duration(15m…2h+), notes, extra.
+- **assessment_documents** — id, assessment_id, doc_type(resume_cv|extra), label, file_path (private
+  `crm-docs` bucket), file_name, uploaded_by. Downloads audit-logged.
+  RLS for leads/interviews/assessments/(their docs): **owner-scoped** — `auth_is_bd_lead() OR
+  (owner_bd_id = auth.uid() AND auth_is_bd())`; a BD manages only their own, BD-Lead/admin manage all.
 
 ## Functions & triggers
 - `compute_attendance_hours()` (BEFORE INSERT/UPDATE on attendance) — computes total/deficit/extra

@@ -39,3 +39,10 @@ Schema: `../../../database/database.md`.
 ## Screens
 `CRM → Leads` (BD own pipeline by status; admin/BD-Lead all) with disqualify action. `CRM → Deals`
 (admin): list + detail with documents; "close → deal" action on a won lead; manage accounts/methods.
+
+## As-built (Plan 02, 2026-07-01) — **Leads shipped** (Deals = Plan 03, not yet built)
+- Table `leads` (migration `0013`), owner-scoped RLS. Status open/interviewing/assessment/won/lost/
+  **disqualified**; disqualify (BD+admin) sets category + note (`disqualify-panel.tsx`), re-qualify by
+  the owner/admin; both audited. UI: `/crm/leads` (pipeline + new), `/crm/leads/[id]` (info + disqualify
+  + nested interviews/assessments via `lead-activity.tsx` + edit). Service/routes: `crm-activity.ts`,
+  `app/api/crm/leads/*`. **Deals/accounts/payment-methods remain Plan 03.**

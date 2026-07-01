@@ -49,6 +49,36 @@ async function main() {
     });
     console.log(`seeded dev_profile: ${r.name} (${r.stack}) → ${r.ownerName ?? "Unassigned"}`);
   }
+
+  // Flag a few developers (interview/assessment "given by / completed by" picker source).
+  const devNames = ["Muzammal Faiz", "Muhammad Aizaz Ansab", "Super Admin"];
+  const { data: allProfiles } = await admin.from("profiles").select("id, full_name");
+  const pid = (name) => allProfiles.find((p) => p.full_name === name)?.id ?? null;
+  for (const n of devNames) {
+    const id = pid(n);
+    if (id) await admin.from("profiles").update({ is_developer: true }).eq("id", id);
+  }
+  console.log("flagged developers:", devNames.join(", "));
+
+  // A demo lead (owned by Shaiza) + one interview + one assessment, for browser/E2E verification.
+  const shaiza = bds.find((b) => b.full_name === "Shaiza Maheen")?.id ?? null;
+  const { data: sabahat } = await admin.from("dev_profiles").select("id").eq("email", "demo.sabahat@example.com").maybeSingle();
+  if (shaiza && sabahat) {
+    await admin.from("leads").delete().eq("company", "DemoCorp").eq("owner_bd_id", shaiza);
+    const { data: lead } = await admin.from("leads")
+      .insert({ company: "DemoCorp", role: "Senior Full Stack", dev_profile_id: sabahat.id, owner_bd_id: shaiza, status: "interviewing" })
+      .select("id").single();
+    const dev = pid("Muzammal Faiz");
+    await admin.from("interviews").insert({
+      lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Senior Full Stack Engineer",
+      company: "DemoCorp", status: "completed", round: "1st", outcome: "selected", given_by: dev, whom_should_give: dev,
+    });
+    await admin.from("assessments").insert({
+      lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Take-home", company: "DemoCorp",
+      status: "pending", priority: "high", duration: "1h", completed_by: dev,
+    });
+    console.log("seeded demo lead + interview + assessment (DemoCorp → Shaiza)");
+  }
   console.log("CRM demo seed done ✅");
 }
 

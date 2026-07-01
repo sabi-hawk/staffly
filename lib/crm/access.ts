@@ -39,4 +39,13 @@ export function canSeeDeals(p: RoleLike): boolean {
   return isAdminRole(p.role);
 }
 
+/** Owner BD to stamp on a new lead/interview/assessment: BD-Leads/admins may assign to any BD
+ * (falling back to self); a plain BD can only own their own rows. RLS enforces this too. */
+export function crmOwnerId(
+  me: { id: string; role: UserRole | string | null; is_bd_lead?: boolean | null },
+  requested?: string | null
+): string {
+  return isBdLead(me) ? requested || me.id : me.id;
+}
+
 export type { CrmProfile };

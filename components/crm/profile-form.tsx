@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import type { Opt } from "@/lib/crm/options";
 
-export type Opt = { id: string; label: string };
+export type { Opt }; // re-export for existing importers
 
 const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
 

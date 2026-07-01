@@ -62,3 +62,11 @@ export function ageFromDob(dob: string | null | undefined): number | null {
   if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
   return age;
 }
+
+/** Format a stored UTC ISO timestamp as a short Asia/Karachi date+time (CRM lists). */
+export function formatCrmDatetime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-GB", {
+    timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
