@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { isAdminRole } from "@/lib/crm/access";
@@ -9,7 +10,8 @@ type Stat = { leads: number; disqualified: number; interviews: number; assessmen
 
 export default async function CrmAnalyticsPage() {
   const me = await getCurrentProfile();
-  const canSeeDeals = isAdminRole(me?.role);
+  if (!me) redirect("/");
+  const canSeeDeals = isAdminRole(me.role);
   const supabase = createClient();
 
   // RLS scopes rows to what the viewer may see: a BD gets only their own; admin/BD-Lead get all.
@@ -47,16 +49,17 @@ export default async function CrmAnalyticsPage() {
     : { data: [] as any[] };
   const nameOf = (id: string) => (names ?? []).find((n: any) => n.id === id)?.full_name ?? "—";
 
+  const score = (s: Stat) => s.leads + s.interviews + s.assessments + s.deals;
   const rows = ids
     .map((id) => ({ id, name: nameOf(id), ...stats.get(id)! }))
-    .sort((a, b) => b.leads + b.interviews + b.assessments - (a.leads + a.interviews + a.assessments));
+    .sort((a, b) => score(b) - score(a));
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>BD Performance</CardTitle>
         <CardDescription>
-          Activity per Business Developer. Disqualified leads are excluded from the active lead count.
+          Activity per Business Developer. The lead count excludes disqualified leads (shown separately).
           {canSeeDeals ? "" : " You see your own numbers."}
         </CardDescription>
       </CardHeader>
@@ -64,7 +67,7 @@ export default async function CrmAnalyticsPage() {
         <Table>
           <THead>
             <TR>
-              <TH>BD</TH><TH>Active leads</TH><TH>Disqualified</TH><TH>Interviews</TH><TH>Assessments</TH>
+              <TH>BD</TH><TH>Leads</TH><TH>Disqualified</TH><TH>Interviews</TH><TH>Assessments</TH>
               {canSeeDeals && <TH>Deals</TH>}
             </TR>
           </THead>
