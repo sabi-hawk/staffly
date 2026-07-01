@@ -11,9 +11,11 @@ import {
   BarChart3,
   Settings,
   ScrollText,
+  Contact,
   type LucideIcon,
 } from "lucide-react";
-import type { UserRole } from "@/lib/types";
+import type { Profile } from "@/lib/types";
+import { canSeeCrm } from "@/lib/crm/access";
 
 export interface NavItem {
   label: string;
@@ -48,8 +50,17 @@ const superAdminNav: NavItem[] = [
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
-export function navForRole(role: UserRole): NavItem[] {
-  if (role === "employee") return employeeNav;
-  if (role === "admin") return adminNav;
-  return [...adminNav, ...superAdminNav]; // super_admin
+type NavProfile = Pick<Profile, "role" | "department" | "is_bd_lead">;
+
+/** CRM nav items for a person who can see the CRM (BD or admin). Empty otherwise.
+ * A single /crm/profiles route serves everyone — RLS scopes the rows (a BD sees only their own). */
+function crmNavFor(p: NavProfile): NavItem[] {
+  if (!canSeeCrm(p)) return [];
+  return [{ label: "CRM Profiles", href: "/crm/profiles", icon: Contact }];
+}
+
+export function navForRole(p: NavProfile): NavItem[] {
+  const base =
+    p.role === "employee" ? employeeNav : p.role === "admin" ? adminNav : [...adminNav, ...superAdminNav];
+  return [...base, ...crmNavFor(p)];
 }

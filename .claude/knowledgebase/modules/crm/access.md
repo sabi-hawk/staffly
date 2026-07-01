@@ -37,3 +37,14 @@ Base roles stay `employee | admin | super_admin` (`profiles.role`, `auth_role()`
 ## Key flows
 Promote a BD → BD Lead (set `is_bd_lead`). Flag a user `is_developer` so they're pickable as an
 interview/assessment developer. Assign a profile's owner (a BD).
+
+## As-built (Plan 01, 2026-07-01)
+- `auth_is_bd()` is keyed on the **text `department`** (`= 'Business Development'`), not the FK — so
+  middleware, nav, and RLS read ONE source and never drift vs a one-time `department_id` backfill + the
+  re-seed flow. The `departments` lookup + `department_id` exist as forward structure; a follow-up will
+  wire the employee editor/seed to write `department_id`, then flip `auth_is_bd()` to the join.
+- `guard_profile_privileged_cols()` (BEFORE UPDATE on profiles) closes the self-update escalation hole:
+  non-admins can't change role/status/department/`is_bd_lead`/`is_developer` (avatar self-update still works).
+- CRM lives under `/crm/*`; a single `/crm/profiles` route serves everyone (RLS scopes rows) — no
+  separate `/my-profiles`. Helpers: `lib/crm/access.ts` (client+server safe: `canSeeCrm`, `isBdLead`,
+  `canSeeDeals`); nav via `navForRole(profile)`.

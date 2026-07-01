@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { BD_DEPARTMENT, CRM_PREFIX, CRM_DEALS_PREFIX } from "@/lib/crm/access";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 const ADMIN_PREFIX = "/admin";
@@ -51,7 +52,7 @@ export async function updateSession(request: NextRequest) {
   if (user && !isPublic) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, status")
+      .select("role, status, department")
       .eq("id", user.id)
       .single();
 
@@ -64,11 +65,29 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    const isAdmin = profile.role === "admin" || profile.role === "super_admin";
+
     // Role gating for /admin/* — employees are redirected away.
     if (path.startsWith(ADMIN_PREFIX) && profile.role === "employee") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
+    }
+
+    // CRM gating for /crm/* — only Business-Development employees + admins/super-admins.
+    if (path.startsWith(CRM_PREFIX)) {
+      const isBD = isAdmin || profile.department === BD_DEPARTMENT;
+      if (!isBD) {
+        const url = request.nextUrl.clone();
+        url.pathname = profile.role === "employee" ? "/dashboard" : "/admin/dashboard";
+        return NextResponse.redirect(url);
+      }
+      // Deals are admin/super-admin only.
+      if (path.startsWith(CRM_DEALS_PREFIX) && !isAdmin) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/crm/profiles";
+        return NextResponse.redirect(url);
+      }
     }
   }
 

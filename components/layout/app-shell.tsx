@@ -12,7 +12,7 @@ function titleFromPath(path: string): string {
 
 export function AppShell({ profile, children }: { profile: Profile; children: React.ReactNode }) {
   const pathname = usePathname();
-  const items = navForRole(profile.role);
+  const items = navForRole(profile);
   return (
     <div className="flex min-h-screen bg-surface">
       <Sidebar items={items} role={profile.role} />

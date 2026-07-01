@@ -42,3 +42,15 @@ its **owner BD**. Replaces the Drive `Profiles/` folder + `Profiles-Credentials`
 ## Relationships
 Referenced by [interviews](interviews.md), [assessments](assessments.md), [leads-deals](leads-deals.md).
 Access model → [access.md](access.md). Audited → [activity-log.md](activity-log.md).
+
+## As-built (Plan 01, 2026-07-01) — shipped
+- Tables: `dev_stacks`, `dev_profiles`, `dev_profile_secrets` (**not audited** — keeps the password out
+  of `audit_log`), `dev_profile_documents` (one primary resume via partial unique index). Migration `0011`.
+- Storage: private **`crm-docs`** bucket; upload `POST /api/crm/profiles/[id]/documents` (admin);
+  download `GET /api/crm/documents/[docId]/download` → RLS-checked short-lived **signed URL**, logged as
+  an `audit_log` `download` event. Delete + set-primary via `/api/crm/documents/[docId]`.
+- Service `lib/services/dev-profiles.ts`; routes under `app/api/crm/*`; UI at `app/(app)/crm/profiles`
+  (grid + `[id]` detail + `new`), components `components/crm/{profile-form,password-panel,documents-panel}`.
+- Verified: `npm run report` all-PASS + 3 E2E tests (`tests/e2e/crm.spec.ts`) + screenshots (admin sees
+  password/edit/upload; BD sees only own, no password/edit; non-BD blocked from `/crm`).
+- Demo data: `node scripts/seed-crm.mjs` (3 profiles).

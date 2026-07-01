@@ -23,6 +23,14 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   total = sum of completed sessions, via reworked `compute_attendance_hours` + `recompute_attendance_day`
   trigger), `profiles.contract_type` (permanent|probation), `admin_notifications` (probation/
   payslip/birthday, dedup_key), `holidays.type`, `announcements.body_text`.
+- `0010_crm_access.sql` — **CRM access foundation**: `departments` lookup (+seed, backfill from the
+  free-text `profiles.department`); `profiles.department_id`, **`is_bd_lead`**, **`is_developer`**;
+  `guard_profile_privileged_cols()` BEFORE-UPDATE trigger (non-admins can't self-edit role/status/
+  department/CRM flags); `auth_department()`, **`auth_is_bd()`** (keyed on the text `department` for a
+  single drift-free source), **`auth_is_bd_lead()`**; departments RLS + audit trigger.
+- `0011_crm_profiles.sql` — **CRM Profiles**: `dev_stacks` (+seed), `dev_profiles`,
+  `dev_profile_secrets` (account password; **not audited**), `dev_profile_documents` (resume|
+  cover_letter; one primary resume via partial unique index); RLS + audit triggers.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
@@ -71,6 +79,22 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `/api/audit/login`). **Super-admin read only.**
 - **announcements, holidays, documents, alerts_log, company_settings** — supporting.
 
+### CRM tables (0010–0011)
+- **departments** — id, name (unique), sort_order, is_active. Lookup; `profiles.department_id` FK.
+  RLS: read all; write admin/super. (profiles also gained **`is_bd_lead`**, **`is_developer`**.)
+- **dev_stacks** — id, name (unique), sort_order, is_active. Extendable stack lookup. RLS: read any
+  authenticated; write admin/super.
+- **dev_profiles** — id, name, stack_id→dev_stacks, **owner_bd_id→profiles** (a BD; null=Unassigned),
+  email, mobile, dob, status(active|inactive), notes ("LinkedIn banned" lives here). A standalone
+  marketing identity (no person FK). RLS: **BD sees own (owner=self); BD-Lead+admin see all**;
+  create/edit/assign admin/super only. Audited.
+- **dev_profile_secrets** — dev_profile_id (PK/FK), account_password, updated_by. **admin/super only**
+  (never BD). **Not audited** (keeps the password out of `audit_log`).
+- **dev_profile_documents** — id, dev_profile_id, doc_type(resume|cover_letter), label, is_primary,
+  file_path (private `crm-docs` bucket), file_name, uploaded_by. One primary resume per profile
+  (partial unique index). RLS: same visibility as parent profile; write admin/super. Audited.
+  Downloads are logged as `audit_log` action=`download` from the download route.
+
 ## Functions & triggers
 - `compute_attendance_hours()` (BEFORE INSERT/UPDATE on attendance) — computes total/deficit/extra
   from check-in/out vs expected; **non-netting** (deficit & extra independent). Mirrors `lib/hours.ts`.
@@ -78,19 +102,30 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   payroll & reports.
 - `handle_new_user()` — inserts a profile row when an auth user is created.
 - `auth_role()` — caller's role (security definer) used by RLS.
+- `auth_is_bd()` / `auth_is_bd_lead()` / `auth_department()` — CRM access helpers (security definer).
+  `auth_is_bd()` = admin/super OR text `department='Business Development'`; `auth_is_bd_lead()` = admin/
+  super OR `is_bd_lead`.
+- `guard_profile_privileged_cols()` — BEFORE UPDATE on profiles; blocks a non-admin actor from changing
+  role/status/department_id/is_bd_lead/is_developer (service-role + admins pass). Closes the self-update
+  escalation hole (the self-update policy has no column check — used for avatar).
 - `set_updated_at()` — on all tables with updated_at.
 
 ## RLS summary
 - profiles: read all; update self or admin; insert/delete admin.
 - attendance/leave_requests/leave_balances/shifts/documents/alerts: employee sees own; admin all.
 - **salary_structures, payroll_runs, compensation_components, payslip_components: super_admin ONLY.**
-- company_settings: read all; write super_admin. audit_log: admin read.
+- company_settings: read all; write super_admin. audit_log: super_admin read.
+- **CRM**: `dev_profiles`/`dev_profile_documents` — BD sees own (owner=self), BD-Lead+admin all, write
+  admin/super. `dev_profile_secrets` — admin/super only. `departments`/`dev_stacks` — read all, write
+  admin/super. CRM route gating in middleware: `/crm/*` = BD-or-admin, `/crm/deals` = admin/super.
 
 ## Storage
-- **Avatars** are stored in the public Supabase Storage bucket **`avatars`** (object key
-  `<employee_id>.<ext>`). Uploaded via `/api/upload/avatar` (service-role, after a self-or-admin
-  check); `profiles.avatar_url` holds the public URL. Bucket is created/verified by
-  `npm run storage:setup`. Serverless-safe (no local disk writes).
+- **Avatars** — public bucket **`avatars`** (key `<employee_id>.<ext>`), via `/api/upload/avatar`
+  (service-role, self-or-admin check); `profiles.avatar_url` = public URL.
+- **CRM docs** — **PRIVATE** bucket **`crm-docs`** (key `<dev_profile_id>/<uuid>.<ext>`) for resumes/
+  cover letters. Upload via `/api/crm/profiles/[id]/documents` (admin-only). Download via
+  `/api/crm/documents/[docId]/download` — RLS-checked, short-lived **signed URL**, audit-logged. Both
+  buckets created/verified by `npm run storage:setup`.
 
 ## Known caveats
 - Direct `DATABASE_URL` host is IPv6-only; tooling uses `SUPABASE_DB_URL` (session pooler, same DB).

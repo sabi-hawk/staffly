@@ -23,6 +23,9 @@ export interface Profile {
   employee_code: string | null;
   position: string | null;
   department: string | null;
+  department_id: string | null;
+  is_bd_lead: boolean;
+  is_developer: boolean;
   reports_to: string | null;
   employment_type: EmploymentType;
   contract_type: "permanent" | "probation";
@@ -32,6 +35,15 @@ export interface Profile {
   emergency_name: string | null;
   emergency_phone: string | null;
   emergency_relation: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
