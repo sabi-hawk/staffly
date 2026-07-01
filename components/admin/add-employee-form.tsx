@@ -17,7 +17,7 @@ const FIELDS: { key: string; label: string; type?: string; options?: string[]; r
   { key: "employment_type", label: "Work type", type: "select", options: ["onsite", "remote"] },
   { key: "contract_type", label: "Contract", type: "select", options: ["permanent", "probation"] },
   { key: "joining_date", label: "Joining date", type: "date" },
-  { key: "base_salary", label: "Base salary (PKR)", type: "number" },
+  { key: "base_salary", label: "Base salary (PKR) — 0 for commission-only", type: "number" },
 ];
 
 export function AddEmployeeForm() {

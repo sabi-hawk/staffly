@@ -16,6 +16,7 @@ import {
   MessageSquare,
   ClipboardCheck,
   Handshake,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
@@ -65,6 +66,7 @@ function crmNavFor(p: NavProfile): NavItem[] {
     { label: "CRM Leads", href: "/crm/leads", icon: Briefcase },
     { label: "Interviews", href: "/crm/interviews", icon: MessageSquare },
     { label: "Assessments", href: "/crm/assessments", icon: ClipboardCheck },
+    { label: "BD Performance", href: "/crm/analytics", icon: TrendingUp },
   ];
   if (canSeeDeals(p)) items.push({ label: "Deals", href: "/crm/deals", icon: Handshake });
   return items;

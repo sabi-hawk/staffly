@@ -78,7 +78,8 @@ export function CompensationEditor({
       <div className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
         <div className="space-y-1.5">
           <Label>Base salary (PKR)</Label>
-          <Input type="number" value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
+          <Input type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
+          <p className="text-caption text-text-secondary">Set 0 for commission-only staff — net pay is then just their compensation categories.</p>
         </div>
         <Button onClick={saveBase} disabled={savingBase}>{savingBase ? "Saving…" : "Update base salary"}</Button>
       </div>

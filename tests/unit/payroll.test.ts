@@ -29,6 +29,20 @@ describe("§14.2 payroll — pure logic", () => {
     expect(r.netPay).toBe(211600);
   });
 
+  it("Commission-only (base 0): net = commission + benefits, no base deduction", () => {
+    const r = computePayroll({
+      salaryType: "commission",
+      baseSalary: 0,
+      commissionAmount: 45000,
+      benefits: [{ label: "Medical", amount: 5000 }],
+      workingDays: 22,
+      unpaidDays: 3, // daily rate = 0/22 = 0, so unpaid days deduct nothing
+    });
+    expect(r.baseSalary).toBe(0);
+    expect(r.deductions).toBe(0);
+    expect(r.netPay).toBe(50000);
+  });
+
   it("Commission: base 60k, comm 45k → net = 105k + benefits − ded", () => {
     const r = computePayroll({
       salaryType: "commission",

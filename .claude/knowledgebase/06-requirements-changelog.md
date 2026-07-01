@@ -206,4 +206,12 @@ reflected in BD analytics ([FRD-02](frds/FRD-02-interviews.md)/[FRD-05](frds/FRD
   the portal's existing audit backbone (DB `record_audit()` triggers → `audit_log` + the super-admin Logs
   panel) into a comprehensive, well-designed module → new **[FRD-06](frds/FRD-06-activity-log.md)**.
 
+## 2026-07-02 — BD performance analytics + base-pay-zero (built)
+- **BD performance analytics** (FRD-05 Q1 / FRD-02): a **`/crm/analytics` "BD Performance"** page — per-BD
+  counts of active leads (disqualified excluded), disqualified, interviews, assessments, and deals
+  (admin-only column). RLS-scoped: a BD sees their own numbers; admin/BD-Lead see all. Nav entry added.
+- **Base pay = 0** (commission-only staff): confirmed it works end-to-end (add-employee, salary editor,
+  payroll `net = base + additions − deductions` with base 0 → net = compensation; unpaid-day deduction = 0
+  since daily-rate = base/working-days = 0). Made explicit in the UI (labels/help text) + a payroll unit test.
+
 <!-- New requirements go below this line. -->
