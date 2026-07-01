@@ -42,8 +42,10 @@ Also run any built-in code/security review. Fix clear gaps; ask the owner about 
 {{How to actually exercise the change (drive the UI / hit the API / inspect output) and read the result.}}
 
 ## 8. Sync the knowledge base
-Update the database index (on schema change) + the relevant module doc + the requirements log — in the
-**same** change as the code.
+Update the database index (on schema change) + the relevant **`knowledgebase/modules/<module>`** doc
+(fold in the durable "how it works now") + the requirements log — in the **same** change as the code.
+If the change came from an FRD, leave the FRD as the requirements-of-record and move its knowledge into
+the module doc.
 
 ## 9. Commit (+ push when asked)
 Commit per slice with a clear message. {{Push/PR policy.}}

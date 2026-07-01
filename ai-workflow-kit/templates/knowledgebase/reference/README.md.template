@@ -1,0 +1,18 @@
+# Reference — origin & provenance (read-once)
+
+These are the **starting-point** docs: what the project was when this knowledge base began, and the
+original source material. They're kept for **provenance** ("where it started / what was first asked"),
+not day-to-day working docs. Current, living knowledge lives in [`../modules/`](../modules/modules.md);
+agreed per-feature requirements live in [`../frds/`](../frds/README.md).
+
+Suggested contents (fill from the project; drop what doesn't apply):
+| File | What it is |
+|------|-----------|
+| `product-overview.md` | The initial product overview (origin snapshot). |
+| `architecture-and-conventions.md` | Stack, structure, data-flow, conventions (foundational). |
+| `business-rules.md` | The original non-negotiables / invariants. |
+| `testing-and-validation.md` | The testing/verification approach. |
+| `source/` | Original briefs, PRDs, imported specs, brand assets. |
+
+> As modules evolve, their *current* truth is documented in `../modules/<module>` — not here. Update
+> these only if the origin record itself needs correcting.

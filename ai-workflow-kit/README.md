@@ -22,7 +22,7 @@ ai-workflow-kit/
     ├── rules/                (security · testing · conventions · git)
     ├── agents/               (context-gatherer · security-reviewer · quality-reviewer · professional-qa)
     ├── skills/               (feature-workflow · db-change · browser-verify · find-skills)
-    ├── knowledgebase/        (README.template — one folder/doc per module; frds/ for large initiatives)
+    ├── knowledgebase/        (3-part KB: modules/ durable truth · frds/ requirement specs · reference/ origin)
     ├── database/             (database.md.template — schema index)
     └── plans/                (README — optional lightweight plan lifecycle)
 ```
@@ -39,9 +39,10 @@ ai-workflow-kit/
 That's it. The result is a project that any future Claude session can pick up with full context.
 
 ## The core ideas (why this works)
-- **Knowledge base = single source of truth.** Durable product/architecture/business knowledge lives
-  in `.claude/knowledgebase/` + `.claude/database/`, updated in the *same change* as the code — so
-  context is never lost between sessions.
+- **Knowledge base = single source of truth, in three parts.** `modules/` holds the durable "how each
+  module works now" (the real KB), `frds/` holds per-feature requirement specs that mature before
+  becoming plans, and `reference/` holds origin/provenance. Updated in the *same change* as the code —
+  so context is never lost between sessions. (Schema lives in `.claude/database/`.)
 - **A repeatable loop** (the `feature-workflow` skill): capture → ground in the KB → decide →
   implement small slices → self-test → review with subagents → verify in a browser → sync the KB → commit.
 - **Guardrails as code**: hooks block secret writes; rules encode the non-negotiables; review agents

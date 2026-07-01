@@ -6,7 +6,9 @@ works, and keeps the knowledge base current.** No FRDs/tickets required.
 
 ## 1. Mental model
 1. **The knowledge base is the source of truth** (`.claude/knowledgebase/` + `.claude/database/`),
-   read before work and updated in the *same change* as the code — so any session resumes with full context.
+   read before work and updated in the *same change* as the code — so any session resumes with full
+   context. It has three parts: **`modules/`** (durable "how it works now"), **`frds/`** (per-feature
+   requirement specs that mature before becoming plans), and **`reference/`** (origin/provenance).
 2. **Every change runs one loop** (the `feature-workflow` skill): capture → ground → decide →
    implement → self-test → review → verify → sync KB → commit.
 3. **Lightweight by default** — requirements come from you in chat; ceremony is added only when the work justifies it.
@@ -31,8 +33,8 @@ works, and keeps the knowledge base current.** No FRDs/tickets required.
   INSTRUCTIONS ─▶ changelog ─▶ [FRD: Draft→InReview→Approved] ─▶ plans/upcoming/ ─▶ plans/inprogress/ (+tasks.md) ─▶ plans/done/
   ```
   Gates Claude asks at: (1) "mark this FRD Approved?" (multi-module only) (2) "shall I promote it to a
-  plan?" (3) "move it to in-progress and start?". On completion, durable knowledge folds into the KB and
-  the folder moves to `done/`.
+  plan?" (3) "move it to in-progress and start?". On completion, durable knowledge folds into
+  `knowledgebase/modules/` (the FRD stays as the requirements-of-record) and the plan folder moves to `done/`.
 
 ## 4. How to phrase a request
 Describe the **problem and the outcome**, not the implementation. Claude asks clarifying questions,

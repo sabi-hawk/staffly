@@ -1,0 +1,22 @@
+# Modules — durable knowledge (current truth)
+
+One folder/doc per **business module**: how it works now, the rules/checks that must hold, its data
+model, and key flows — everything an agent needs to build or extend it **without re-deriving context**.
+
+> **This is the living knowledge base.** FRDs (`../frds/`) are the *agreed requirements* per feature;
+> **module docs here are the durable "how it works"**. When a plan ships, its lasting knowledge is folded
+> into the relevant module doc + `../../database/database.md`. The FRD stays as the requirements-of-record.
+> Origin/provenance (initial overview, architecture, v1 rules, source) lives in `../reference/`.
+
+## How to use
+- **Building/extending a module?** Read its doc here first, then its FRD (for the agreed scope) and
+  `../../database/database.md` (for schema). Update this doc in the **same change** as the code.
+- Keep docs **descriptive of current truth**; put change/delivery detail in `../../plans/`.
+
+## Index
+| Module | Doc | FRD (if any) | Notes |
+|--------|-----|--------------|-------|
+| {{module}} | [{{module}}/README.md]({{module}}/README.md) | — | {{one-line}} |
+
+> Fill one row per real module (seed from the actual codebase). A module folder holds its `README.md`
+> (how it works now), plus `data-model`, `business-rules`, and any sub-feature docs as needed.

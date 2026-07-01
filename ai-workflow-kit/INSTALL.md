@@ -37,8 +37,10 @@ don't apply (e.g. no DB → skip `database/` + `db-change`; no browser UI → sk
 ├── rules/                 ← security · testing · conventions · git (rewrite to this project's truth)
 ├── agents/                ← context-gatherer + the review agents (adapt tools/model + checklists)
 ├── skills/                ← feature-workflow (your core loop) + db-change / browser-verify / find-skills as relevant
-├── knowledgebase/         ← README + ONE doc/folder per real module (fill from the codebase, Step 4)
-│   └── frds/              ← per-module requirement specs for large initiatives (keep if multi-module work is expected; else drop)
+├── knowledgebase/         ← README (3-part index) + the changelog (fill from the codebase, Step 4)
+│   ├── modules/           ← DURABLE per-module "how it works now" — the real KB (one doc/folder per module)
+│   ├── frds/              ← per-feature requirement specs for large initiatives (keep if multi-module work is expected; else drop)
+│   └── reference/         ← origin/provenance: initial overview, architecture, v1 rules, source (keep if such material exists)
 ├── database/database.md   ← schema index (skip if no DB)
 └── plans/                 ← README + backlog/upcoming/inprogress/done (keep empty; optional)
 ```
@@ -48,8 +50,9 @@ human's operating manual for the workflow. Add the secrets/credentials patterns 
 
 ## Step 4 — Seed the knowledge base from reality
 This is the highest-value step. Populate `.claude/knowledgebase/` and `.claude/database/database.md`
-by reading the actual code — product overview, architecture & conventions, the **business rules that
-must never break**, the data model, and how to test. Cite real file paths. A knowledge base that
+by reading the actual code. Put the **durable "how it works now"** per module in `modules/<module>`
+(the real KB); put origin material (initial overview, architecture, the **rules that must never break**,
+imported specs) in `reference/`. Cite real file paths. A knowledge base that
 mirrors the repo is what lets future sessions start grounded instead of re-deriving everything.
 
 ## Step 5 — Wire up & verify

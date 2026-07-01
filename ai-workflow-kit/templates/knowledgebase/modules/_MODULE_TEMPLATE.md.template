@@ -1,0 +1,24 @@
+# {{Module name}}
+
+Durable "how it works now" for this module (current truth). Requirements-of-record: {{link to FRD if any}}.
+Delivery history: {{link to plan(s)}}. Schema: `../../database/database.md`.
+
+## What it is
+One paragraph: the module's purpose and where it fits.
+
+## Data model
+Key entities, important fields, relationships (link to `database.md` for full schema). Note access-control
+scoping per table.
+
+## Business rules
+The rules/checks/conditions that MUST hold (validation, calculations, state transitions). These are the
+things a change must never regress — write them explicitly.
+
+## Permissions
+Who can read/write what; how it's enforced (the project's defense-in-depth layers).
+
+## Key flows / screens
+The main user journeys + the screens/endpoints that serve them.
+
+## Relationships
+Which other modules this depends on or feeds. Link to their docs.
