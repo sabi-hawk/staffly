@@ -20,3 +20,22 @@ export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
     .from("profiles").select("id, full_name").eq("department", "Business Development").order("full_name");
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name }));
 }
+
+export async function leadOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  // Active opportunities only — a deal shouldn't attach to a disqualified/lost/cancelled lead.
+  const { data } = await supabase
+    .from("leads").select("id, company, role")
+    .in("status", ["open", "interviewing", "assessment", "won"])
+    .order("created_at", { ascending: false });
+  return (data ?? []).map((l: any) => ({ id: l.id, label: l.role ? `${l.company} — ${l.role}` : l.company }));
+}
+
+export async function accountOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  const { data } = await supabase.from("receiving_accounts").select("id, holder_name, bank_name").eq("is_active", true).order("holder_name");
+  return (data ?? []).map((a: any) => ({ id: a.id, label: a.bank_name ? `${a.holder_name} — ${a.bank_name}` : a.holder_name }));
+}
+
+export async function methodOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  const { data } = await supabase.from("payment_methods").select("id, name").eq("is_active", true).order("sort_order");
+  return (data ?? []).map((m: any) => ({ id: m.id, label: m.name }));
+}

@@ -40,7 +40,17 @@ Schema: `../../../database/database.md`.
 `CRM → Leads` (BD own pipeline by status; admin/BD-Lead all) with disqualify action. `CRM → Deals`
 (admin): list + detail with documents; "close → deal" action on a won lead; manage accounts/methods.
 
-## As-built (Plan 02, 2026-07-01) — **Leads shipped** (Deals = Plan 03, not yet built)
+## As-built (Plan 03, 2026-07-02) — **Deals shipped**
+- Tables `deals`, `deal_documents`, `receiving_accounts`, `payment_methods` (migration `0014`).
+  **admin/super-admin only** (payment_methods lookup readable by any authenticated). Salary = numeric PKR
+  (shown via `formatPKR`). Deal docs in private `crm-docs` bucket (`deals/<id>/…`), signed-URL + audit-logged.
+- UI: `/crm/deals` (list), `/crm/deals/new` (prefill from `?lead=`), `/crm/deals/[id]` (detail + docs +
+  edit), `/crm/deals/settings` (manage receiving accounts + payment methods). Admin-only **"Create deal
+  from this lead"** button on the lead detail. Nav "Deals" shown only to admin/super (`canSeeDeals`).
+- Service `lib/services/crm-deals.ts`; routes `app/api/crm/{deals,deal-documents,receiving-accounts,payment-methods}/*`.
+- Deferred (FRD-04 §13): BD-commission-from-deals, client invoicing.
+
+## As-built (Plan 02, 2026-07-01) — **Leads shipped**
 - Table `leads` (migration `0013`), owner-scoped RLS. Status open/interviewing/assessment/won/lost/
   **disqualified**; disqualify (BD+admin) sets category + note (`disqualify-panel.tsx`), re-qualify by
   the owner/admin; both audited. UI: `/crm/leads` (pipeline + new), `/crm/leads/[id]` (info + disqualify

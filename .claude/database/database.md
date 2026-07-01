@@ -36,6 +36,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0013_crm_leads_activity.sql` — **CRM Leads/Interviews/Assessments**: `leads`, `interviews`,
   `assessments`, `assessment_documents`; **owner-scoped** RLS (BD manages own; BD-Lead/admin all) + audit
   + updated_at triggers.
+- `0014_crm_deals.sql` — **CRM Deals** (admin/super-admin only): `receiving_accounts`, `payment_methods`
+  (+seed), `deals`, `deal_documents`; RLS (deals/docs/accounts = admin/super only; payment_methods =
+  read-any, write-admin) + audit + updated_at.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
@@ -114,6 +117,15 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `crm-docs` bucket), file_name, uploaded_by. Downloads audit-logged.
   RLS for leads/interviews/assessments/(their docs): **owner-scoped** — `auth_is_bd_lead() OR
   (owner_bd_id = auth.uid() AND auth_is_bd())`; a BD manages only their own, BD-Lead/admin manage all.
+- **deals** — id, lead_id→leads, designation, joining_date, dev_profile_id, working_developer→profiles,
+  salary (numeric PKR), receiving_account_id→receiving_accounts, payment_method_id→payment_methods,
+  profile_dob, status(active|ended|cancelled). **admin/super-admin ONLY.**
+- **receiving_accounts** — id, holder_name, bank_name, account_number, notes, is_active. Managed list of
+  company accounts. **admin/super-admin only** (sensitive financial).
+- **payment_methods** — id, name (unique), sort_order, is_active. Extendable lookup (+seed Direct bank/
+  Payoneer/Wise/Other). Read by any authenticated; write admin/super.
+- **deal_documents** — id, deal_id, label, file_path (private `crm-docs` bucket, `deals/<id>/…`),
+  file_name, uploaded_by. **admin/super only**; downloads audit-logged.
 
 ## Functions & triggers
 - `compute_attendance_hours()` (BEFORE INSERT/UPDATE on attendance) — computes total/deficit/extra

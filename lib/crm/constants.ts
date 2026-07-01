@@ -29,7 +29,10 @@ export function statusTone(v: string | null | undefined): "success" | "warning" 
     case "won":
     case "selected":
     case "completed":
+    case "active":
       return "success";
+    case "ended":
+      return "warning";
     case "rejected":
     case "lost":
     case "cancelled":

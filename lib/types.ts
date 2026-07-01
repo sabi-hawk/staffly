@@ -63,6 +63,40 @@ export interface Lead {
   updated_at: string;
 }
 
+export interface ReceivingAccount {
+  id: string;
+  holder_name: string;
+  bank_name: string | null;
+  account_number: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface Deal {
+  id: string;
+  lead_id: string | null;
+  designation: string | null;
+  joining_date: string | null;
+  dev_profile_id: string | null;
+  working_developer: string | null;
+  salary: number | null;
+  receiving_account_id: string | null;
+  payment_method_id: string | null;
+  profile_dob: string | null;
+  status: "active" | "ended" | "cancelled";
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Interview {
   id: string;
   lead_id: string | null;

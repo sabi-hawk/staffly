@@ -78,6 +78,18 @@ async function main() {
       status: "pending", priority: "high", duration: "1h", completed_by: dev,
     });
     console.log("seeded demo lead + interview + assessment (DemoCorp → Shaiza)");
+
+    // Demo deal (admin-only) from the DemoCorp lead.
+    await admin.from("receiving_accounts").delete().eq("holder_name", "Demo Holder");
+    const { data: acct } = await admin.from("receiving_accounts")
+      .insert({ holder_name: "Demo Holder", bank_name: "Demo Bank", account_number: "PK00DEMO0000" }).select("id").single();
+    const { data: pm } = await admin.from("payment_methods").select("id").eq("name", "Wise").maybeSingle();
+    await admin.from("deals").delete().eq("lead_id", lead.id);
+    await admin.from("deals").insert({
+      lead_id: lead.id, designation: "Senior Full Stack", dev_profile_id: sabahat.id, working_developer: dev,
+      salary: 750000, receiving_account_id: acct?.id ?? null, payment_method_id: pm?.id ?? null, status: "active",
+    });
+    console.log("seeded demo deal (DemoCorp)");
   }
   console.log("CRM demo seed done ✅");
 }

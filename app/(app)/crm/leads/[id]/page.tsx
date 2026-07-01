@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isBdLead } from "@/lib/crm/access";
+import { isBdLead, isAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { crmProfileOptions, developerOptions, bdOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { LeadForm } from "@/components/crm/lead-form";
@@ -59,7 +60,12 @@ export default async function LeadDetail({ params }: { params: { id: string } })
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle>{lead.company}{lead.role ? ` · ${lead.role}` : ""}</CardTitle>
-          <Badge tone={statusTone(lead.status)}>{labelize(lead.status)}</Badge>
+          <div className="flex items-center gap-2">
+            {isAdminRole(me.role) && (
+              <Button asChild size="sm" variant="outline"><Link href={`/crm/deals/new?lead=${lead.id}`}>Create deal</Link></Button>
+            )}
+            <Badge tone={statusTone(lead.status)}>{labelize(lead.status)}</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">

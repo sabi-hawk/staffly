@@ -6,7 +6,7 @@
 | **Module** | CRM · Leads & Deals |
 | **Created** | 2026-06-30 |
 | **Updated** | 2026-07-01 |
-| **Plan** | [02-crm-activity](../../plans/done/02-crm-activity/plan.md) (leads) + [03-crm-deals](../../plans/upcoming/03-crm-deals/plan.md) (deals) |
+| **Plan** | [02-crm-activity](../../plans/done/02-crm-activity/plan.md) (leads) + [03-crm-deals](../../plans/done/03-crm-deals/plan.md) (deals) |
 | **Changelog refs** | 2026-06-30 (CRM business model + first batch) |
 
 > A **lead** is one job opportunity (company + role) a BD is pursuing for a profile — the thread that
