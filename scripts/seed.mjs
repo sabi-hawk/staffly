@@ -2,6 +2,7 @@
 // (2) run supabase/seed.sql, (3) print a verification table of computed hours (§14.6).
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 import pg from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { dbUrl, loadEnv, ROOT } from "./lib/env.mjs";
@@ -146,6 +147,15 @@ async function main() {
   console.log(`\n   canonical dataset correct: ${ok ? "YES ✅" : "NO ❌"}`);
 
   await client.end();
+
+  // CRM demo data (dev_profiles for BDs, is_developer flags on engineers, a DemoCorp lead + interview +
+  // assessment + deal) — keeps the CRM testable and the CRM E2E self-sufficient. Idempotent; non-fatal.
+  try {
+    execSync("node scripts/seed-crm.mjs", { cwd: ROOT, stdio: "inherit" });
+  } catch (e) {
+    console.warn("CRM demo seed failed (non-fatal):", e.message);
+  }
+
   console.log("\nDone. Logins:");
   console.log(`  Super Admin (email): super.admin@softonoma.com  /  ${SUPER_ADMIN_PW}`);
   console.log(`  Admin / HR  (email): admin@softonoma.com        /  ${ADMIN_PW}`);

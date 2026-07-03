@@ -18,9 +18,11 @@ async function main() {
     .eq("department", "Business Development");
   const owner = (name) => bds.find((b) => b.full_name === name)?.id ?? null;
 
-  // (name, stack, owner-BD) — a couple owned, one unassigned.
+  // (name, stack, owner-BD) — Shaiza owns three (for BD-view testing), one for Areeba, one unassigned.
   const rows = [
     { name: "Sabahat Atique", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.sabahat@example.com", mobile: "0300-0000001" },
+    { name: "Bilal Khan", stack: "Backend", ownerName: "Shaiza Maheen", email: "demo.bilal@example.com", mobile: "0300-0000004" },
+    { name: "Hina Raza", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.hina@example.com", mobile: "0300-0000005" },
     { name: "Ali Ahmad", stack: "Backend", ownerName: "Areeba Zaidi", email: "demo.ali@example.com", mobile: "0300-0000002", notes: "LinkedIn banned" },
     { name: "Atique Latif", stack: "Data Engineer", ownerName: null, email: "demo.atique@example.com", mobile: "0300-0000003" },
   ];
