@@ -58,14 +58,14 @@ export function DisqualifyPanel({
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="space-y-1.5">
-        <Label>Reason</Label>
-        <select className={selectCls} value={cat} onChange={(e) => setCat(e.target.value)}>
+        <Label htmlFor="disqualify-reason">Reason</Label>
+        <select id="disqualify-reason" className={selectCls} value={cat} onChange={(e) => setCat(e.target.value)}>
           {DISQUALIFY_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5 flex-1 min-w-[200px]">
-        <Label>Note *</Label>
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Why isn't this a real lead?" />
+        <Label htmlFor="disqualify-note">Note *</Label>
+        <Input id="disqualify-note" value={text} onChange={(e) => setText(e.target.value)} placeholder="Why isn't this a real lead?" />
       </div>
       <Button
         variant="outline"

@@ -41,8 +41,9 @@ export function LeaveApplyForm() {
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label htmlFor="apply-type">Type</Label>
               <select
+                id="apply-type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
@@ -53,16 +54,16 @@ export function LeaveApplyForm() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label>Reason</Label>
-              <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional" />
+              <Label htmlFor="apply-reason">Reason</Label>
+              <Input id="apply-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional" />
             </div>
             <div className="space-y-1.5">
-              <Label>Start</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} required />
+              <Label htmlFor="apply-start">Start</Label>
+              <Input id="apply-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label>End</Label>
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} required />
+              <Label htmlFor="apply-end">End</Label>
+              <Input id="apply-end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} required />
             </div>
           </div>
           <p className="text-caption text-text-secondary">

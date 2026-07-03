@@ -88,8 +88,8 @@ export function PayrollClient({
         <CardHeader><CardTitle>Generate payroll</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5"><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label htmlFor="payroll-from">From</Label><Input id="payroll-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label htmlFor="payroll-to">To</Label><Input id="payroll-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
             <Button onClick={generate} disabled={busy}>{busy ? "Generating…" : "Generate / refresh drafts"}</Button>
           </div>
         </CardContent>
@@ -99,11 +99,11 @@ export function PayrollClient({
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0">
           <CardTitle>Payroll runs &amp; payments</CardTitle>
           <div className="flex gap-2">
-            <select value={empFilter} onChange={(e) => setEmpFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
+            <select aria-label="Filter by employee" value={empFilter} onChange={(e) => setEmpFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
               <option value="">All employees</option>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
             </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
+            <select aria-label="Filter by status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
               <option value="all">All statuses</option>
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
@@ -208,12 +208,12 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
               ))}
               {run.status === "draft" && (
                 <div className="flex flex-wrap items-end gap-2 pt-1">
-                  <Input placeholder="label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} className="h-8 w-40" />
-                  <Input placeholder="amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} className="h-8 w-28" />
-                  <select value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
+                  <Input aria-label="Line label" placeholder="label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} className="h-8 w-40" />
+                  <Input aria-label="Line amount" placeholder="amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} className="h-8 w-28" />
+                  <select aria-label="Line type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
                     <option value="addition">Addition</option><option value="deduction">Deduction</option>
                   </select>
-                  <Input placeholder="description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} className="h-8 w-48" />
+                  <Input aria-label="Line description" placeholder="description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} className="h-8 w-48" />
                   <Button size="sm" onClick={() => { onAddLine(run.id, nl.label, nl.amount, nl.kind, nl.description); setNl({ label: "", amount: "", kind: "addition", description: "" }); }}>Add line</Button>
                 </div>
               )}

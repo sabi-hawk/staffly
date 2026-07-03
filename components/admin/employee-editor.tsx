@@ -50,9 +50,10 @@ export function EmployeeEditor({ profile }: { profile: Profile }) {
     <form onSubmit={save} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {fields.map((f) => (
         <div key={String(f.key)} className="space-y-1.5">
-          <Label>{f.label}</Label>
+          <Label htmlFor={`emp-${String(f.key)}`}>{f.label}</Label>
           {f.type === "select" ? (
             <select
+              id={`emp-${String(f.key)}`}
               value={form[f.key as string]}
               onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
               className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm capitalize"
@@ -63,6 +64,7 @@ export function EmployeeEditor({ profile }: { profile: Profile }) {
             </select>
           ) : (
             <Input
+              id={`emp-${String(f.key)}`}
               type={f.type ?? "text"}
               value={form[f.key as string]}
               onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}

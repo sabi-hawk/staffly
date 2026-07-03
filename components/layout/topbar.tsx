@@ -1,9 +1,17 @@
 "use client";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export function Topbar({ title, fullName }: { title: string; fullName: string }) {
+export function Topbar({
+  title,
+  fullName,
+  onMenuClick,
+}: {
+  title: string;
+  fullName: string;
+  onMenuClick?: () => void;
+}) {
   const router = useRouter();
   const initials = fullName
     .split(" ")
@@ -19,7 +27,14 @@ export function Topbar({ title, fullName }: { title: string; fullName: string })
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-card/80 px-6 backdrop-blur">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-card/80 px-4 backdrop-blur sm:px-6">
+      <button
+        onClick={onMenuClick}
+        className="rounded-md p-2 text-text-secondary hover:bg-surface md:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="size-5" />
+      </button>
       <h1 className="text-h2 text-text-primary">{title}</h1>
       <div className="ml-auto flex items-center gap-3">
         <div className="hidden items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-caption text-text-secondary md:flex">

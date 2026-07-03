@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Input } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { RANGE_LABELS, type RangeKey } from "@/lib/time";
 
@@ -32,9 +32,10 @@ export function AttendanceControls({
 
   return (
     <div className="flex flex-wrap items-end gap-4">
-      <label className="space-y-1.5">
-        <span className="block text-caption font-medium text-text-primary">Employee</span>
+      <div className="space-y-1.5">
+        <Label htmlFor="att-employee" className="block text-caption font-medium text-text-primary">Employee</Label>
         <select
+          id="att-employee"
           value={employeeId}
           onChange={(e) => set({ employeeId: e.target.value })}
           className="h-9 rounded-md border border-border bg-white px-3 text-sm"
@@ -46,7 +47,7 @@ export function AttendanceControls({
             </option>
           ))}
         </select>
-      </label>
+      </div>
 
       <div className="space-y-1.5">
         <span className="block text-caption font-medium text-text-primary">Range</span>
@@ -68,14 +69,14 @@ export function AttendanceControls({
 
       {range === "custom" && (
         <div className="flex items-end gap-2">
-          <label className="space-y-1.5">
-            <span className="block text-caption font-medium text-text-primary">From</span>
-            <Input type="date" defaultValue={from} onChange={(e) => set({ from: e.target.value })} />
-          </label>
-          <label className="space-y-1.5">
-            <span className="block text-caption font-medium text-text-primary">To</span>
-            <Input type="date" defaultValue={to} onChange={(e) => set({ to: e.target.value })} />
-          </label>
+          <div className="space-y-1.5">
+            <Label htmlFor="att-from" className="block text-caption font-medium text-text-primary">From</Label>
+            <Input id="att-from" type="date" defaultValue={from} onChange={(e) => set({ from: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="att-to" className="block text-caption font-medium text-text-primary">To</Label>
+            <Input id="att-to" type="date" defaultValue={to} onChange={(e) => set({ to: e.target.value })} />
+          </div>
         </div>
       )}
     </div>

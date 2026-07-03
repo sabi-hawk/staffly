@@ -119,7 +119,7 @@ export function DocumentsPanel({
       {canManage && (
         <form onSubmit={upload} className="flex flex-wrap items-end gap-2 border-t border-border pt-4">
           <div className="space-y-1.5">
-            <Label>File</Label>
+            <Label htmlFor="crm-doc-file">File</Label>
             <input
               id="crm-doc-file"
               type="file"
@@ -129,15 +129,15 @@ export function DocumentsPanel({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Type</Label>
-            <select className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume" | "cover_letter")}>
+            <Label htmlFor="crm-doc-type">Type</Label>
+            <select id="crm-doc-type" className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume" | "cover_letter")}>
               <option value="resume">Resume</option>
               <option value="cover_letter">Cover letter</option>
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label>Label</Label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Full Stack" className="w-40" />
+            <Label htmlFor="crm-doc-label">Label</Label>
+            <Input id="crm-doc-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Full Stack" className="w-40" />
           </div>
           {docType === "resume" && (
             <label className="flex h-9 items-center gap-1.5 text-sm">

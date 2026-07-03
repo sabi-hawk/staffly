@@ -67,44 +67,44 @@ export function AssessmentForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1.5"><Label>Job title</Label><Input value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Company</Label><Input value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-job-title">Job title</Label><Input id="assessment-job-title" value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-company">Company</Label><Input id="assessment-company" value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
-        <select className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
+        <Label htmlFor="assessment-status">Status</Label>
+        <select id="assessment-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           {ASSESSMENT_STATUS.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Priority</Label>
-        <select className={`${selectCls} capitalize`} value={form.priority} onChange={(e) => set("priority", e.target.value)}>
+        <Label htmlFor="assessment-priority">Priority</Label>
+        <select id="assessment-priority" className={`${selectCls} capitalize`} value={form.priority} onChange={(e) => set("priority", e.target.value)}>
           {PRIORITIES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Duration</Label>
-        <select className={selectCls} value={form.duration} onChange={(e) => set("duration", e.target.value)}>
+        <Label htmlFor="assessment-duration">Duration</Label>
+        <select id="assessment-duration" className={selectCls} value={form.duration} onChange={(e) => set("duration", e.target.value)}>
           <option value="">—</option>
           {DURATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5"><Label>Entry date</Label><Input type="date" value={form.entry_date} onChange={(e) => set("entry_date", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Completion date</Label><Input type="date" value={form.completion_date} onChange={(e) => set("completion_date", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-entry-date">Entry date</Label><Input id="assessment-entry-date" type="date" value={form.entry_date} onChange={(e) => set("entry_date", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-deadline">Deadline</Label><Input id="assessment-deadline" type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-completion-date">Completion date</Label><Input id="assessment-completion-date" type="date" value={form.completion_date} onChange={(e) => set("completion_date", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label>Completed by (developer)</Label>
-        <select className={selectCls} value={form.completed_by} onChange={(e) => set("completed_by", e.target.value)}>
+        <Label htmlFor="assessment-completed-by">Completed by (developer)</Label>
+        <select id="assessment-completed-by" className={selectCls} value={form.completed_by} onChange={(e) => set("completed_by", e.target.value)}>
           <option value="">—</option>
           {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5"><Label>Budget</Label><Input value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $55-60/hr" /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Mail subject</Label><Input value={form.mail_subject} onChange={(e) => set("mail_subject", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Job post URL</Label><Input value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Assessment link</Label><Input value={form.assessment_link} onChange={(e) => set("assessment_link", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-4"><Label>Job description</Label><Input value={form.job_description} onChange={(e) => set("job_description", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Extra</Label><Input value={form.extra} onChange={(e) => set("extra", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-budget">Budget</Label><Input id="assessment-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $55-60/hr" /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="assessment-mail-subject">Mail subject</Label><Input id="assessment-mail-subject" value={form.mail_subject} onChange={(e) => set("mail_subject", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="assessment-job-post-url">Job post URL</Label><Input id="assessment-job-post-url" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="assessment-assessment-link">Assessment link</Label><Input id="assessment-assessment-link" value={form.assessment_link} onChange={(e) => set("assessment_link", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-4"><Label htmlFor="assessment-job-description">Job description</Label><Input id="assessment-job-description" value={form.job_description} onChange={(e) => set("job_description", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="assessment-notes">Notes</Label><Input id="assessment-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="assessment-extra">Extra</Label><Input id="assessment-extra" value={form.extra} onChange={(e) => set("extra", e.target.value)} /></div>
       <div className="sm:col-span-2 lg:col-span-4">
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : id ? "Save assessment" : "Add assessment"}</Button>
       </div>

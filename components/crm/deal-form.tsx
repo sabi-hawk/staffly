@@ -60,8 +60,8 @@ export function DealForm({
 
   const sel = (k: string, label: string, opts: Opt[], first = "—") => (
     <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <select className={selectCls} value={form[k]} onChange={(e) => set(k, e.target.value)}>
+      <Label htmlFor={`deal-${k}`}>{label}</Label>
+      <select id={`deal-${k}`} className={selectCls} value={form[k]} onChange={(e) => set(k, e.target.value)}>
         <option value="">{first}</option>
         {opts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
       </select>
@@ -73,15 +73,15 @@ export function DealForm({
       {sel("lead_id", "Lead", leads)}
       {sel("dev_profile_id", "Selected profile", profiles)}
       {sel("working_developer", "Working developer", developers)}
-      <div className="space-y-1.5"><Label>Designation</Label><Input value={form.designation} onChange={(e) => set("designation", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Joining date</Label><Input type="date" value={form.joining_date} onChange={(e) => set("joining_date", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Salary (PKR)</Label><Input type="number" value={form.salary} onChange={(e) => set("salary", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="deal-designation">Designation</Label><Input id="deal-designation" value={form.designation} onChange={(e) => set("designation", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="deal-joining_date">Joining date</Label><Input id="deal-joining_date" type="date" value={form.joining_date} onChange={(e) => set("joining_date", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="deal-salary">Salary (PKR)</Label><Input id="deal-salary" type="number" value={form.salary} onChange={(e) => set("salary", e.target.value)} /></div>
       {sel("receiving_account_id", "Receiving account", accounts)}
       {sel("payment_method_id", "Payment method", methods)}
-      <div className="space-y-1.5"><Label>Profile DOB</Label><Input type="date" value={form.profile_dob} onChange={(e) => set("profile_dob", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="deal-profile_dob">Profile DOB</Label><Input id="deal-profile_dob" type="date" value={form.profile_dob} onChange={(e) => set("profile_dob", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
-        <select className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
+        <Label htmlFor="deal-status">Status</Label>
+        <select id="deal-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>

@@ -52,10 +52,10 @@ export function DealDocuments({ dealId, docs }: { dealId: string; docs: DealDoc[
       ))}
       <form onSubmit={upload} className="flex flex-wrap items-end gap-2 border-t border-border pt-3">
         <div className="space-y-1.5">
-          <Label>File</Label>
+          <Label htmlFor={`ddoc-${dealId}`}>File</Label>
           <input id={`ddoc-${dealId}`} type="file" accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
         </div>
-        <div className="space-y-1.5"><Label>Label</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Contract" className="w-40" /></div>
+        <div className="space-y-1.5"><Label htmlFor="deal-doc-label">Label</Label><Input id="deal-doc-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Contract" className="w-40" /></div>
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Uploading…" : "Upload"}</Button>
       </form>
     </div>

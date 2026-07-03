@@ -4,21 +4,46 @@ import { getCurrentProfile } from "@/lib/auth";
 import { isAdminRole } from "@/lib/crm/access";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { DateRangeFilter } from "@/components/crm/date-range-filter";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Stat = { leads: number; disqualified: number; interviews: number; assessments: number; deals: number };
 
-export default async function CrmAnalyticsPage() {
+// Accept a real YYYY-MM-DD calendar date only (drop malformed/impossible values like 2024-99-99).
+const asDate = (v: string | undefined) => {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : undefined;
+};
+
+export default async function CrmAnalyticsPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string; to?: string };
+}) {
   const me = await getCurrentProfile();
   if (!me) redirect("/");
   const canSeeDeals = isAdminRole(me.role);
   const supabase = createClient();
 
+  const from = asDate(searchParams?.from);
+  const to = asDate(searchParams?.to);
+  // Bound each entity by its own created_at, at Asia/Karachi day edges (UTC+5, no DST) so the range
+  // matches the calendar days the user picked — a bare date would anchor to UTC midnight (05:00 PKT)
+  // and drop early-morning-PKT rows. `to` is inclusive of the whole selected day.
+  const fromStart = from ? `${from}T00:00:00+05:00` : undefined;
+  const toEnd = to ? `${to}T23:59:59.999+05:00` : undefined;
+  const withRange = <T extends { gte: any; lte: any }>(q: T): T => {
+    if (fromStart) q = q.gte("created_at", fromStart);
+    if (toEnd) q = q.lte("created_at", toEnd);
+    return q;
+  };
+
   // RLS scopes rows to what the viewer may see: a BD gets only their own; admin/BD-Lead get all.
   const [leadsRes, ivRes, asRes] = await Promise.all([
-    supabase.from("leads").select("owner_bd_id, status"),
-    supabase.from("interviews").select("owner_bd_id"),
-    supabase.from("assessments").select("owner_bd_id"),
+    withRange(supabase.from("leads").select("owner_bd_id, status")),
+    withRange(supabase.from("interviews").select("owner_bd_id")),
+    withRange(supabase.from("assessments").select("owner_bd_id")),
   ]);
 
   const stats = new Map<string, Stat>();
@@ -39,7 +64,7 @@ export default async function CrmAnalyticsPage() {
 
   // Deals carry no owner_bd_id — attribute via their lead's owner. Deals are admin-only (RLS).
   if (canSeeDeals) {
-    const { data: deals } = await supabase.from("deals").select("lead:leads(owner_bd_id)");
+    const { data: deals } = await withRange(supabase.from("deals").select("lead:leads(owner_bd_id)"));
     for (const d of (deals ?? []) as any[]) { const s = get(d.lead?.owner_bd_id); if (s) s.deals++; }
   }
 
@@ -57,11 +82,17 @@ export default async function CrmAnalyticsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>BD Performance</CardTitle>
-        <CardDescription>
-          Activity per Business Developer. The lead count excludes disqualified leads (shown separately).
-          {canSeeDeals ? "" : " You see your own numbers."}
-        </CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <CardTitle>BD Performance</CardTitle>
+            <CardDescription>
+              Activity per Business Developer. The lead count excludes disqualified leads (shown separately).
+              {from || to ? " Filtered by the selected date range." : ""}
+              {canSeeDeals ? "" : " You see your own numbers."}
+            </CardDescription>
+          </div>
+          <DateRangeFilter />
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

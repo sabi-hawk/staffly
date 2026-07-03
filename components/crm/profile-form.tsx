@@ -54,45 +54,45 @@ export function ProfileForm({
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div className="space-y-1.5">
-        <Label>Name *</Label>
-        <Input required value={form.name} onChange={(e) => set("name", e.target.value)} />
+        <Label htmlFor="profile-name">Name *</Label>
+        <Input id="profile-name" required value={form.name} onChange={(e) => set("name", e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label>Stack</Label>
-        <select className={selectCls} value={form.stack_id} onChange={(e) => set("stack_id", e.target.value)}>
+        <Label htmlFor="profile-stack">Stack</Label>
+        <select id="profile-stack" className={selectCls} value={form.stack_id} onChange={(e) => set("stack_id", e.target.value)}>
           <option value="">—</option>
           {stacks.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Owner (BD)</Label>
-        <select className={selectCls} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
+        <Label htmlFor="profile-owner">Owner (BD)</Label>
+        <select id="profile-owner" className={selectCls} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
           <option value="">Unassigned</option>
           {owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Email</Label>
-        <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+        <Label htmlFor="profile-email">Email</Label>
+        <Input id="profile-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label>Mobile</Label>
-        <Input value={form.mobile} onChange={(e) => set("mobile", e.target.value)} />
+        <Label htmlFor="profile-mobile">Mobile</Label>
+        <Input id="profile-mobile" value={form.mobile} onChange={(e) => set("mobile", e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label>Date of birth</Label>
-        <Input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
+        <Label htmlFor="profile-dob">Date of birth</Label>
+        <Input id="profile-dob" type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
-        <select className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
+        <Label htmlFor="profile-status">Status</Label>
+        <select id="profile-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           <option value="active">active</option>
           <option value="inactive">inactive</option>
         </select>
       </div>
       <div className="space-y-1.5 sm:col-span-2">
-        <Label>Notes (e.g. &quot;LinkedIn banned&quot;)</Label>
-        <Input value={form.notes} onChange={(e) => set("notes", e.target.value)} />
+        <Label htmlFor="profile-notes">Notes (e.g. &quot;LinkedIn banned&quot;)</Label>
+        <Input id="profile-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
       </div>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save profile" : "Create profile"}</Button>

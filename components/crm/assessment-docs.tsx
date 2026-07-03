@@ -56,8 +56,8 @@ export function AssessmentDocs({ assessmentId, docs }: { assessmentId: string; d
         </div>
       ))}
       <form onSubmit={upload} className="flex items-center gap-2">
-        <input id={`adoc-${assessmentId}`} type="file" accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-xs" />
-        <select className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume_cv" | "extra")}>
+        <input id={`adoc-${assessmentId}`} aria-label="Upload file" type="file" accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-xs" />
+        <select aria-label="Document type" className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume_cv" | "extra")}>
           <option value="resume_cv">Resume/CV</option>
           <option value="extra">Extra</option>
         </select>

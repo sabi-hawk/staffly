@@ -45,9 +45,10 @@ export function AddEmployeeForm() {
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {FIELDS.map((f) => (
         <div key={f.key} className="space-y-1.5">
-          <Label>{f.label}{f.required ? " *" : ""}</Label>
+          <Label htmlFor={`new-emp-${f.key}`}>{f.label}{f.required ? " *" : ""}</Label>
           {f.type === "select" ? (
             <select
+              id={`new-emp-${f.key}`}
               value={form[f.key] ?? ""}
               onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
               className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm capitalize"
@@ -56,6 +57,7 @@ export function AddEmployeeForm() {
             </select>
           ) : (
             <Input
+              id={`new-emp-${f.key}`}
               type={f.type ?? "text"}
               required={f.required}
               value={form[f.key] ?? ""}

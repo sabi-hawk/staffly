@@ -55,13 +55,13 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1.5">
-              <Label>Employee</Label>
-              <select value={id} onChange={(e) => setId(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
+              <Label htmlFor="report-employee">Employee</Label>
+              <select id="report-employee" value={id} onChange={(e) => setId(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
                 {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}{e.employee_code ? ` (#${e.employee_code})` : ""}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5"><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label htmlFor="report-from">From</Label><Input id="report-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label htmlFor="report-to">To</Label><Input id="report-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
             <Button onClick={run} disabled={busy}>{busy ? "Running…" : "Run report"}</Button>
             {report && <Button variant="secondary" onClick={exportCsv}>Export CSV</Button>}
           </div>
@@ -114,8 +114,8 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
               {/* local pagination for the loaded daily array */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-caption text-text-secondary">
                 <div className="flex items-center gap-2">
-                  <span>Rows per page</span>
-                  <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
+                  <Label htmlFor="report-page-size" className="font-normal text-text-secondary">Rows per page</Label>
+                  <select id="report-page-size" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
                     {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <span className="tabular">{daily.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, daily.length)} of {daily.length}</span>

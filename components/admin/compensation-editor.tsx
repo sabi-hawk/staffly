@@ -77,8 +77,8 @@ export function CompensationEditor({
       {/* base salary */}
       <div className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
         <div className="space-y-1.5">
-          <Label>Base salary (PKR)</Label>
-          <Input type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
+          <Label htmlFor="comp-base">Base salary (PKR)</Label>
+          <Input id="comp-base" type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
           <p className="text-caption text-text-secondary">Set 0 for commission-only staff — net pay is then just their compensation categories.</p>
         </div>
         <Button onClick={saveBase} disabled={savingBase}>{savingBase ? "Saving…" : "Update base salary"}</Button>
@@ -110,16 +110,16 @@ export function CompensationEditor({
 
       <form onSubmit={add} className="grid gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>Category</Label>
-          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Fuel Allowance" />
+          <Label htmlFor="comp-label">Category</Label>
+          <Input id="comp-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Fuel Allowance" />
         </div>
         <div className="space-y-1.5">
-          <Label>Amount (PKR)</Label>
-          <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
+          <Label htmlFor="comp-amount">Amount (PKR)</Label>
+          <Input id="comp-amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>Description</Label>
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Why / when it was decided" />
+          <Label htmlFor="comp-description">Description</Label>
+          <Input id="comp-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Why / when it was decided" />
         </div>
         <label className="flex items-center gap-2 text-caption text-text-secondary">
           <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />

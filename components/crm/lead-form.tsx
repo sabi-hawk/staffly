@@ -54,30 +54,30 @@ export function LeadForm({
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div className="space-y-1.5">
-        <Label>Company *</Label>
-        <Input required value={form.company} onChange={(e) => set("company", e.target.value)} />
+        <Label htmlFor="lead-company">Company *</Label>
+        <Input id="lead-company" required value={form.company} onChange={(e) => set("company", e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label>Role</Label>
-        <Input value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="e.g. Senior Full Stack" />
+        <Label htmlFor="lead-role">Role</Label>
+        <Input id="lead-role" value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="e.g. Senior Full Stack" />
       </div>
       <div className="space-y-1.5">
-        <Label>Profile</Label>
-        <select className={selectCls} value={form.dev_profile_id} onChange={(e) => set("dev_profile_id", e.target.value)}>
+        <Label htmlFor="lead-profile">Profile</Label>
+        <select id="lead-profile" className={selectCls} value={form.dev_profile_id} onChange={(e) => set("dev_profile_id", e.target.value)}>
           <option value="">—</option>
           {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
-        <select className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
+        <Label htmlFor="lead-status">Status</Label>
+        <select id="lead-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           {MANUAL_STATUSES.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
       {canAssignOwner && (
         <div className="space-y-1.5">
-          <Label>Owner (BD)</Label>
-          <select className={selectCls} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
+          <Label htmlFor="lead-owner">Owner (BD)</Label>
+          <select id="lead-owner" className={selectCls} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
             <option value="">Me</option>
             {owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>

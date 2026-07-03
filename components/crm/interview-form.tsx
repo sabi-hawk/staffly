@@ -81,44 +81,44 @@ export function InterviewForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1.5"><Label>Job title</Label><Input value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label>Company</Label><Input value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Job post URL</Label><Input value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="interview-job-title">Job title</Label><Input id="interview-job-title" value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="interview-company">Company</Label><Input id="interview-company" value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-job-post-url">Job post URL</Label><Input id="interview-job-post-url" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label>Status</Label>
-        <select className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
+        <Label htmlFor="interview-status">Status</Label>
+        <select id="interview-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           {INTERVIEW_STATUS.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Round</Label>
-        <select className={selectCls} value={form.round} onChange={(e) => set("round", e.target.value)}>
+        <Label htmlFor="interview-round">Round</Label>
+        <select id="interview-round" className={selectCls} value={form.round} onChange={(e) => set("round", e.target.value)}>
           {INTERVIEW_ROUND.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Outcome</Label>
-        <select className={`${selectCls} capitalize`} value={form.outcome} onChange={(e) => set("outcome", e.target.value)}>
+        <Label htmlFor="interview-outcome">Outcome</Label>
+        <select id="interview-outcome" className={`${selectCls} capitalize`} value={form.outcome} onChange={(e) => set("outcome", e.target.value)}>
           {INTERVIEW_OUTCOME.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5"><Label>Interview time</Label><Input type="datetime-local" value={form.interview_at} onChange={(e) => set("interview_at", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="interview-interview-at">Interview time</Label><Input id="interview-interview-at" type="datetime-local" value={form.interview_at} onChange={(e) => set("interview_at", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label>Given by (developer)</Label>
-        <select className={selectCls} value={form.given_by} onChange={(e) => set("given_by", e.target.value)}>
+        <Label htmlFor="interview-given-by">Given by (developer)</Label>
+        <select id="interview-given-by" className={selectCls} value={form.given_by} onChange={(e) => set("given_by", e.target.value)}>
           <option value="">—</option>
           {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label>Whom should give (next rounds)</Label>
-        <select className={selectCls} value={form.whom_should_give} onChange={(e) => set("whom_should_give", e.target.value)}>
+        <Label htmlFor="interview-whom-should-give">Whom should give (next rounds)</Label>
+        <select id="interview-whom-should-give" className={selectCls} value={form.whom_should_give} onChange={(e) => set("whom_should_give", e.target.value)}>
           <option value="">—</option>
           {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Notes</Label><Input value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label>Notes 2</Label><Input value={form.notes2} onChange={(e) => set("notes2", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-notes">Notes</Label><Input id="interview-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-notes2">Notes 2</Label><Input id="interview-notes2" value={form.notes2} onChange={(e) => set("notes2", e.target.value)} /></div>
       <div className="sm:col-span-2 lg:col-span-4">
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : id ? "Save interview" : "Add interview"}</Button>
       </div>

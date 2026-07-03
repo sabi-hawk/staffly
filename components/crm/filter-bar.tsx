@@ -23,6 +23,7 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
       {filters.map((f) => (
         <select
           key={f.key}
+          aria-label={f.label}
           value={params.get(f.key) ?? ""}
           onChange={(e) => setParam(f.key, e.target.value)}
           className="h-9 rounded-md border border-border bg-white px-3 text-sm"
@@ -34,6 +35,7 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
       {search && (
         <input
           type="search"
+          aria-label={search.placeholder ?? "Search"}
           defaultValue={params.get(search.key) ?? ""}
           placeholder={search.placeholder ?? "Search…"}
           onKeyDown={(e) => { if (e.key === "Enter") setParam(search.key, (e.target as HTMLInputElement).value.trim()); }}
