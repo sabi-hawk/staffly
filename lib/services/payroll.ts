@@ -39,41 +39,45 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
 
     const base = round2(Number(sal.base_salary) || 0);
 
-    const workingDays =
-      Number(
-        (await supabase.rpc("working_days", { p_employee: employeeId, p_start: opts.from, p_end: opts.to })).data
-      ) || 0;
+    // These four reads are independent of each other — fetch them concurrently (was a sequential N+1).
+    const [wdRes, attRes, leavesRes, compsRes] = await Promise.all([
+      supabase.rpc("working_days", { p_employee: employeeId, p_start: opts.from, p_end: opts.to }),
+      supabase
+        .from("attendance")
+        .select("total_hours, extra_hours, deficit_hours, check_out_time")
+        .eq("employee_id", employeeId)
+        .gte("work_date", opts.from)
+        .lte("work_date", opts.to),
+      supabase
+        .from("leave_requests")
+        .select("days_count")
+        .eq("employee_id", employeeId)
+        .eq("type", "unpaid")
+        .eq("status", "approved")
+        .gte("start_date", opts.from)
+        .lte("end_date", opts.to),
+      supabase
+        .from("compensation_components")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .eq("is_active", true)
+        .eq("recurring", true),
+    ]);
 
-    const { data: att } = await supabase
-      .from("attendance")
-      .select("total_hours, extra_hours, deficit_hours, check_out_time")
-      .eq("employee_id", employeeId)
-      .gte("work_date", opts.from)
-      .lte("work_date", opts.to);
+    const workingDays = Number(wdRes.data) || 0;
 
+    const att = attRes.data;
     const present = (att ?? []).filter((a) => a.check_out_time).length;
     const totalHours = sum((att ?? []).map((a) => Number(a.total_hours) || 0));
     const totalExtra = sum((att ?? []).map((a) => Number(a.extra_hours) || 0));
     const totalDeficit = sum((att ?? []).map((a) => Number(a.deficit_hours) || 0));
 
-    const { data: leaves } = await supabase
-      .from("leave_requests")
-      .select("days_count")
-      .eq("employee_id", employeeId)
-      .eq("type", "unpaid")
-      .eq("status", "approved")
-      .gte("start_date", opts.from)
-      .lte("end_date", opts.to);
+    const leaves = leavesRes.data;
     const unpaidDays = sum((leaves ?? []).map((l) => Number(l.days_count) || 0));
     const deductions = workingDays > 0 ? round2((unpaidDays * base) / workingDays) : 0;
 
     // dynamic additions = recurring compensation components
-    const { data: comps } = await supabase
-      .from("compensation_components")
-      .select("*")
-      .eq("employee_id", employeeId)
-      .eq("is_active", true)
-      .eq("recurring", true);
+    const comps = compsRes.data;
     const additions = (comps ?? []).map((c) => ({ label: c.label, amount: round2(Number(c.amount) || 0), description: c.description }));
     const additionsTotal = sum(additions.map((a) => a.amount));
 

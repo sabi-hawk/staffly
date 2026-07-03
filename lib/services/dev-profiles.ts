@@ -3,16 +3,8 @@
 // is explicitly passed). Follows the lib/services/* injected-client convention.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const CRM_DOCS_BUCKET = "crm-docs";
-export const DOC_MIME = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-];
-export const DOC_MAX_BYTES = 10 * 1024 * 1024;
+// Canonical home is lib/crm/docs.ts; re-exported here for existing importers (back-compat).
+export { CRM_DOCS_BUCKET, DOC_MIME, DOC_MAX_BYTES } from "@/lib/crm/docs";
 
 export interface DevProfileInput {
   name?: string;

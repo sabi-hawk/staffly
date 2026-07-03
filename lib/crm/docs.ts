@@ -1,4 +1,16 @@
-// Shared CRM document helpers (server-side use in route handlers).
+// Shared CRM document helpers + constants (server-side use in route handlers). Pure module —
+// no framework/secret imports, safe to import from any server route handler.
+export const CRM_DOCS_BUCKET = "crm-docs";
+export const DOC_MIME = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
+export const DOC_MAX_BYTES = 10 * 1024 * 1024;
+
 export const EXT: Record<string, string> = {
   "application/pdf": "pdf",
   "application/msword": "doc",
