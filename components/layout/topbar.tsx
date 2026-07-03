@@ -1,16 +1,19 @@
 "use client";
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { LogOut, Menu, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AlertsBell } from "@/components/crm/alerts-bell";
 
 export function Topbar({
   title,
   fullName,
   onMenuClick,
+  showAlerts = false,
 }: {
   title: string;
   fullName: string;
   onMenuClick?: () => void;
+  showAlerts?: boolean;
 }) {
   const router = useRouter();
   const initials = fullName
@@ -42,9 +45,7 @@ export function Topbar({
           <span>Search</span>
           <kbd className="rounded bg-white px-1.5 text-[10px]">⌘K</kbd>
         </div>
-        <button className="relative rounded-md p-2 text-text-secondary hover:bg-surface" aria-label="Notifications">
-          <Bell className="size-4" />
-        </button>
+        {showAlerts && <AlertsBell />}
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-light text-caption font-semibold text-brand-primary">
           {initials}
         </div>

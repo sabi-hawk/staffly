@@ -28,6 +28,7 @@ export function AppShell({ profile, children }: { profile: Profile; children: Re
           title={titleFromPath(pathname)}
           fullName={profile.full_name}
           onMenuClick={() => setMobileOpen(true)}
+          showAlerts={profile.role === "admin" || profile.role === "super_admin"}
         />
         <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6">{children}</main>
       </div>
