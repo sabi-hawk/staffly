@@ -47,6 +47,14 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   RLS** — super-admin all; **admin + BD-Lead** non-financial entries; a **BD** their own CRM records
   (`owner_bd_id` in the row snapshot). Financial (salary/payroll/comp/deals/accounts/PII/credentials)
   stays super-admin-only.
+- `0019_security_hardening.sql` — **whole-app audit fixes**: (1) `guard_profile_privileged_cols()`
+  hardened — nobody below `super_admin` may change `role` (closes admin **self-escalation** to
+  super_admin), non-admins still can't touch any privileged col; service-role (`auth.uid() is null`)
+  trusted. (2) `handle_new_user()` hardcodes `role='employee'` (ignores client-supplied signup role).
+  (3) Attendance integrity: `company_today()` (Asia/Karachi date); `attendance_sessions` CHECK
+  `ended_at >= started_at`; `att_self_insert`/`att_update`/`sessions_self_write` rescoped so an
+  employee may only write their **own** attendance for the **current company day** (no
+  backdating/forging) — admin/super_admin retain full write for corrections.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
@@ -140,14 +148,18 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   from check-in/out vs expected; **non-netting** (deficit & extra independent). Mirrors `lib/hours.ts`.
 - `working_days(employee, start, end)` — scheduled working days excl. holidays; used by leave &
   payroll & reports.
-- `handle_new_user()` — inserts a profile row when an auth user is created.
+- `handle_new_user()` — inserts a profile row when an auth user is created; role is **always
+  `employee`** (0019 — never honours a client-supplied signup role).
+- `company_today()` — current company date in Asia/Karachi; used by attendance write-scoping policies (0019).
 - `auth_role()` — caller's role (security definer) used by RLS.
 - `auth_is_bd()` / `auth_is_bd_lead()` / `auth_department()` — CRM access helpers (security definer).
   `auth_is_bd()` = admin/super OR text `department='Business Development'`; `auth_is_bd_lead()` = admin/
   super OR `is_bd_lead`.
 - `guard_profile_privileged_cols()` — BEFORE UPDATE on profiles; blocks a non-admin actor from changing
-  role/status/department_id/is_bd_lead/is_developer (service-role + admins pass). Closes the self-update
-  escalation hole (the self-update policy has no column check — used for avatar).
+  role/status/department/department_id/is_bd_lead/is_developer (service-role passes). **Hardened in 0019:**
+  `role` is now super_admin-only for *everyone* (admins included), closing the admin **self-escalation**
+  to super_admin. The self-update RLS policy has no column check (used for avatar), so this trigger is
+  the enforcement point.
 - `set_updated_at()` — on all tables with updated_at.
 
 ## RLS summary

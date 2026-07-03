@@ -69,6 +69,11 @@ async function main() {
   const hiraAuditOps = await hira.from("audit_log").select("id").eq("entity", "profiles").limit(1);
   check("admin: audit_log non-financial (profiles) → readable (scoped, no error)", !hiraAuditOps.error);
 
+  // an admin must NOT be able to self-escalate their role (guard_profile_privileged_cols, 0019)
+  const escalate = await hira.from("profiles").update({ role: "super_admin" }).eq("email", ADMIN_EMAIL).select();
+  const stillAdmin = (await pgc.query("select role from profiles where email=$1", [ADMIN_EMAIL])).rows[0]?.role;
+  check("admin: cannot self-escalate role → super_admin (blocked)", !!escalate.error || stillAdmin === "admin");
+
   const founder = await asUser(SUPER_EMAIL, SUPER_PW);
   const fSal = await founder.from("salary_structures").select("*");
   check("super_admin: salary_structures → all (8 incl. test acct)", (fSal.data?.length ?? 0) === 8, `${fSal.data?.length ?? 0} rows`);

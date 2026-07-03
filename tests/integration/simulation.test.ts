@@ -20,6 +20,11 @@ describe("§14.5 E2E-4 (data) — payroll with dynamic additions → finalise", 
     const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
 
+    // Reset any run left finalised by a prior test run — generate must not un-finalise a locked run
+    // (0019 data-loss guard), so this test starts from a clean slate to exercise fresh generation.
+    await admin.from("payroll_runs").delete()
+      .eq("employee_id", MUZAMMAL).eq("period_start", from).eq("period_end", to);
+
     const runs = await generatePayroll(admin, { from, to, generatedBy: FOUNDER });
     const run = runs.find((r: any) => r.employee_id === MUZAMMAL);
     expect(run).toBeTruthy();

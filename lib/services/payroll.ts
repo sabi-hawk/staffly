@@ -25,6 +25,18 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
   const runs = [];
   for (const sal of salaries ?? []) {
     const employeeId = sal.employee_id as string;
+
+    // Never overwrite a FINALISED payslip: re-running "generate drafts" must not reset a locked run
+    // to draft or wipe its (possibly hand-edited) lines. Check first — skip before any per-employee work.
+    const { data: existingRun } = await supabase
+      .from("payroll_runs")
+      .select("status")
+      .eq("employee_id", employeeId)
+      .eq("period_start", opts.from)
+      .eq("period_end", opts.to)
+      .maybeSingle();
+    if (existingRun?.status === "finalised") continue;
+
     const base = round2(Number(sal.base_salary) || 0);
 
     const workingDays =
@@ -109,8 +121,9 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
   return runs;
 }
 
-/** Recompute a run's totals from its payslip_components (after manual line edits). */
+/** Recompute a run's totals from its payslip_components (after manual line edits). Refuses a finalised run. */
 export async function recomputeRun(supabase: SupabaseClient, runId: string) {
+  await assertNotFinalised(supabase, runId);
   const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", runId);
   const base = sum((lines ?? []).filter((l) => l.kind === "base").map((l) => Number(l.amount)));
   const additions = sum((lines ?? []).filter((l) => l.kind === "addition").map((l) => Number(l.amount)));
@@ -125,16 +138,24 @@ export async function recomputeRun(supabase: SupabaseClient, runId: string) {
   return data;
 }
 
-/** Add/remove a payslip line item, then recompute. */
+/** Throw if the payroll run is finalised (locked) — payslip lines/totals are then immutable. */
+async function assertNotFinalised(supabase: SupabaseClient, runId: string) {
+  const { data } = await supabase.from("payroll_runs").select("status").eq("id", runId).maybeSingle();
+  if (data?.status === "finalised") throw new Error("This payslip is finalised and can no longer be edited");
+}
+
+/** Add a payslip line item, then recompute the run's totals. */
 export async function addPayslipLine(
   supabase: SupabaseClient,
   runId: string,
   line: { label: string; amount: number; kind: "addition" | "deduction"; description?: string }
 ) {
+  await assertNotFinalised(supabase, runId);
   await supabase.from("payslip_components").insert({ payroll_run_id: runId, ...line, description: line.description ?? null });
   return recomputeRun(supabase, runId);
 }
 export async function removePayslipLine(supabase: SupabaseClient, lineId: string, runId: string) {
+  await assertNotFinalised(supabase, runId);
   await supabase.from("payslip_components").delete().eq("id", lineId);
   return recomputeRun(supabase, runId);
 }
