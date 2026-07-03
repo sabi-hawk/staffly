@@ -1,7 +1,11 @@
 # CRM · Assessments
 
-Per-BD assessment (take-home/technical test) tracking. Requirements: [FRD-03](../../frds/FRD-03-assessments.md).
-Delivery: Plan 02. Schema: `../../../database/database.md`.
+Per-BD assessment (take-home/technical test) tracking. Requirements: [FRD-03](../../frds/FRD-03-assessments.md) + [FRD-07](../../frds/FRD-07-crm-leads-redesign.md).
+Delivery: Plan 02 + FRD-07. Schema: `../../../database/database.md`.
+
+> **FRD-07:** assessments are a **tab in the CRM Leads hub** (`/crm/leads?tab=assessments`), not a
+> standalone page. Added `feedback`; `entry_date` is relabelled **"Received"**. Grids show Received /
+> Entry / Modified columns with 1wk/1mo/3mo/custom filters; created via the hub's type-first **Add** flow.
 
 ## What it is
 Each row = one **assessment** for a job/company against a profile, under a **lead**. Replaces the per-BD

@@ -29,7 +29,9 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.round) query = query.eq("round", searchParams.round);
   if (searchParams.outcome) query = query.eq("outcome", searchParams.outcome);
-  if (searchParams.q) query = query.or(`job_title.ilike.%${searchParams.q}%,company.ilike.%${searchParams.q}%`);
+  // strip PostgREST DSL metacharacters from q before interpolating into .or() (filter-injection guard)
+  const q = searchParams.q?.replace(/[,()]/g, "").trim();
+  if (q) query = query.or(`job_title.ilike.%${q}%,company.ilike.%${q}%`);
   if (rFrom) query = query.gte("received_date", rFrom);
   if (rTo) query = query.lte("received_date", rTo);
   const { data: rows, count } = await query

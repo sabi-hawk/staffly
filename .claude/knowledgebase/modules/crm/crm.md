@@ -2,7 +2,12 @@
 
 The portal's business side: Softonoma is a software **staffing / services** company. This doc is the
 durable anchor for the CRM — the model, the module map, and the cross-cutting rules every CRM module
-shares. Requirements-of-record: [FRD-00](../../frds/FRD-00-crm-vision.md) + FRD-01–06.
+shares. Requirements-of-record: [FRD-00](../../frds/FRD-00-crm-vision.md) + FRD-01–07.
+
+> **FRD-07 (CRM Leads redesign):** Leads / Interviews / Assessments are unified into **one CRM Leads
+> hub** (tabs), keyed by company; lead status is a pipeline outcome (`in_progress/on_hold/closed/
+> rejected/dismissed`); a `closed` lead raises an **admin alert** (`crm_alerts`, topbar bell). Nav no
+> longer has standalone Interviews/Assessments items. See [leads-deals](leads-deals.md).
 
 ## The business in one screen
 - We maintain marketable **developer profiles** — one real developer can be behind **many** profiles,

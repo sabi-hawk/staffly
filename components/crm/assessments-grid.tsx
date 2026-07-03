@@ -31,7 +31,9 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.priority) query = query.eq("priority", searchParams.priority);
   if (searchParams.duration) query = query.eq("duration", searchParams.duration);
-  if (searchParams.q) query = query.or(`job_title.ilike.%${searchParams.q}%,company.ilike.%${searchParams.q}%`);
+  // strip PostgREST DSL metacharacters from q before interpolating into .or() (filter-injection guard)
+  const q = searchParams.q?.replace(/[,()]/g, "").trim();
+  if (q) query = query.or(`job_title.ilike.%${q}%,company.ilike.%${q}%`);
   if (rFrom) query = query.gte("entry_date", rFrom);
   if (rTo) query = query.lte("entry_date", rTo);
   const { data: rows, count } = await query

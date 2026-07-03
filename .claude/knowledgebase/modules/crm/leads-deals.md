@@ -1,18 +1,21 @@
 # CRM · Leads & Deals
 
-Requirements: [FRD-04](../../frds/FRD-04-leads-deals.md). Delivery: Plan 02 (leads) + Plan 03 (deals).
+Requirements: [FRD-04](../../frds/FRD-04-leads-deals.md) + **[FRD-07](../../frds/FRD-07-crm-leads-redesign.md)** (leads redesign). Delivery: Plan 02 (leads) + Plan 03 (deals) + the FRD-07 phases (migration 0020).
 Schema: `../../../database/database.md`.
 
 ## What it is
-- A **lead** = one job opportunity (company + role + profile) a BD is pursuing — the thread that groups
-  its [interviews](interviews.md) + [assessments](assessments.md).
+- A **lead** = one company/opportunity thread a BD is pursuing — groups its
+  [interviews](interviews.md) + [assessments](assessments.md). Surfaced as a **card/thread view** in the
+  **CRM Leads hub** (one page, tabs: Leads / Interviews / Assessments; type-first Add flow — FRD-07).
 - A **deal** = a landed lead, with engagement + financial details + documents. **Admin/super-admin only.**
 
 ## Data model
-- **`leads`** — id, company, role, `dev_profile_id`, `owner_bd_id`, **status**
-  (open|interviewing|assessment|won|lost|**disqualified**), disqualified_category
-  (fake_job|low_pay|unpaid_collab|other), disqualified_note, disqualified_by, disqualified_at, timestamps.
-  Interviews/assessments carry `lead_id`.
+- **`leads`** — id, company, role, `dev_profile_id`, `owner_bd_id`, **status** (FRD-07:
+  `in_progress|on_hold|closed|rejected|dismissed` — closed = won; rejected/dismissed require a reason),
+  **feedback**, and the legacy `disqualified_category|note|by|at` (now the **dismiss** reason).
+  Interviews/assessments carry `lead_id`. A lead going **`closed`** fires an admin `crm_alerts` row (no
+  auto-deal). *Old statuses migrated in 0020: open/interviewing/assessment→in_progress, won→closed,
+  lost→rejected, disqualified→dismissed.*
 - **`deals`** — id, `lead_id`, designation, joining_date, `dev_profile_id`, **working_developer**
   (employee; may differ from the profile's nominal person), salary, `receiving_account_id`,
   `payment_method_id`, profile_dob, status, timestamps.

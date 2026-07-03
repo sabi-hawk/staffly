@@ -30,6 +30,16 @@ export async function leadOptions(supabase: SupabaseClient): Promise<Opt[]> {
   return (data ?? []).map((l: any) => ({ id: l.id, label: l.role ? `${l.company} — ${l.role}` : l.company }));
 }
 
+// Recent-first {id, company} for the type-first Add flow's "existing company" picker (FRD-07).
+export async function leadCompanyOptions(supabase: SupabaseClient): Promise<{ id: string; company: string }[]> {
+  const { data } = await supabase
+    .from("leads").select("id, company")
+    .in("status", ["in_progress", "on_hold", "closed"])
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  return (data ?? []).map((l: any) => ({ id: l.id, company: l.company }));
+}
+
 export async function accountOptions(supabase: SupabaseClient): Promise<Opt[]> {
   const { data } = await supabase.from("receiving_accounts").select("id, holder_name, bank_name").eq("is_active", true).order("holder_name");
   return (data ?? []).map((a: any) => ({ id: a.id, label: a.bank_name ? `${a.holder_name} — ${a.bank_name}` : a.holder_name }));

@@ -1,7 +1,12 @@
 # CRM · Interviews
 
-Per-BD interview tracking. Requirements: [FRD-02](../../frds/FRD-02-interviews.md). Delivery: Plan 02.
-Schema: `../../../database/database.md`.
+Per-BD interview tracking. Requirements: [FRD-02](../../frds/FRD-02-interviews.md) + [FRD-07](../../frds/FRD-07-crm-leads-redesign.md).
+Delivery: Plan 02 + FRD-07. Schema: `../../../database/database.md`.
+
+> **FRD-07:** interviews are a **tab in the CRM Leads hub** (`/crm/leads?tab=interviews`), not a
+> standalone page. Added `received_date` (editable email-arrival date, shown as "Received") + `feedback`.
+> Grids show Received / Entry (`created_at`) / Modified (`updated_at`) columns with 1wk/1mo/3mo/custom
+> filters. New interviews are created via the hub's type-first **Add** flow (round auto-advances).
 
 ## What it is
 Each row = one **interview round** for a job/company against a profile, under a **lead**. Replaces the

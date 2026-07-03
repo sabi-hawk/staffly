@@ -1,9 +1,9 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+import { leadCompanyOptions, crmProfileOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CrmTabs } from "@/components/crm/crm-tabs";
-import { LeadsTable } from "@/components/crm/leads-table";
+import { AddActivity } from "@/components/crm/add-activity";
+import { LeadsCards } from "@/components/crm/leads-cards";
 import { InterviewsGrid } from "@/components/crm/interviews-grid";
 import { AssessmentsGrid } from "@/components/crm/assessments-grid";
 
@@ -16,20 +16,20 @@ export default async function CrmLeadsHubPage({
   const tab = ["leads", "interviews", "assessments"].includes(searchParams.tab ?? "")
     ? (searchParams.tab as string)
     : "leads";
-
   const title = tab === "interviews" ? "Interviews" : tab === "assessments" ? "Assessments" : "Leads";
+
+  const supabase = createClient();
+  const [leads, profiles] = await Promise.all([leadCompanyOptions(supabase), crmProfileOptions(supabase)]);
 
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>CRM · {title}</CardTitle>
-        <Button asChild size="sm">
-          <Link href="/crm/leads/new"><Plus className="size-4" /> New lead</Link>
-        </Button>
+        <AddActivity leads={leads} profiles={profiles} />
       </CardHeader>
       <CardContent>
         <CrmTabs active={tab} />
-        {tab === "leads" && <LeadsTable searchParams={searchParams} />}
+        {tab === "leads" && <LeadsCards searchParams={searchParams} profiles={profiles} />}
         {tab === "interviews" && <InterviewsGrid searchParams={searchParams} />}
         {tab === "assessments" && <AssessmentsGrid searchParams={searchParams} />}
       </CardContent>
