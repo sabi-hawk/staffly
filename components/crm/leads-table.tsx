@@ -1,0 +1,65 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { bdOptions, crmProfileOptions } from "@/lib/crm/options";
+import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
+import { CrmFilterBar } from "@/components/crm/filter-bar";
+import { parsePaging } from "@/lib/pagination";
+import { labelize, statusTone, LEAD_STATUS } from "@/lib/crm/constants";
+import { formatCrmDate } from "@/lib/utils";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
+
+/** Leads tab (list view). The richer per-company card/thread view lands in Phase 2b. */
+export async function LeadsTable({ searchParams }: { searchParams: SP }) {
+  const supabase = createClient();
+  const { page, pageSize, from, to } = parsePaging(searchParams);
+
+  let query = supabase
+    .from("leads")
+    .select("id, company, role, status, updated_at, profile:dev_profiles(name), owner:profiles!leads_owner_bd_id_fkey(full_name)", { count: "exact" });
+  if (searchParams.status) query = query.eq("status", searchParams.status);
+  if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
+  if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
+  if (searchParams.q) query = query.ilike("company", `%${searchParams.q}%`);
+  const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(from, to);
+
+  const [bds, profiles] = await Promise.all([bdOptions(supabase), crmProfileOptions(supabase)]);
+  const list = (rows ?? []) as any[];
+
+  return (
+    <>
+      <CrmFilterBar
+        filters={[
+          { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+          { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+          { key: "profile", label: "Profile", options: profiles.map((p) => ({ value: p.id, label: p.label })) },
+        ]}
+        search={{ key: "q", placeholder: "Search company" }}
+      />
+      <Table>
+        <THead>
+          <TR><TH>Company</TH><TH>Role</TH><TH>Profile</TH><TH>Owner (BD)</TH><TH>Status</TH><TH>Modified</TH><TH></TH></TR>
+        </THead>
+        <TBody>
+          {list.map((l) => (
+            <TR key={l.id}>
+              <TD><Link href={`/crm/leads/${l.id}`} className="font-medium text-text-primary hover:text-brand-primary">{l.company}</Link></TD>
+              <TD>{l.role ?? "—"}</TD>
+              <TD>{l.profile?.name ?? "—"}</TD>
+              <TD>{l.owner?.full_name ?? "—"}</TD>
+              <TD><Badge tone={statusTone(l.status)}>{labelize(l.status)}</Badge></TD>
+              <TD className="text-text-secondary">{formatCrmDate(l.updated_at)}</TD>
+              <TD className="text-right"><Link href={`/crm/leads/${l.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
+            </TR>
+          ))}
+          {list.length === 0 && <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No leads match.</TD></TR>}
+        </TBody>
+      </Table>
+      <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
+    </>
+  );
+}

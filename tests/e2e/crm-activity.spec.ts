@@ -13,7 +13,7 @@ async function login(page: Page, identifier: string, password: string) {
 test("super admin: leads pipeline + lead detail with interviews & assessments", async ({ page }) => {
   await login(page, "super.admin@softonoma.com", "Softonoma@SaDM7k29");
   await page.goto("/crm/leads");
-  await expect(page.getByText(/CRM Leads \(/)).toBeVisible();
+  await expect(page.getByText("CRM · Leads")).toBeVisible();
   await expect(page.getByRole("link", { name: "DemoCorp", exact: true })).toBeVisible();
   await page.screenshot(SHOT("crm-05-admin-leads"));
 

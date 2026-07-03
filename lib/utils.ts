@@ -70,3 +70,11 @@ export function formatCrmDatetime(iso: string | null | undefined): string {
     timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
   });
 }
+
+/** Date only (Asia/Karachi), for CRM Entry/Modified/Received columns. Accepts a date or timestamp. */
+export function formatCrmDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  // A bare YYYY-MM-DD (received_date/entry_date) has no time — render as-is in local calendar terms.
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00+05:00`) : new Date(iso);
+  return d.toLocaleDateString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", year: "numeric" });
+}
