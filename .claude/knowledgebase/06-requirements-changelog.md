@@ -215,3 +215,24 @@ reflected in BD analytics ([FRD-02](frds/FRD-02-interviews.md)/[FRD-05](frds/FRD
   since daily-rate = base/working-days = 0). Made explicit in the UI (labels/help text) + a payroll unit test.
 
 <!-- New requirements go below this line. -->
+
+## 2026-07-04 — CRM Leads redesign: unified hub, thread model, admin alerts (FRD-07)
+Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-07](frds/FRD-07-crm-leads-redesign.md)**; revises FRD-02/03/04's lead-status + IA + add-flow.
+- **Lead = the per-company thread** (confirmed). Interviews/assessments keep linking via `lead_id`.
+- **Lead status remodelled** — the old `open/interviewing/assessment/won/lost/disqualified` conflated
+  *activity* with *pipeline outcome*. New set (with icons): **In Progress · On Hold · Closed** (won —
+  positive) **· Rejected** (they rejected us) **· Dismissed** (we opted out — reason required; replaces
+  `disqualified`). Activity state (scheduled/pending/done/passed) stays on the interview/assessment rows.
+- **Feedback** free-text on **lead**, **interview**, **assessment**.
+- **Dates:** *Entry* = `created_at` (system, read-only); **Received** = editable, default today
+  (`interviews.received_date` new; `assessments.entry_date` reused/relabelled); *Modified* = `updated_at`.
+  All three shown as grid columns.
+- **One CRM Leads hub** with tabs: **Leads** (card/thread view, one card per company) · **Interviews**
+  (grid) · **Assessments** (grid) — each grid with **1wk / 1mo / 3mo / custom** filters. Standalone
+  Interviews & Assessments nav items removed (old routes redirect into the hub).
+- **Type-first Add flow:** pick Interview/Assessment → **New company** (creates the lead) or **Existing**
+  (searchable, recent-first → attaches; interview auto-advances to the next round).
+- **Closed → admin alert (no deal auto-flag for now):** setting a lead `closed` raises a `crm_alerts`
+  row; the admin **topbar bell** gains a red unread badge + a **last-30-days** dropdown.
+- **Test/login:** seed dev_profiles for Shaiza + sample leads/activity; set `is_developer` on engineers;
+  add **BD** and **Engineer** demo logins so both views are testable.

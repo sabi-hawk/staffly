@@ -1,5 +1,10 @@
 # FRD-04 — Leads & Deals
 
+> ⚠️ **Lead model partly revised by [FRD-07](FRD-07-crm-leads-redesign.md)** (2026-07-04): the lead
+> **status** set is now In Progress / On Hold / Closed / Rejected / Dismissed (replacing
+> open/interviewing/assessment/won/lost/disqualified), leads gain a `feedback` field, and a `closed`
+> lead raises an **admin alert** (it does NOT auto-create a deal). The **Deals** half here is unchanged.
+
 | | |
 |---|---|
 | **Status** | Promoted |

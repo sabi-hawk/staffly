@@ -69,5 +69,7 @@ Unlike plans (whose folder = status), an FRD stays in `frds/` permanently as the
 | [04](FRD-04-leads-deals.md) | Leads & Deals | Promoted | [plan 02](../../plans/done/02-crm-activity/plan.md) + [03](../../plans/upcoming/03-crm-deals/plan.md) |
 | [05](FRD-05-roles-access.md) | Roles, Departments & CRM access | Promoted | [plan 01](../../plans/done/01-crm-profiles-foundation/plan.md) |
 | [06](FRD-06-activity-log.md) | Activity Log & Audit (change history) | Promoted | [plan 04](../../plans/done/04-activity-log/plan.md) |
+| [07](FRD-07-crm-leads-redesign.md) | CRM Leads Redesign (hub · thread model · alerts) | Approved | [plan](../../plans/delegated-noodling-lerdorf.md) |
 
 > Keep this table current whenever an FRD is added or changes status.
+> **FRD-07 revises FRD-02/03/04** — the lead-status model, CRM information architecture, and the add flow.

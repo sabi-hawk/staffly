@@ -1,5 +1,9 @@
 # FRD-02 — Interviews
 
+> ⚠️ **Partly revised by [FRD-07](FRD-07-crm-leads-redesign.md)** (2026-07-04): CRM information
+> architecture (interviews live in the CRM Leads hub as a tab, not a standalone nav item), the
+> type-first add flow, and new `received_date` + `feedback` fields. Read FRD-07 alongside this.
+
 | | |
 |---|---|
 | **Status** | Promoted |
