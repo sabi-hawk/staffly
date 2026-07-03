@@ -48,7 +48,7 @@ export function LeaveApplyForm() {
                 className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
               >
                 <option value="annual">Annual (8/yr)</option>
-                <option value="casual">Casual (2/mo)</option>
+                <option value="casual">Casual (1/mo)</option>
                 <option value="unpaid">Unpaid</option>
               </select>
             </div>
@@ -66,7 +66,7 @@ export function LeaveApplyForm() {
             </div>
           </div>
           <p className="text-caption text-text-secondary">
-            Annual: 8/year, request at least 21 days ahead. Casual: max 2 days per month.
+            Annual: 8/year, request at least 21 days ahead. Casual: max 1 day per month.
             Unpaid: unlimited (deducted).
           </p>
           <Button type="submit" disabled={busy}>

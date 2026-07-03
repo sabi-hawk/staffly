@@ -1,5 +1,5 @@
 // Leave business logic (PRD §11 + v2 rules).
-// Annual = 8/yr, approval needed, >=21-day notice (admin override). Casual = <=2/month, paid,
+// Annual = 8/yr, approval needed, >=21-day notice (admin override). Casual = <=1/month, paid,
 // auto-approved. Unpaid = unlimited, recorded, deducted. Quota usage is derived from
 // leave_requests (the source of truth) — NOT from per-month counter rows — so it is correct
 // across months and across the year.
@@ -7,16 +7,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeaveType } from "@/lib/types";
 
 export const ANNUAL_TOTAL = 8;
-export const CASUAL_MONTHLY_LIMIT = 2;
+export const CASUAL_MONTHLY_LIMIT = 1; // golden rule: casual 1/mo (no carry)
 export const ANNUAL_NOTICE_DAYS = 21;
+
+/** A configured quota, honouring an explicit 0; fall back to `dflt` only when unset/non-numeric. */
+function quota(value: unknown, dflt: number) {
+  if (value == null) return dflt; // null/undefined (no row / nullable col) → unset; Number(null)=0 would leak
+  const n = Number(value);
+  return Number.isFinite(n) ? n : dflt; // `??`/finite-check, NOT `||` — an intentional 0 must survive
+}
 
 /** Quotas from company_settings (fall back to the defaults above). */
 async function quotas(supabase: SupabaseClient) {
   const { data } = await supabase
     .from("company_settings").select("annual_leave_quota, casual_leave_quota").eq("id", 1).maybeSingle();
   return {
-    annual: Number(data?.annual_leave_quota) || ANNUAL_TOTAL,
-    casual: Number(data?.casual_leave_quota) || CASUAL_MONTHLY_LIMIT,
+    annual: quota(data?.annual_leave_quota, ANNUAL_TOTAL),
+    casual: quota(data?.casual_leave_quota, CASUAL_MONTHLY_LIMIT),
   };
 }
 

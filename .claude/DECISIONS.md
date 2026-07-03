@@ -45,3 +45,11 @@ build instruction to keep going rather than ask.
 | 28 | **Signup never trusts a client-supplied role** — `handle_new_user()` hardcodes `role='employee'` (0019). | Elevation must be a deliberate admin action, never self-service via signup metadata. |
 | 29 | **Employees may only write their OWN attendance for the CURRENT company day** (0019 policies + `company_today()` Asia/Karachi); admin/super_admin retain full write. | Audit HIGH: direct RLS writes let an employee forge/backdate attendance → overtime/pay fraud. UI already scopes to today; RLS now matches. Multi-session same-day flows unaffected. |
 | 30 | **Finalised payroll runs are immutable** — `generatePayroll` skips finalised runs (no un-finalise/line-wipe); `addPayslipLine`/`removePayslipLine` throw via `assertNotFinalised()`. | Audit HIGH data-loss: re-running "generate drafts" reset finalised runs to draft and wiped hand-edited payslip lines. App-layer guard (revisit with a DB constraint if needed). |
+
+## Whole-app audit fixes (Group 2 — security & testing hardening)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 31 | **Cron auth centralised in `lib/cron-auth.ts` (`isAuthorizedCron`), fail-closed + constant-time.** | Audit: the inline `auth !== ` + "`Bearer ${CRON_SECRET}`" + ` check *failed open* — with `CRON_SECRET` unset, a request sending literally `Bearer undefined` passed. Helper rejects when the secret is unconfigured and uses `timingSafeEqual` (length-guarded) to avoid a token timing oracle. Unit-tested (`tests/unit/cron-auth.test.ts`). |
+| 32 | **Leave quotas honour an explicit `0`; casual default corrected 2→1.** | `Number(x) || DEFAULT` overrode a legitimate `0` quota (e.g. disabling casual leave) and the casual fallback was `2`, contradicting the golden rule (casual 1/mo) and the live `company_settings` (already 1). New `quota()` helper uses `Number.isFinite`. UI copy fixed to "Casual (1/mo)". |
+| 33 | **CRM coverage added to the RLS gate.** | The heavily-reviewed CRM had no assertions in `npm run report`. Added 5 cases: a non-BD employee sees 0 leads/deals; admin/super read leads/deals. RLS suite 16→21. |

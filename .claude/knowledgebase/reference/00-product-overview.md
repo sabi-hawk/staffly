@@ -16,7 +16,7 @@ what they are owed, and where time is being lost.
 ## Core capabilities
 1. **Attendance** — check-in/out with live timer, work logs (Tiptap), per-day hours with
    deficit/extra, admin edit of both timestamps, missed check-in/out alert crons.
-2. **Leave** — annual (8/yr, ≥21-day notice), casual (≤2/month), unpaid (unlimited, deducted);
+2. **Leave** — annual (8/yr, ≥21-day notice), casual (≤1/month), unpaid (unlimited, deducted);
    approval queue; admin can convert a missing day into a leave.
 3. **Employees** — rich profiles (contacts, CNIC, DOB/age, bank/account, per-employee shift),
    dynamic compensation categories, attendance analytics with date ranges, avatars.

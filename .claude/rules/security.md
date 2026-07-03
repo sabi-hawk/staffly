@@ -19,7 +19,9 @@ Enforced by `.claude/hooks/block-secret-writes.mjs` and the `security-reviewer` 
 - Sensitive PII (CNIC, bank) lives in `employee_private` (self or super_admin). Never put it on `profiles` (everyone-readable).
 - Never trust client-supplied role/identity — resolve from the authenticated session server-side.
 - Every new table: enable RLS + policies **in the same migration**.
-- Cron routes require `Authorization: Bearer ${CRON_SECRET}`.
+- Cron routes require `Authorization: Bearer ${CRON_SECRET}` — checked via `isAuthorizedCron()`
+  (`lib/cron-auth.ts`): **fail-closed** (unset `CRON_SECRET` → all requests rejected, no
+  `Bearer undefined` bypass) + constant-time (`timingSafeEqual`) compare.
 
 ## Input & data
 - Validate external input (route bodies, query, uploads) before use. Validate uploads by type/size.

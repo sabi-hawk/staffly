@@ -32,7 +32,7 @@ Status legend: ✅ done · 🔄 in progress · ⏳ planned.
   by gender.
 
 ## Leaves ✅
-- Casual ≤2/month, annual ≥21-day notice (admin override), unpaid unlimited.
+- Casual ≤1/month, annual ≥21-day notice (admin override), unpaid unlimited.
 - Admin "add / convert leave" (missing day → casual/unpaid/paid). Employee-code columns.
 
 ## Reports ✅

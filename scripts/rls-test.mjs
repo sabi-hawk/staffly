@@ -83,6 +83,19 @@ async function main() {
   const hiraAtt = await hira.from("attendance").select("employee_id").limit(50);
   check("admin: attendance → reads all employees", (hiraAtt.data?.length ?? 0) >= 5, `${hiraAtt.data?.length ?? 0} rows`);
 
+  // ── CRM RLS (leads scoped to BD/owner; deals admin-only). Muzammal = Engineering, non-BD.
+  const empLeads = await emp.from("leads").select("id");
+  check("employee (non-BD): leads → 0 rows (CRM hidden)", (empLeads.data?.length ?? 0) === 0);
+  const empDeals = await emp.from("deals").select("id");
+  check("employee (non-BD): deals → 0 rows (admin-only)", (empDeals.data?.length ?? 0) === 0);
+  const hiraLeads = await hira.from("leads").select("id");
+  // admin satisfies auth_is_bd_lead() → sees ALL leads (asserts scope, not just liveness)
+  check("admin: leads → readable, sees all (auth_is_bd_lead)", !hiraLeads.error && (hiraLeads.data?.length ?? 0) >= 1, `${hiraLeads.data?.length ?? 0} rows`);
+  const hiraDeals = await hira.from("deals").select("id");
+  check("admin: deals → readable (deals_admin)", !hiraDeals.error && (hiraDeals.data?.length ?? 0) >= 1, `${hiraDeals.data?.length ?? 0} rows`);
+  const founderDeals = await founder.from("deals").select("id");
+  check("super_admin: deals → readable", !founderDeals.error && (founderDeals.data?.length ?? 0) >= 1);
+
   // employee cannot update another employee's attendance
   await pgc.query(
     `insert into attendance (employee_id, work_date, check_in_time, expected_hours)

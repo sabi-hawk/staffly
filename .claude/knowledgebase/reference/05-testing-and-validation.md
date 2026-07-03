@@ -9,7 +9,7 @@ We test at three levels and self-validate with subagents + a browser pass before
 ## 2. Integration (against the cloud DB) — `tests/integration/*.test.ts`
 - Real Supabase calls: trigger math, RLS (employee/admin cannot read payroll; cross-employee
   blocked), attendance flows (idempotent check-in, checkout, edit+audit), cron de-dup, leave
-  rules (casual ≤2/mo, annual ≥21d, overflow→unpaid), payroll generation incl. additions.
+  rules (casual ≤1/mo, annual ≥21d, overflow→unpaid), payroll generation incl. additions.
 - Canonical subject: **Muzammal Faiz**. Run: `npm run test:int` and `npm run test:rls`.
 
 ## 3. Browser E2E (Playwright) — `tests/e2e/*.spec.ts`

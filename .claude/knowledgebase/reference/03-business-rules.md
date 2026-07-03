@@ -22,7 +22,7 @@ These are the rules that define correctness. Tests enforce them; agents must not
 - **Annual**: 8 per year; must be requested **≥ 21 days in advance** (admin may override).
   Approval required; on approval `annual_used` increments. If a request exceeds remaining annual,
   the overflow is filed as **unpaid** (and the user is told).
-- **Casual**: **max 2 days per calendar month** (paid, auto-approved). Enforced on request.
+- **Casual**: **max 1 day per calendar month** (paid, auto-approved). Enforced on request.
 - **Unpaid**: unlimited, recorded, **deducted** at payroll.
 - Admin can **add/convert** a leave for any employee/date/type (e.g. turn a missing day into
   casual/unpaid/paid) via `/api/admin/leaves`.
@@ -51,6 +51,6 @@ These are the rules that define correctness. Tests enforce them; agents must not
 
 ## Defaults (when unspecified)
 - Currency PKR; timezone Asia/Karachi; week starts Monday; working days Mon–Fri.
-- Casual 2/month, annual 8/year, annual notice 21 days, missed-checkin buffer per shift,
+- Casual 1/month, annual 8/year, annual notice 21 days, missed-checkin buffer per shift,
   missed-checkout grace 1h, overtime warning 2h (overridable in `company_settings`).
 - Employee codes are unique 4-digit numbers. Default password for seeded employees: `Softonoma@123`.
