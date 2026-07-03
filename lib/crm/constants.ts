@@ -1,6 +1,19 @@
 // CRM option lists + label helpers — plain module, safe on server AND client.
 
-export const LEAD_STATUS = ["open", "interviewing", "assessment", "won", "lost", "disqualified"] as const;
+// Lead pipeline status (FRD-07) — the thread's overall outcome, distinct from per-activity state.
+export const LEAD_STATUS = ["in_progress", "on_hold", "closed", "rejected", "dismissed"] as const;
+// Display metadata: label + a lucide icon name (resolved in the UI). Closed = the positive/won state.
+export const LEAD_STATUS_META = [
+  { value: "in_progress", label: "In Progress", icon: "Loader" },
+  { value: "on_hold", label: "On Hold", icon: "PauseCircle" },
+  { value: "closed", label: "Closed", icon: "CheckCircle2" },
+  { value: "rejected", label: "Rejected", icon: "XCircle" },
+  { value: "dismissed", label: "Dismissed", icon: "Ban" },
+] as const;
+// Statuses that require a reason/feedback when set.
+export const LEAD_REASON_STATUSES = ["rejected", "dismissed"] as const;
+
+// Reason categories for a Dismissed lead (reuses the legacy disqualified_* columns for audit continuity).
 export const DISQUALIFY_CATEGORIES = [
   { value: "fake_job", label: "Fake job" },
   { value: "low_pay", label: "Low pay" },
@@ -26,7 +39,7 @@ export function labelize(v: string | null | undefined): string {
 /** Badge tone for a status-ish value (maps to the shadcn Badge tones used elsewhere). */
 export function statusTone(v: string | null | undefined): "success" | "warning" | "danger" | "neutral" | "brand" {
   switch (v) {
-    case "won":
+    case "closed":
     case "selected":
     case "completed":
     case "active":
@@ -34,16 +47,13 @@ export function statusTone(v: string | null | undefined): "success" | "warning" 
     case "ended":
       return "warning";
     case "rejected":
-    case "lost":
     case "cancelled":
-    case "disqualified":
+    case "dismissed":
       return "danger";
     case "pending":
     case "on_hold":
     case "scheduled":
       return "warning";
-    case "interviewing":
-    case "assessment":
     case "in_progress":
       return "brand";
     default:

@@ -96,6 +96,20 @@ async function main() {
   const founderDeals = await founder.from("deals").select("id");
   check("super_admin: deals → readable", !founderDeals.error && (founderDeals.data?.length ?? 0) >= 1);
 
+  // ── crm_alerts (FRD-07): admin/super read-only; everyone else blocked; trigger fires on close.
+  const empAlerts = await emp.from("crm_alerts").select("id");
+  check("employee (non-BD): crm_alerts → 0 rows (admin-only)", (empAlerts.data?.length ?? 0) === 0);
+  const hiraAlerts = await hira.from("crm_alerts").select("id");
+  check("admin: crm_alerts → readable (no error)", !hiraAlerts.error);
+  // trigger smoke: create a lead for a BD, flip it to closed, expect exactly one alert; then clean up.
+  const tLead = (await pgc.query(
+    `insert into leads (company, owner_bd_id, status) values ('__RLS_TEST_CO__', $1, 'in_progress') returning id`,
+    [EMP2])).rows[0].id;
+  await pgc.query(`update leads set status='closed' where id=$1`, [tLead]);
+  const alertN = (await pgc.query(`select count(*)::int n from crm_alerts where lead_id=$1`, [tLead])).rows[0].n;
+  check("trigger: closing a lead inserts one crm_alert", alertN === 1, `${alertN} alert(s)`);
+  await pgc.query(`delete from leads where id=$1`, [tLead]); // cascade removes the alert
+
   // employee cannot update another employee's attendance
   await pgc.query(
     `insert into attendance (employee_id, work_date, check_in_time, expected_hours)

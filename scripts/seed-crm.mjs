@@ -66,7 +66,7 @@ async function main() {
   if (shaiza && sabahat) {
     await admin.from("leads").delete().eq("company", "DemoCorp").eq("owner_bd_id", shaiza);
     const { data: lead } = await admin.from("leads")
-      .insert({ company: "DemoCorp", role: "Senior Full Stack", dev_profile_id: sabahat.id, owner_bd_id: shaiza, status: "interviewing" })
+      .insert({ company: "DemoCorp", role: "Senior Full Stack", dev_profile_id: sabahat.id, owner_bd_id: shaiza, status: "in_progress" })
       .select("id").single();
     const dev = pid("Muzammal Faiz");
     await admin.from("interviews").insert({

@@ -22,10 +22,10 @@ export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
 }
 
 export async function leadOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  // Active opportunities only — a deal shouldn't attach to a disqualified/lost/cancelled lead.
+  // Active opportunities only — a deal shouldn't attach to a rejected/dismissed lead (FRD-07).
   const { data } = await supabase
     .from("leads").select("id, company, role")
-    .in("status", ["open", "interviewing", "assessment", "won"])
+    .in("status", ["in_progress", "on_hold", "closed"])
     .order("created_at", { ascending: false });
   return (data ?? []).map((l: any) => ({ id: l.id, label: l.role ? `${l.company} — ${l.role}` : l.company }));
 }

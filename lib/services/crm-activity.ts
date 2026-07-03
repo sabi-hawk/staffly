@@ -11,15 +11,15 @@ function pick<T extends object>(input: T, fields: (keyof T)[]) {
   return row;
 }
 
-const LEAD_FIELDS = ["company", "role", "dev_profile_id", "owner_bd_id", "status"] as const;
+const LEAD_FIELDS = ["company", "role", "dev_profile_id", "owner_bd_id", "status", "feedback"] as const;
 const INTERVIEW_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "job_post_url", "status",
-  "given_by", "whom_should_give", "interview_at", "round", "outcome", "notes", "notes2",
+  "given_by", "whom_should_give", "interview_at", "received_date", "round", "outcome", "feedback", "notes", "notes2",
 ] as const;
 const ASSESSMENT_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "status", "entry_date", "deadline",
   "completion_date", "mail_subject", "job_post_url", "job_description", "completed_by", "priority",
-  "budget", "assessment_link", "duration", "notes", "extra",
+  "budget", "assessment_link", "duration", "feedback", "notes", "extra",
 ] as const;
 
 async function insert(supabase: SupabaseClient, table: string, row: Record<string, unknown>) {
@@ -39,9 +39,17 @@ export async function createLead(supabase: SupabaseClient, input: Record<string,
   return insert(supabase, "leads", pick(input as never, LEAD_FIELDS as never));
 }
 export async function updateLead(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {
+  // FRD-07: rejected/dismissed require a reason. Dismiss has a dedicated action (category+note);
+  // a generic status update to rejected/dismissed must carry feedback (blocks a bare-status bypass).
+  const status = input.status as string | undefined;
+  if ((status === "rejected" || status === "dismissed") && !(input.feedback as string)?.trim()) {
+    throw new Error("A rejected or dismissed lead needs a reason — add feedback.");
+  }
   return update(supabase, "leads", id, pick(input as never, LEAD_FIELDS as never));
 }
-export async function disqualifyLead(
+// Dismiss a lead ("we're not proceeding") with a required reason. Reuses the legacy disqualified_*
+// columns for audit continuity (FRD-07 renamed the concept disqualified → dismissed).
+export async function dismissLead(
   supabase: SupabaseClient,
   id: string,
   category: string,
@@ -53,7 +61,7 @@ export async function disqualifyLead(
   const { error } = await supabase
     .from("leads")
     .update({
-      status: "disqualified",
+      status: "dismissed",
       disqualified_category: category,
       disqualified_note: note,
       disqualified_by: actorId,
@@ -62,13 +70,17 @@ export async function disqualifyLead(
     .eq("id", id);
   if (error) throw new Error(error.message);
 }
-export async function requalifyLead(supabase: SupabaseClient, id: string) {
+// Reopen a dismissed lead back to In Progress, clearing the reason.
+export async function reopenLead(supabase: SupabaseClient, id: string) {
   const { error } = await supabase
     .from("leads")
-    .update({ status: "open", disqualified_category: null, disqualified_note: null, disqualified_by: null, disqualified_at: null })
+    .update({ status: "in_progress", disqualified_category: null, disqualified_note: null, disqualified_by: null, disqualified_at: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
 }
+// Back-compat aliases (older callers/tests referenced the disqualify/requalify names).
+export const disqualifyLead = dismissLead;
+export const requalifyLead = reopenLead;
 
 // ── Interviews ──
 export async function createInterview(supabase: SupabaseClient, input: Record<string, unknown>) {

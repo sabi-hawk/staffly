@@ -56,8 +56,8 @@ export default async function CrmAnalyticsPage({
   for (const l of (leadsRes.data ?? []) as any[]) {
     const s = get(l.owner_bd_id);
     if (!s) continue;
-    if (l.status === "disqualified") s.disqualified++;
-    else s.leads++; // disqualified leads excluded from the active lead count (FRD-04)
+    if (l.status === "dismissed") s.disqualified++;
+    else s.leads++; // dismissed leads excluded from the active lead count (FRD-07; was "disqualified")
   }
   for (const iv of (ivRes.data ?? []) as any[]) { const s = get(iv.owner_bd_id); if (s) s.interviews++; }
   for (const a of (asRes.data ?? []) as any[]) { const s = get(a.owner_bd_id); if (s) s.assessments++; }

@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { labelize, LEAD_STATUS } from "@/lib/crm/constants";
+import { labelize, LEAD_STATUS, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
 
 const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
-// 'disqualified' is set via the disqualify action, not the manual status dropdown.
-const MANUAL_STATUSES = LEAD_STATUS.filter((s) => s !== "disqualified");
+// rejected/dismissed require a reason → set via the dismiss/status action, not the plain dropdown.
+const MANUAL_STATUSES = LEAD_STATUS.filter((s) => !(LEAD_REASON_STATUSES as readonly string[]).includes(s));
 
 export function LeadForm({
   id,
@@ -29,7 +29,7 @@ export function LeadForm({
     company: initial?.company ?? "",
     role: initial?.role ?? "",
     dev_profile_id: initial?.dev_profile_id ?? "",
-    status: initial?.status ?? "open",
+    status: initial?.status ?? "in_progress",
     owner_bd_id: initial?.owner_bd_id ?? "",
   });
   const [busy, setBusy] = useState(false);

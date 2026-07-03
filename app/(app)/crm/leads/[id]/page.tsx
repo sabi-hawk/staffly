@@ -81,7 +81,7 @@ export default async function LeadDetail({ params }: { params: { id: string } })
         <CardContent>
           <DisqualifyPanel
             leadId={lead.id}
-            disqualified={lead.status === "disqualified"}
+            disqualified={lead.status === "dismissed"}
             category={lead.disqualified_category}
             note={lead.disqualified_note}
           />

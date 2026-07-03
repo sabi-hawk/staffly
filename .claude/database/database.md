@@ -55,6 +55,13 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `ended_at >= started_at`; `att_self_insert`/`att_update`/`sessions_self_write` rescoped so an
   employee may only write their **own** attendance for the **current company day** (no
   backdating/forging) — admin/super_admin retain full write for corrections.
+- `0020_crm_leads_redesign.sql` — **CRM Leads redesign** (FRD-07): `leads.status` remodelled to
+  `in_progress|on_hold|closed|rejected|dismissed` (existing values migrated: open/interviewing/
+  assessment→in_progress, won→closed, lost→rejected, disqualified→dismissed) + `leads.feedback`;
+  `interviews.received_date` (editable, email-received) + `interviews.feedback`; `assessments.feedback`
+  (existing `entry_date` = "Received"). New **`crm_alerts`** table (admin/super read+update RLS; **no
+  client insert**) + a SECURITY-DEFINER trigger `crm_alert_on_lead_closed` that inserts one alert when a
+  lead transitions **into** `closed`. `disqualified_*` columns retained as the **dismiss** reason.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

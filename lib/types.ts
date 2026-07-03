@@ -54,7 +54,8 @@ export interface Lead {
   role: string | null;
   dev_profile_id: string | null;
   owner_bd_id: string;
-  status: "open" | "interviewing" | "assessment" | "won" | "lost" | "disqualified";
+  status: "in_progress" | "on_hold" | "closed" | "rejected" | "dismissed";
+  feedback: string | null;
   disqualified_category: "fake_job" | "low_pay" | "unpaid_collab" | "other" | null;
   disqualified_note: string | null;
   disqualified_by: string | null;
@@ -109,8 +110,10 @@ export interface Interview {
   given_by: string | null;
   whom_should_give: string | null;
   interview_at: string | null;
+  received_date: string | null; // email-received date (editable, FRD-07)
   round: "1st" | "2nd" | "3rd" | "final" | null;
   outcome: "pending" | "selected" | "rejected" | "on_hold" | null;
+  feedback: string | null; // FRD-07
   notes: string | null;
   notes2: string | null;
   created_at: string;
@@ -136,6 +139,7 @@ export interface Assessment {
   budget: string | null;
   assessment_link: string | null;
   duration: string | null;
+  feedback: string | null; // FRD-07
   notes: string | null;
   extra: string | null;
   created_at: string;
