@@ -17,6 +17,11 @@ const SUPER_EMAIL = "super.admin@softonoma.com";
 const SUPER_PW = "Softonoma@SaDM7k29";
 const ADMIN_EMAIL = "admin@softonoma.com";
 const ADMIN_PW = "Softonoma@HrAd4n63";
+// BD users for dev-doc ownership tests: Shaiza (…0021) owns demo profiles; Areeba (…0024) does not.
+const SHAIZA_EMAIL = "029755shaizamaheen@gmail.com";
+const SHAIZA_PW = "Softonoma@1042";
+const AREEBA_EMAIL = "areebazaidi027@gmail.com";
+const AREEBA_PW = "Softonoma@4765";
 
 const results = [];
 function check(name, pass, detail = "") {
@@ -109,6 +114,56 @@ async function main() {
   const alertN = (await pgc.query(`select count(*)::int n from crm_alerts where lead_id=$1`, [tLead])).rows[0].n;
   check("trigger: closing a lead inserts one crm_alert", alertN === 1, `${alertN} alert(s)`);
   await pgc.query(`delete from leads where id=$1`, [tLead]); // cascade removes the alert
+
+  // ── dev-profile documents (0022/0023): owner BD writes/soft-deletes own; non-owner BD + non-BD
+  //     blocked; admin soft/hard-deletes + sees history; soft-deleted hidden from the owner's SELECT.
+  const shaizaProfile = (await pgc.query(
+    `select id from dev_profiles where owner_bd_id=$1 limit 1`, [EMP2])).rows[0]?.id;
+  if (shaizaProfile) {
+    // non-BD employee cannot insert / hard-delete
+    const seedDoc = (await pgc.query(
+      `insert into dev_profile_documents (dev_profile_id, doc_type, file_path)
+       values ($1, 'resume', '__rls__/t.pdf') returning id`, [shaizaProfile])).rows[0].id;
+    const empDocIns = await emp.from("dev_profile_documents")
+      .insert({ dev_profile_id: shaizaProfile, doc_type: "resume", file_path: "__rls__/x.pdf" }).select();
+    check("employee (non-BD): insert dev-profile doc → blocked", !!empDocIns.error || (empDocIns.data?.length ?? 0) === 0);
+    const empDocDel = await emp.from("dev_profile_documents").delete().eq("id", seedDoc).select();
+    check("employee (non-BD): hard-delete dev-profile doc → blocked", (empDocDel.data?.length ?? 0) === 0);
+
+    // owner BD (Shaiza) CAN insert + soft-delete a doc on her own profile
+    const shaiza = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+    const bdIns = await shaiza.from("dev_profile_documents")
+      .insert({ dev_profile_id: shaizaProfile, doc_type: "resume", file_path: "__rls__/bd.pdf" }).select("id");
+    check("BD owner: insert doc on own profile → allowed", (bdIns.data?.length ?? 0) === 1);
+    const ownDocId = bdIns.data?.[0]?.id ?? seedDoc;
+    // soft-delete via the security-definer RPC (0024) — a plain owner UPDATE is rejected once the row
+    // flips invisible to the owner (SELECT policy 0023). Verify the write landed via service-role pg.
+    const bdSoft = await shaiza.rpc("crm_soft_delete_document", { p_doc_id: ownDocId });
+    check("BD owner: soft-delete own doc via RPC → allowed", !bdSoft.error);
+    const softAt = (await pgc.query(`select deleted_at from dev_profile_documents where id=$1`, [ownDocId])).rows[0]?.deleted_at;
+    check("BD owner: soft-delete own doc → applied", !!softAt);
+    // soft-deleted row is hidden from the owner's SELECT (history is admin-only, 0023)
+    const bdSees = await shaiza.from("dev_profile_documents").select("id").eq("id", ownDocId);
+    check("BD owner: soft-deleted doc hidden from own SELECT (0023)", (bdSees.data?.length ?? 0) === 0);
+
+    // non-owner BD (Areeba) cannot soft-delete Shaiza's doc — RPC authorizes via can_manage_dev_docs
+    const areeba = await asUser(AREEBA_EMAIL, AREEBA_PW);
+    const otherSoft = await areeba.rpc("crm_soft_delete_document", { p_doc_id: seedDoc });
+    const stillLive = (await pgc.query(`select deleted_at from dev_profile_documents where id=$1`, [seedDoc])).rows[0]?.deleted_at;
+    check("BD non-owner: soft-delete another BD's doc → blocked", !!otherSoft.error && !stillLive);
+
+    // admin soft-delete + sees history + hard-delete
+    const admSoft = await hira.from("dev_profile_documents")
+      .update({ deleted_at: new Date().toISOString() }).eq("id", seedDoc).select("id");
+    check("admin: soft-delete dev-profile doc (update) → allowed", (admSoft.data?.length ?? 0) === 1);
+    const admSees = await hira.from("dev_profile_documents").select("id").eq("id", seedDoc);
+    check("admin: sees soft-deleted doc in history (0023)", (admSees.data?.length ?? 0) === 1);
+    const admHard = await hira.from("dev_profile_documents").delete().eq("id", seedDoc).select("id");
+    check("admin: hard-delete dev-profile doc → allowed", (admHard.data?.length ?? 0) === 1);
+
+    // cleanup any rows left by the above (best-effort)
+    await pgc.query(`delete from dev_profile_documents where file_path like '__rls__/%'`);
+  }
 
   // employee cannot update another employee's attendance
   await pgc.query(

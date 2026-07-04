@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole } from "@/lib/crm/access";
+import { isAdminRole, isBdLead } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,9 +11,11 @@ import { PasswordPanel } from "@/components/crm/password-panel";
 import { DocumentsPanel, type Doc } from "@/components/crm/documents-panel";
 import { RecordHistory } from "@/components/audit/record-history";
 
+export const dynamic = "force-dynamic";
+
 export default async function CrmProfileDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
-  const canManage = isAdminRole(me?.role);
+  const isAdmin = isAdminRole(me?.role);
   const supabase = createClient();
 
   // RLS returns null if this viewer may not see the profile (e.g. a BD who doesn't own it).
@@ -24,17 +26,33 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
     .single();
   if (!p) notFound();
 
+  // The owning BD (or a BD-Lead / admin) may add, mark-primary, note, and soft-delete documents.
+  const canEdit = isBdLead(me ?? { role: null }) || p.owner_bd_id === me?.id;
+
+  // Active documents everyone-with-access sees; soft-deleted history is admin-only.
   const { data: docRows } = await supabase
     .from("dev_profile_documents")
-    .select("id, doc_type, label, is_primary, file_name")
+    .select("id, doc_type, label, note, is_primary, file_name, created_at")
     .eq("dev_profile_id", params.id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const docs = (docRows ?? []) as Doc[];
+
+  let deletedDocs: Doc[] = [];
+  if (isAdmin) {
+    const { data: del } = await supabase
+      .from("dev_profile_documents")
+      .select("id, doc_type, label, note, is_primary, file_name, created_at, deleted_at, deleter:profiles!dev_profile_documents_deleted_by_fkey(full_name)")
+      .eq("dev_profile_id", params.id)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+    deletedDocs = (del ?? []).map((d: any) => ({ ...d, deleted_by_name: d.deleter?.full_name ?? null })) as Doc[];
+  }
 
   let stacks: { id: string; label: string }[] = [];
   let owners: { id: string; label: string }[] = [];
   let hasPassword = false;
-  if (canManage) {
+  if (isAdmin) {
     const [st, bd, sec] = await Promise.all([
       supabase.from("dev_stacks").select("id, name").eq("is_active", true).order("sort_order"),
       supabase.from("profiles").select("id, full_name").eq("department", "Business Development").order("full_name"),
@@ -74,11 +92,11 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
       <Card>
         <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
         <CardContent>
-          <DocumentsPanel profileId={p.id} docs={docs} canManage={canManage} />
+          <DocumentsPanel profileId={p.id} docs={docs} deletedDocs={deletedDocs} canEdit={canEdit} isAdmin={isAdmin} />
         </CardContent>
       </Card>
 
-      {canManage && (
+      {isAdmin && (
         <>
           <Card>
             <CardHeader><CardTitle>Account password</CardTitle></CardHeader>

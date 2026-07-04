@@ -106,6 +106,7 @@ export async function addDevProfileDocument(
     dev_profile_id: string;
     doc_type: "resume" | "cover_letter";
     label?: string | null;
+    note?: string | null;
     is_primary?: boolean;
     file_path: string;
     file_name?: string | null;
@@ -117,16 +118,52 @@ export async function addDevProfileDocument(
       .from("dev_profile_documents")
       .update({ is_primary: false })
       .eq("dev_profile_id", doc.dev_profile_id)
-      .eq("doc_type", "resume");
+      .eq("doc_type", "resume")
+      .is("deleted_at", null);
   }
-  const { error } = await supabase.from("dev_profile_documents").insert({
+  const { data, error } = await supabase.from("dev_profile_documents").insert({
     dev_profile_id: doc.dev_profile_id,
     doc_type: doc.doc_type,
     label: doc.label ?? null,
+    note: doc.note ?? null,
     is_primary: doc.doc_type === "resume" ? !!doc.is_primary : false,
     file_path: doc.file_path,
     file_name: doc.file_name ?? null,
     uploaded_by: doc.uploaded_by,
-  });
+  }).select("id, doc_type, label, note, is_primary, file_name, created_at").single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Make a resume the primary one (owner/admin via RLS): unset siblings, then set this. */
+export async function setPrimaryDocument(supabase: SupabaseClient, docId: string) {
+  const { data: doc } = await supabase.from("dev_profile_documents").select("dev_profile_id, doc_type, deleted_at").eq("id", docId).single();
+  if (!doc) throw new Error("Not found");
+  if (doc.deleted_at) throw new Error("Cannot set a deleted document as primary");
+  if (doc.doc_type !== "resume") throw new Error("Only resumes can be primary");
+  const unset = await supabase.from("dev_profile_documents").update({ is_primary: false })
+    .eq("dev_profile_id", doc.dev_profile_id).eq("doc_type", "resume").is("deleted_at", null);
+  if (unset.error) throw new Error(unset.error.message);
+  const { data, error } = await supabase.from("dev_profile_documents").update({ is_primary: true }).eq("id", docId).select("id");
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("Not found"); // RLS filtered it out (not the caller's profile)
+}
+
+/** Set a document's purpose note (max 500 chars). */
+export async function setDocumentNote(supabase: SupabaseClient, docId: string, note: string | null) {
+  const clean = note ? note.slice(0, 500) : null;
+  const { data, error } = await supabase.from("dev_profile_documents").update({ note: clean }).eq("id", docId).select("id");
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("Not found");
+}
+
+/**
+ * Soft-delete a document (owning BD, BD-Lead, or admin): hidden from the profile, retained + shown in
+ * the admin-only history. Routed through a security-definer RPC (0024) because after 0023 the owner's
+ * own UPDATE that sets `deleted_at` is rejected — the post-update row is no longer selectable by the
+ * owner. The function authorizes via `can_manage_dev_docs` and stamps `deleted_by = auth.uid()`.
+ */
+export async function softDeleteDocument(supabase: SupabaseClient, docId: string) {
+  const { error } = await supabase.rpc("crm_soft_delete_document", { p_doc_id: docId });
   if (error) throw new Error(error.message);
 }

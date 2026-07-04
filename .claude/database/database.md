@@ -68,6 +68,18 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `interviews.received_date` / `assessments.entry_date` from `created_at` where null (so the default
   1-month grid filter shows pre-existing rows). New **`lead_documents`** table (resume/file attach per
   lead; owner-scoped RLS via the parent lead; updated_at + audit triggers).
+- `0022_dev_profile_docs.sql` — **profile documents v2**: `dev_profile_documents` +`note` +`deleted_at`
+  +`deleted_by`; primary-resume unique index re-scoped to active rows (`deleted_at is null`). New
+  `can_manage_dev_docs(profile)` (security-definer, `search_path=public`) = owning BD **or**
+  `auth_is_bd_lead()`. Replaces the admin-only write policy with **owner insert/update** +
+  **admin-only hard delete** (BD delete = soft, an UPDATE setting `deleted_at`). See DECISIONS.md.
+- `0023_dev_docs_history_scope.sql` — the "Deleted (history)" list is **admin-only**: `dev_docs_select`
+  now hides soft-deleted rows from BD owners / BD-Leads (`admin OR (deleted_at is null AND (bd_lead OR
+  owner))`). Also drops the dead `crm_set_primary_document(uuid)` RPC (superseded by the service).
+- `0024_dev_docs_soft_delete_fn.sql` — **`crm_soft_delete_document(doc)`** security-definer RPC. After
+  0023 a BD owner's own UPDATE that sets `deleted_at` is rejected (the post-update row is no longer
+  selectable by that owner), so soft-delete is routed through this function (authorizes via
+  `can_manage_dev_docs`, stamps `deleted_by = auth.uid()`). `execute` granted to `authenticated`.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
@@ -127,10 +139,15 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   create/edit/assign admin/super only. Audited.
 - **dev_profile_secrets** — dev_profile_id (PK/FK), account_password, updated_by. **admin/super only**
   (never BD). **Not audited** (keeps the password out of `audit_log`).
-- **dev_profile_documents** — id, dev_profile_id, doc_type(resume|cover_letter), label, is_primary,
-  file_path (private `crm-docs` bucket), file_name, uploaded_by. One primary resume per profile
-  (partial unique index). RLS: same visibility as parent profile; write admin/super. Audited.
-  Downloads are logged as `audit_log` action=`download` from the download route.
+- **dev_profile_documents** — id, dev_profile_id, doc_type(resume|cover_letter), label, **note**,
+  is_primary, file_path (private `crm-docs` bucket), file_name, uploaded_by, **deleted_at**,
+  **deleted_by** (0022). One primary **active** resume per profile (partial unique index scoped
+  `where … and deleted_at is null`). RLS (0022): read = same visibility as parent profile; **write
+  (insert/update) = owning BD or BD-Lead/admin** via `can_manage_dev_docs(profile)` (owner does
+  add / mark-primary / set-note / **soft-delete** — an UPDATE that sets `deleted_at`); **hard DELETE
+  = admin/super only** (from the admin "Deleted (history)" list; removes the storage object). Audited.
+  Access is logged to `audit_log` — action=`download` (file download) or `view` (in-app inline viewer,
+  `?inline=1`) from the download route.
 - **leads** — id, company, role, dev_profile_id→dev_profiles, owner_bd_id→profiles (a BD), status
   (open|interviewing|assessment|won|lost|**disqualified**), disqualified_category
   (fake_job|low_pay|unpaid_collab|other), disqualified_note/by/at. Groups interviews+assessments.
@@ -180,8 +197,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - attendance/leave_requests/leave_balances/shifts/documents/alerts: employee sees own; admin all.
 - **salary_structures, payroll_runs, compensation_components, payslip_components: super_admin ONLY.**
 - company_settings: read all; write super_admin. audit_log: super_admin read.
-- **CRM**: `dev_profiles`/`dev_profile_documents` — BD sees own (owner=self), BD-Lead+admin all, write
-  admin/super. `dev_profile_secrets` — admin/super only. `departments`/`dev_stacks` — read all, write
+- **CRM**: `dev_profiles` — BD sees own (owner=self), BD-Lead+admin all, write admin/super.
+  `dev_profile_documents` — read same as parent profile; **write = owning BD or BD-Lead/admin**
+  (`can_manage_dev_docs`); BD delete = soft (`deleted_at`), **hard DELETE = admin/super only** (0022).
+  `dev_profile_secrets` — admin/super only. `departments`/`dev_stacks` — read all, write
   admin/super. CRM route gating in middleware: `/crm/*` = BD-or-admin, `/crm/deals` = admin/super.
 
 ## Storage

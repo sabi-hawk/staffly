@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole, isUuid } from "@/lib/crm/access";
+import { canSeeCrm, isUuid } from "@/lib/crm/access";
 import { readValidatedDoc, stageCrmDoc } from "@/lib/crm/doc-upload";
 import { addDevProfileDocument } from "@/lib/services/dev-profiles";
 
-// Upload a resume / cover letter to the private crm-docs bucket (admin/super-admin only).
+// Upload a resume / cover letter to the private crm-docs bucket. The owning BD (or admin/BD-Lead) may
+// add docs to their profile; RLS on dev_profile_documents (can_manage_dev_docs) is the real gate.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canSeeCrm(me)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const v = await readValidatedDoc(req);
@@ -21,16 +22,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if ("error" in staged) return NextResponse.json({ error: staged.error.message }, { status: staged.error.status });
 
   try {
-    await addDevProfileDocument(createClient(), {
+    const doc = await addDevProfileDocument(createClient(), {
       dev_profile_id: params.id,
       doc_type: docType,
       label: (v.form.get("label") as string) || null,
+      note: ((v.form.get("note") as string) || "").slice(0, 500) || null,
       is_primary: isPrimary,
       file_path: staged.objectPath,
       file_name: v.file.name,
       uploaded_by: me.id,
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, doc });
   } catch (e) {
     // roll back the orphaned upload on a DB failure
     await staged.rollback();

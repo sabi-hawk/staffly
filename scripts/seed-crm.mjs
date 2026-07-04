@@ -8,6 +8,40 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUP
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+const CRM_DOCS_BUCKET = "crm-docs";
+
+/** Build a tiny but valid single-page PDF containing `text` (renders in the in-app viewer). */
+function buildPdf(text) {
+  const esc = String(text).replace(/([()\\])/g, "\\$1");
+  const objs = [
+    "<</Type/Catalog/Pages 2 0 R>>",
+    "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+    "<</Type/Page/Parent 2 0 R/MediaBox[0 0 400 200]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>",
+    (() => { const s = `BT /F1 20 Tf 40 120 Td (${esc}) Tj ET`; return `<</Length ${s.length}>>\nstream\n${s}\nendstream`; })(),
+    "<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>",
+  ];
+  let body = "%PDF-1.4\n";
+  const offsets = [];
+  objs.forEach((o, i) => { offsets.push(body.length); body += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xrefPos = body.length;
+  let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  offsets.forEach((off) => { xref += `${String(off).padStart(10, "0")} 00000 n \n`; });
+  body += `${xref}trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xrefPos}\n%%EOF`;
+  return Buffer.from(body, "latin1");
+}
+
+/** Seed a demo document (upload PDF to crm-docs + insert a dev_profile_documents row). Idempotent-ish:
+ *  the whole profile row is deleted+recreated above, so its docs are re-seeded fresh each run. */
+async function seedDoc(profileId, { doc_type, label, note, is_primary, title }) {
+  const path = `${profileId}/${doc_type}-${(label || "doc").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;
+  await admin.storage.from(CRM_DOCS_BUCKET).upload(path, buildPdf(title), { contentType: "application/pdf", upsert: true });
+  const { error } = await admin.from("dev_profile_documents").insert({
+    dev_profile_id: profileId, doc_type, label, note: note ?? null, is_primary: !!is_primary,
+    file_path: path, file_name: `${(label || doc_type).replace(/\s+/g, "-")}.pdf`, uploaded_by: null,
+  });
+  if (error && !/duplicate|unique/i.test(error.message)) throw new Error(`doc ${label}: ${error.message}`);
+}
+
 async function main() {
   const { data: stacks } = await admin.from("dev_stacks").select("id, name");
   const stackId = (n) => stacks.find((s) => s.name === n)?.id ?? null;
@@ -49,6 +83,12 @@ async function main() {
       dev_profile_id: data.id,
       account_password: "Demo@" + Math.floor(1000 + (r.email.length * 137) % 9000),
     });
+
+    // Demo documents: a primary resume + a secondary resume + a cover letter (per profile).
+    await seedDoc(data.id, { doc_type: "resume", label: `${r.stack} Resume`, note: "Primary resume for outreach", is_primary: true, title: `${r.name} — Resume` });
+    await seedDoc(data.id, { doc_type: "resume", label: "Concise (1-page)", note: "Shorter variant for quick screens", is_primary: false, title: `${r.name} — 1-page Resume` });
+    await seedDoc(data.id, { doc_type: "cover_letter", label: "General Cover Letter", note: "Adapt per role", is_primary: false, title: `${r.name} — Cover Letter` });
+
     console.log(`seeded dev_profile: ${r.name} (${r.stack}) → ${r.ownerName ?? "Unassigned"}`);
   }
 

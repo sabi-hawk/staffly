@@ -236,3 +236,14 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
   row; the admin **topbar bell** gains a red unread badge + a **last-30-days** dropdown.
 - **Test/login:** seed dev_profiles for Shaiza + sample leads/activity; set `is_developer` on engineers;
   add **BD** and **Engineer** demo logins so both views are testable.
+
+## 2026-07-05 — CRM Profiles UX polish + documents v2
+- **Profiles UX (8 items):** owner filter/assign restricted to BD-Lead/admin; "Clear filters" everywhere;
+  title-cased badges + shared status pill; fully clickable grid rows; instant collapsed-rail nav tooltips;
+  global route-progress bar + filter pending states; Slack-formatted copy-to-clipboard on lead cards and
+  interview/assessment rows.
+- **Profile documents v2:** per-document notes; multiple cover letters; the owning BD can upload,
+  mark-primary, annotate, and **soft-delete** their profile's documents; soft-deleted docs move to an
+  **admin-only "Deleted (history)"** list (view / download / permanent hard-delete — no restore); an
+  in-app **browser-native inline viewer** (eye button) for PDFs/images; dummy seed resumes + cover
+  letters per demo profile. Enforced by RLS (`can_manage_dev_docs`) + a security-definer soft-delete RPC.
