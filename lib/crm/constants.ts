@@ -29,11 +29,10 @@ export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancel
 export const PRIORITIES = ["high", "medium", "low"] as const;
 export const DURATIONS = ["15m", "30m", "45m", "1h", "1.5h", "2h", "2h+"] as const;
 
-/** Title-case a snake/underscore value for display ("on_hold" → "On hold"). */
+/** Title-case a snake/underscore value for display, every word ("on_hold" → "On Hold"). */
 export function labelize(v: string | null | undefined): string {
   if (!v) return "—";
-  const s = v.replace(/_/g, " ");
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /** Badge tone for a status-ish value (maps to the shadcn Badge tones used elsewhere). */

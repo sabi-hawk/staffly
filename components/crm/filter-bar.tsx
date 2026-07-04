@@ -18,6 +18,16 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
     router.push(`${pathname}?${sp.toString()}`);
   }
 
+  const keys = [...filters.map((f) => f.key), ...(search ? [search.key] : [])];
+  const anyActive = keys.some((k) => params.get(k));
+  function clearAll() {
+    const sp = new URLSearchParams(params.toString());
+    for (const k of keys) sp.delete(k);
+    sp.delete("page");
+    const qs = sp.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       {filters.map((f) => (
@@ -42,6 +52,11 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
           onBlur={(e) => { const v = e.target.value.trim(); if (v !== (params.get(search.key) ?? "")) setParam(search.key, v); }}
           className="h-9 w-56 rounded-md border border-border bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         />
+      )}
+      {anyActive && (
+        <button onClick={clearAll} className="h-9 rounded-md border border-border px-3 text-sm text-text-secondary hover:bg-surface">
+          Clear filters
+        </button>
       )}
     </div>
   );

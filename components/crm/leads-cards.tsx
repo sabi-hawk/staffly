@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { LeadCardActions } from "@/components/crm/lead-card-actions";
+import { StatusPill } from "@/components/crm/status-pill";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
-import { formatCrmDate, cn } from "@/lib/utils";
+import { formatCrmDate } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
@@ -17,18 +18,6 @@ const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) :
 const initials = (name?: string | null) =>
   (name ?? "").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 
-const DOT: Record<string, string> = {
-  success: "bg-success", warning: "bg-warning", danger: "bg-danger", brand: "bg-brand-primary", neutral: "bg-text-secondary",
-};
-/** A clean status pill: a tone-coloured dot + label (top-right of a lead card). */
-function StatusPill({ status }: { status: string }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-caption font-medium text-text-primary">
-      <span className={cn("size-1.5 rounded-full", DOT[statusTone(status)] ?? DOT.neutral)} />
-      {labelize(status)}
-    </span>
-  );
-}
 function BdAvatar({ fullName }: { fullName?: string | null }) {
   return (
     <span

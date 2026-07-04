@@ -17,7 +17,7 @@ test("super admin: CRM grid + detail (password reveal, docs, edit)", async ({ pa
   await expect(page.getByRole("link", { name: /Add profile/ })).toBeVisible();
   await page.screenshot(SHOT("crm-01-admin-grid"));
 
-  await page.getByRole("link", { name: "Sabahat Atique", exact: true }).first().click();
+  await page.getByRole("cell", { name: "Sabahat Atique", exact: true }).first().click(); // row is clickable
   await expect(page.getByRole("heading", { name: "Account password" })).toBeVisible();
   await page.getByRole("button", { name: /Reveal/ }).click();
   await expect(page.getByRole("heading", { name: "Edit profile" })).toBeVisible();
@@ -29,12 +29,12 @@ test("BD: sees only own profile, no password, no add button", async ({ page }) =
   await page.goto("/crm/profiles");
   await expect(page.getByText(/CRM Profiles \(/)).toBeVisible();
   await expect(page.getByRole("link", { name: /Add profile/ })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Sabahat Atique", exact: true })).toBeVisible();
-  // "Ali Ahmad" is owned by Areeba, not Shaiza — must not be visible (RLS owner-scoping).
-  await expect(page.getByRole("link", { name: "Ali Ahmad", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("cell", { name: "Sabahat Atique", exact: true })).toBeVisible();
+  // "Ali Ahmad" (a dev_profile owned by Areeba) must not be visible to Shaiza (RLS owner-scoping).
+  await expect(page.getByRole("cell", { name: "Ali Ahmad", exact: true })).toHaveCount(0);
   await page.screenshot(SHOT("crm-03-bd-grid"));
 
-  await page.getByRole("link", { name: "Sabahat Atique", exact: true }).first().click();
+  await page.getByRole("cell", { name: "Sabahat Atique", exact: true }).first().click();
   await expect(page.getByText("Documents")).toBeVisible();
   await expect(page.getByText("Account password")).toHaveCount(0); // never shown to a BD
   await expect(page.getByRole("heading", { name: "Edit profile" })).toHaveCount(0);

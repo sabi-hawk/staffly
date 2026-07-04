@@ -39,16 +39,21 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
         nested && "py-1.5",
         active
           ? "bg-brand-light text-brand-primary"
           : "text-text-secondary hover:bg-sidebar-muted hover:text-text-primary"
       )}
-      title={item.label}
     >
       <item.icon className="size-4 shrink-0" />
       {!collapsed && <span>{item.label}</span>}
+      {/* instant CSS tooltip on the collapsed rail (native title has a long hover delay) */}
+      {collapsed && (
+        <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-text-primary px-2 py-1 text-xs text-white shadow-card group-hover:block">
+          {item.label}
+        </span>
+      )}
     </Link>
   );
 }

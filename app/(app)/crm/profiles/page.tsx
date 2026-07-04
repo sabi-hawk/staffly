@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole } from "@/lib/crm/access";
+import { isAdminRole, isBdLead } from "@/lib/crm/access";
 import { bdOptions } from "@/lib/crm/options";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { RowLink } from "@/components/ui/row-link";
+import { StatusPill } from "@/components/crm/status-pill";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { parsePaging } from "@/lib/pagination";
@@ -20,6 +21,8 @@ export default async function CrmProfilesPage({
 }) {
   const me = await getCurrentProfile();
   const canManage = isAdminRole(me?.role);
+  // Only BD-Lead / admin / super may filter or assign by owner; a plain BD sees only their own (RLS).
+  const canFilterOwner = canManage || (me ? isBdLead(me) : false);
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
 
@@ -50,7 +53,7 @@ export default async function CrmProfilesPage({
       <CardContent>
         <CrmFilterBar
           filters={[
-            { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+            ...(canFilterOwner ? [{ key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) }] : []),
             { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
             { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
           ]}
@@ -62,15 +65,15 @@ export default async function CrmProfilesPage({
           </THead>
           <TBody>
             {list.map((p) => (
-              <TR key={p.id} className="cursor-pointer">
-                <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
+              <RowLink key={p.id} href={`/crm/profiles/${p.id}`}>
+                <TD><span className="font-medium text-text-primary">{p.name}</span></TD>
                 <TD>{p.stack?.name ?? "—"}</TD>
                 <TD>{p.owner?.full_name ?? <span className="text-text-secondary">Unassigned</span>}</TD>
                 <TD className="text-text-secondary">{p.email ?? "—"}</TD>
                 <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
-                <TD><Badge tone={p.status === "active" ? "success" : "neutral"}>{p.status}</Badge></TD>
-                <TD className="text-right"><Link href={`/crm/profiles/${p.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
-              </TR>
+                <TD><StatusPill status={p.status} /></TD>
+                <TD className="text-right"><ChevronRight className="ml-auto size-4 text-text-secondary" /></TD>
+              </RowLink>
             ))}
             {list.length === 0 && <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
           </TBody>
