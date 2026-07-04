@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
+import { ActivityRowActions } from "@/components/crm/activity-row-actions";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
 import { formatCrmDatetime, formatCrmDate } from "@/lib/utils";
@@ -12,13 +12,15 @@ import { formatCrmDatetime, formatCrmDate } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SP = { page?: string; pageSize?: string; status?: string; round?: string; outcome?: string; q?: string; from?: string; to?: string };
 const asDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+// PKT (UTC+5) YYYY-MM-DD `offset` days ago — used for the default 1-month window.
+const isoAgo = (offset: number) => { const d = new Date(Date.now() + 5 * 3600_000); d.setUTCDate(d.getUTCDate() - offset); return d.toISOString().slice(0, 10); };
 
-/** Interviews tab of the CRM Leads hub — grid filtered by Received date, with Entry/Modified columns. */
+/** Interviews tab of the CRM Leads hub — grid filtered by Received date (default 1 month), with Entry/Modified columns. */
 export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
-  const rFrom = asDate(searchParams.from);
-  const rTo = asDate(searchParams.to);
+  const rFrom = asDate(searchParams.from) ?? isoAgo(30); // default: last 1 month
+  const rTo = asDate(searchParams.to) ?? isoAgo(0);
 
   let query = supabase
     .from("interviews")
@@ -32,8 +34,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   // strip PostgREST DSL metacharacters from q before interpolating into .or() (filter-injection guard)
   const q = searchParams.q?.replace(/[,()]/g, "").trim();
   if (q) query = query.or(`job_title.ilike.%${q}%,company.ilike.%${q}%`);
-  if (rFrom) query = query.gte("received_date", rFrom);
-  if (rTo) query = query.lte("received_date", rTo);
+  query = query.gte("received_date", rFrom).lte("received_date", rTo);
   const { data: rows, count } = await query
     .order("received_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
@@ -42,20 +43,24 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
 
   return (
     <>
-      <CrmDateFilter />
-      <CrmFilterBar
-        filters={[
-          { key: "status", label: "Status", options: INTERVIEW_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-          { key: "round", label: "Round", options: INTERVIEW_ROUND.map((s) => ({ value: s, label: s })) },
-          { key: "outcome", label: "Outcome", options: INTERVIEW_OUTCOME.map((s) => ({ value: s, label: labelize(s) })) },
-        ]}
-        search={{ key: "q", placeholder: "Search job or company" }}
-      />
+      <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
+        <CrmDateFilter />
+        <div className="border-t border-border pt-3">
+          <CrmFilterBar
+            filters={[
+              { key: "status", label: "Status", options: INTERVIEW_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+              { key: "round", label: "Round", options: INTERVIEW_ROUND.map((s) => ({ value: s, label: s })) },
+              { key: "outcome", label: "Outcome", options: INTERVIEW_OUTCOME.map((s) => ({ value: s, label: labelize(s) })) },
+            ]}
+            search={{ key: "q", placeholder: "Search job or company" }}
+          />
+        </div>
+      </div>
       <Table>
         <THead>
           <TR>
             <TH>Job / Company</TH><TH>BD</TH><TH>Round</TH><TH>Status</TH><TH>Outcome</TH>
-            <TH>Received</TH><TH>Interview</TH><TH>Entry</TH><TH>Modified</TH><TH></TH>
+            <TH>Received</TH><TH>Interview</TH><TH>Entry</TH><TH>Modified</TH><TH className="text-right">Actions</TH>
           </TR>
         </THead>
         <TBody>
@@ -70,7 +75,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
               <TD className="text-text-secondary">{formatCrmDatetime(iv.interview_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.created_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.updated_at)}</TD>
-              <TD className="text-right">{iv.lead_id && <Link href={`/crm/leads/${iv.lead_id}`} className="text-caption text-brand-primary hover:underline">Open lead</Link>}</TD>
+              <TD><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} /></TD>
             </TR>
           ))}
           {list.length === 0 && <TR><TD colSpan={10} className="py-6 text-center text-text-secondary">No interviews match.</TD></TR>}

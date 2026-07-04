@@ -77,13 +77,15 @@ async function main() {
       .insert({ company: "DemoCorp", role: "Senior Full Stack", dev_profile_id: sabahat.id, owner_bd_id: shaiza, status: "in_progress" })
       .select("id").single();
     const dev = pid("Muzammal Faiz");
+    const rxDate = new Date().toISOString().slice(0, 10); // received/entry = today so the 1-month grid shows them
     await admin.from("interviews").insert({
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Senior Full Stack Engineer",
       company: "DemoCorp", status: "completed", round: "1st", outcome: "selected", given_by: dev, whom_should_give: dev,
+      received_date: rxDate,
     });
     await admin.from("assessments").insert({
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Take-home", company: "DemoCorp",
-      status: "pending", priority: "high", duration: "1h", completed_by: dev,
+      status: "pending", priority: "high", duration: "1h", completed_by: dev, entry_date: rxDate,
     });
     console.log("seeded demo lead + interview + assessment (DemoCorp → Shaiza)");
 

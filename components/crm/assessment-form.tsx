@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { labelize, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
+import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
 const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
@@ -33,10 +34,11 @@ export function AssessmentForm({
     status: initial?.status ?? "pending",
     priority: initial?.priority ?? "medium",
     duration: initial?.duration ?? "",
-    entry_date: initial?.entry_date ?? "",
+    entry_date: initial?.entry_date ?? (id ? "" : companyToday()), // "Received" — default today on create
     deadline: initial?.deadline ?? "",
     completion_date: initial?.completion_date ?? "",
     completed_by: initial?.completed_by ?? "",
+    whom_should_complete: initial?.whom_should_complete ?? "",
     budget: initial?.budget ?? "",
     mail_subject: initial?.mail_subject ?? "",
     job_post_url: initial?.job_post_url ?? "",
@@ -88,9 +90,16 @@ export function AssessmentForm({
           {DURATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5"><Label htmlFor="assessment-entry-date">Entry date</Label><Input id="assessment-entry-date" type="date" value={form.entry_date} onChange={(e) => set("entry_date", e.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="assessment-entry-date">Received (email date)</Label><Input id="assessment-entry-date" type="date" value={form.entry_date} onChange={(e) => set("entry_date", e.target.value)} /></div>
       <div className="space-y-1.5"><Label htmlFor="assessment-deadline">Deadline</Label><Input id="assessment-deadline" type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} /></div>
       <div className="space-y-1.5"><Label htmlFor="assessment-completion-date">Completion date</Label><Input id="assessment-completion-date" type="date" value={form.completion_date} onChange={(e) => set("completion_date", e.target.value)} /></div>
+      <div className="space-y-1.5">
+        <Label htmlFor="assessment-whom">Whom should complete (developer)</Label>
+        <select id="assessment-whom" className={selectCls} value={form.whom_should_complete} onChange={(e) => set("whom_should_complete", e.target.value)}>
+          <option value="">—</option>
+          {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+        </select>
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="assessment-completed-by">Completed by (developer)</Label>
         <select id="assessment-completed-by" className={selectCls} value={form.completed_by} onChange={(e) => set("completed_by", e.target.value)}>

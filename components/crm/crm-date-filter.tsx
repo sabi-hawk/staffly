@@ -1,19 +1,16 @@
 "use client";
-// Received-date range filter for the Interviews/Assessments grids: quick presets (1wk / 1mo / 3mo)
-// + a custom range. Pushes ?from&to (YYYY-MM-DD) into the URL; the server tab re-queries.
+// Received-date range filter for the Interviews/Assessments grids: quick presets (1wk / 1mo / 3mo) as
+// a segmented control + an optional custom range. Pushes ?from&to (YYYY-MM-DD). Default = 1 month.
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/input";
 
-// Compute a YYYY-MM-DD `days` before today in Asia/Karachi (UTC+5, no DST).
+// YYYY-MM-DD `days` before today in Asia/Karachi (UTC+5, no DST).
 function daysAgo(days: number): string {
-  const nowPkt = new Date(Date.now() + 5 * 3600_000);
-  nowPkt.setUTCDate(nowPkt.getUTCDate() - days);
-  return nowPkt.toISOString().slice(0, 10);
+  const d = new Date(Date.now() + 5 * 3600_000);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
 }
-function todayPkt(): string {
-  return new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
-}
+const todayPkt = () => new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
 
 const PRESETS = [
   { key: "1w", label: "1 week", days: 7 },
@@ -38,44 +35,43 @@ export function CrmDateFilter() {
     router.push(`${pathname}?${sp.toString()}`);
   }
 
-  // A preset is "active" when from = today-Ndays and to is today/empty.
-  const activePreset = PRESETS.find((p) => from === daysAgo(p.days) && (to === "" || to === todayPkt()))?.key;
+  // No explicit range → 1 month is the active default (the grid defaults the same window server-side).
+  const activePreset = !from && !to ? "1m" : PRESETS.find((p) => from === daysAgo(p.days) && (to === "" || to === todayPkt()))?.key;
 
   return (
-    <div className="mb-3 flex flex-wrap items-end gap-2">
-      <div className="flex gap-1">
-        {PRESETS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => push({ from: daysAgo(p.days), to: todayPkt() })}
-            className={cn(
-              "h-8 rounded-md border px-3 text-caption font-medium transition-colors",
-              activePreset === p.key
-                ? "border-brand-primary bg-brand-light text-brand-primary"
-                : "border-border text-text-secondary hover:bg-surface"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-caption font-medium text-text-secondary">Received</span>
+        <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">
+          {PRESETS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => push({ from: daysAgo(p.days), to: todayPkt() })}
+              className={cn(
+                "rounded-md px-3 py-1 text-caption font-medium transition-colors",
+                activePreset === p.key ? "bg-white text-brand-primary shadow-card" : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex items-end gap-2">
-        <div className="space-y-1">
-          <Label htmlFor="crm-from" className="text-caption text-text-secondary">From</Label>
-          <input
-            id="crm-from" type="date" value={from} max={to || undefined}
-            onChange={(e) => push({ from: e.target.value })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="crm-to" className="text-caption text-text-secondary">To</Label>
-          <input
-            id="crm-to" type="date" value={to} min={from || undefined}
-            onChange={(e) => push({ to: e.target.value })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-          />
-        </div>
+
+      <div className="flex items-center gap-1.5">
+        <label htmlFor="crm-from" className="sr-only">From date</label>
+        <input
+          id="crm-from" type="date" value={from} max={to || undefined}
+          onChange={(e) => push({ from: e.target.value })}
+          className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+        />
+        <span className="text-caption text-text-secondary">–</span>
+        <label htmlFor="crm-to" className="sr-only">To date</label>
+        <input
+          id="crm-to" type="date" value={to} min={from || undefined}
+          onChange={(e) => push({ to: e.target.value })}
+          className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+        />
         {(from || to) && (
           <button
             onClick={() => {
@@ -84,7 +80,7 @@ export function CrmDateFilter() {
               const qs = sp.toString();
               router.push(qs ? `${pathname}?${qs}` : pathname);
             }}
-            className="h-8 rounded-md border border-border px-3 text-caption text-text-secondary hover:bg-surface"
+            className="h-8 rounded-md border border-border px-2.5 text-caption text-text-secondary hover:bg-surface"
           >
             Clear
           </button>

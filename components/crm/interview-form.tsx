@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { labelize, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
+import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
 const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
@@ -52,6 +53,7 @@ export function InterviewForm({
     given_by: initial?.given_by ?? devDefault,
     whom_should_give: initial?.whom_should_give ?? devDefault,
     interview_at: toLocalInput(initial?.interview_at),
+    received_date: initial?.received_date ?? (id ? "" : companyToday()), // email-received date; default today on create
     notes: initial?.notes ?? "",
     notes2: initial?.notes2 ?? "",
   });
@@ -102,6 +104,7 @@ export function InterviewForm({
           {INTERVIEW_OUTCOME.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
+      <div className="space-y-1.5"><Label htmlFor="interview-received">Received (email date)</Label><Input id="interview-received" type="date" value={form.received_date} onChange={(e) => set("received_date", e.target.value)} /></div>
       <div className="space-y-1.5"><Label htmlFor="interview-interview-at">Interview time</Label><Input id="interview-interview-at" type="datetime-local" value={form.interview_at} onChange={(e) => set("interview_at", e.target.value)} /></div>
       <div className="space-y-1.5">
         <Label htmlFor="interview-given-by">Given by (developer)</Label>
