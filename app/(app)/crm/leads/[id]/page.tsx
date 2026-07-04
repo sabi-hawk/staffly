@@ -9,8 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
-import { LeadForm } from "@/components/crm/lead-form";
-import { DisqualifyPanel } from "@/components/crm/disqualify-panel";
+import { LeadEditModal } from "@/components/crm/lead-edit-modal";
+import { QualificationPanel } from "@/components/crm/disqualify-panel";
 import { LeadActivity } from "@/components/crm/lead-activity";
 import { RecordHistory } from "@/components/audit/record-history";
 import type { Interview, Assessment } from "@/lib/types";
@@ -58,33 +58,47 @@ export default async function LeadDetail({ params }: { params: { id: string } })
         <ChevronLeft className="size-4" /> Back to leads
       </Link>
 
+      {/* Top card: the lead's key info + status + an edit modal (no more repetitive inline form). */}
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
           <CardTitle>{lead.company}{lead.role ? ` · ${lead.role}` : ""}</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge tone={statusTone(lead.status)}>{labelize(lead.status)}</Badge>
             {isAdminRole(me.role) && (
               <Button asChild size="sm" variant="outline"><Link href={`/crm/deals/new?lead=${lead.id}`}>Create deal</Link></Button>
             )}
-            <Badge tone={statusTone(lead.status)}>{labelize(lead.status)}</Badge>
+            <LeadEditModal
+              id={lead.id}
+              profiles={profiles}
+              owners={owners}
+              canAssignOwner={isBdLead(me)}
+              initial={{
+                company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id,
+                status: lead.status, owner_bd_id: lead.owner_bd_id, budget: lead.budget,
+                expected_budget: lead.expected_budget, job_description: lead.job_description, notes: lead.notes,
+              }}
+            />
           </div>
         </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
+        <CardContent className="space-y-4">
+          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
             <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{profileName}</dd></div>
             <div><dt className="text-caption text-text-secondary">Owner (BD)</dt><dd>{ownerName}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Budget</dt><dd>{lead.budget || "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Expected</dt><dd>{lead.expected_budget || "—"}</dd></div>
           </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Qualification</CardTitle></CardHeader>
-        <CardContent>
-          <DisqualifyPanel
-            leadId={lead.id}
-            disqualified={lead.status === "dismissed"}
-            category={lead.disqualified_category}
-            note={lead.disqualified_note}
-          />
+          {lead.job_description && (
+            <div>
+              <dt className="mb-1 text-caption text-text-secondary">Job description</dt>
+              <p className="whitespace-pre-wrap text-sm text-text-primary">{lead.job_description}</p>
+            </div>
+          )}
+          {lead.notes && (
+            <div>
+              <dt className="mb-1 text-caption text-text-secondary">BD notes</dt>
+              <p className="whitespace-pre-wrap text-sm text-text-primary">{lead.notes}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -103,15 +117,15 @@ export default async function LeadDetail({ params }: { params: { id: string } })
         </CardContent>
       </Card>
 
+      {/* Qualification lives BELOW activity (owner feedback): default Qualified, mark unqualified w/ reason. */}
       <Card>
-        <CardHeader><CardTitle>Edit lead</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Qualification</CardTitle></CardHeader>
         <CardContent>
-          <LeadForm
-            id={lead.id}
-            profiles={profiles}
-            owners={owners}
-            canAssignOwner={isBdLead(me)}
-            initial={{ company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id, status: lead.status, owner_bd_id: lead.owner_bd_id }}
+          <QualificationPanel
+            leadId={lead.id}
+            unqualified={lead.status === "dismissed"}
+            category={lead.disqualified_category}
+            note={lead.disqualified_note}
           />
         </CardContent>
       </Card>

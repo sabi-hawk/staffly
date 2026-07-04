@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Textarea, Label } from "@/components/ui/input";
 import { labelize, LEAD_STATUS, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
 
@@ -17,12 +17,14 @@ export function LeadForm({
   owners,
   canAssignOwner,
   initial,
+  onDone,
 }: {
   id?: string;
   profiles: Opt[];
   owners: Opt[];
   canAssignOwner: boolean;
   initial?: Partial<Record<string, string | null>>;
+  onDone?: () => void; // when provided (modal use), close+refresh instead of navigating
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
@@ -31,6 +33,10 @@ export function LeadForm({
     dev_profile_id: initial?.dev_profile_id ?? "",
     status: initial?.status ?? "in_progress",
     owner_bd_id: initial?.owner_bd_id ?? "",
+    budget: initial?.budget ?? "",
+    expected_budget: initial?.expected_budget ?? "",
+    job_description: initial?.job_description ?? "",
+    notes: initial?.notes ?? "",
   });
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
@@ -47,6 +53,7 @@ export function LeadForm({
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed to save");
     toast.success(id ? "Lead saved" : "Lead created");
+    if (onDone) { onDone(); router.refresh(); return; }
     router.push(id ? `/crm/leads/${id}` : `/crm/leads/${json.id}`);
     router.refresh();
   }
@@ -83,6 +90,23 @@ export function LeadForm({
           </select>
         </div>
       )}
+      <div className="space-y-1.5">
+        <Label htmlFor="lead-budget">Budget</Label>
+        <Input id="lead-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $3000/mo (company)" />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="lead-expected">Expected budget</Label>
+        <Input id="lead-expected" value={form.expected_budget} onChange={(e) => set("expected_budget", e.target.value)} placeholder="what we asked for" />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+        <Label htmlFor="lead-jd">Job description</Label>
+        <Textarea id="lead-jd" rows={4} value={form.job_description} onChange={(e) => set("job_description", e.target.value)} placeholder="Paste the job description…" />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+        <Label htmlFor="lead-notes">BD notes</Label>
+        <p className="text-caption text-text-secondary">Private notepad — HR contact/email, call notes, anything useful for this deal.</p>
+        <Textarea id="lead-notes" rows={3} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. HR: jane@acme.com …" />
+      </div>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save lead" : "Create lead"}</Button>
       </div>

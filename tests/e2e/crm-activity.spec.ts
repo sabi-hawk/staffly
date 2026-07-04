@@ -31,14 +31,15 @@ test("BD owner: sees own lead, can disqualify then re-qualify", async ({ page })
   await page.screenshot(SHOT("crm-07-bd-leads"));
 
   await page.getByRole("link", { name: "DemoCorp", exact: true }).first().click();
-  // disqualify (note required)
-  await page.getByPlaceholder("Why isn't this a real lead?").fill("Unpaid collaboration, no budget");
-  await page.getByRole("button", { name: "Mark not a lead" }).click();
-  await expect(page.getByText("Not a lead")).toBeVisible();
+  // mark unqualified (reveal reason form → note required)
+  await page.getByRole("button", { name: "Mark as unqualified" }).click();
+  await page.getByLabel("Note *").fill("Unpaid collaboration, no budget");
+  await page.getByRole("button", { name: "Confirm unqualified" }).click();
+  await expect(page.getByText("Unqualified", { exact: true })).toBeVisible();
   await page.screenshot(SHOT("crm-08-bd-disqualified"));
   // re-qualify to leave clean
-  await page.getByRole("button", { name: "Re-qualify" }).click();
-  await expect(page.getByRole("button", { name: "Mark not a lead" })).toBeVisible();
+  await page.getByRole("button", { name: "Mark qualified" }).click();
+  await expect(page.getByRole("button", { name: "Mark as unqualified" })).toBeVisible();
 });
 
 test("another BD does not see a colleague's lead (owner-scoping)", async ({ page }) => {

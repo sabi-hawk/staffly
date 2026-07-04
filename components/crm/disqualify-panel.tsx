@@ -1,4 +1,6 @@
 "use client";
+// Lead qualification. Default = Qualified. "Mark as unqualified" reveals a reason (category + note)
+// which dismisses the lead (reusing the disqualify action). Reopen with "Mark qualified".
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -7,20 +9,21 @@ import { Input, Label } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DISQUALIFY_CATEGORIES } from "@/lib/crm/constants";
 
-const selectCls = "h-9 rounded-md border border-border bg-white px-3 text-sm";
+const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
 
-export function DisqualifyPanel({
+export function QualificationPanel({
   leadId,
-  disqualified,
+  unqualified,
   category,
   note,
 }: {
   leadId: string;
-  disqualified: boolean;
+  unqualified: boolean;
   category: string | null;
   note: string | null;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [cat, setCat] = useState("fake_job");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,45 +39,58 @@ export function DisqualifyPanel({
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed");
     toast.success(ok);
+    setOpen(false); // collapse the reveal form so state is clean after (un)qualifying
+    setText("");
     router.refresh();
   }
 
-  if (disqualified) {
+  if (unqualified) {
     const label = DISQUALIFY_CATEGORIES.find((c) => c.value === category)?.label ?? category ?? "—";
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge tone="danger">Not a lead</Badge>
-          <span className="text-sm font-medium">{label}</span>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="danger">Unqualified</Badge>
+          <span className="text-sm font-medium text-text-primary">{label}</span>
         </div>
         {note && <p className="text-sm text-text-secondary">{note}</p>}
-        <Button variant="outline" size="sm" disabled={busy} onClick={() => act({ action: "requalify" }, "Re-qualified")}>
-          Re-qualify
+        <Button variant="outline" size="sm" disabled={busy} onClick={() => act({ action: "requalify" }, "Marked qualified")}>
+          Mark qualified
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="space-y-1.5">
-        <Label htmlFor="disqualify-reason">Reason</Label>
-        <select id="disqualify-reason" className={selectCls} value={cat} onChange={(e) => setCat(e.target.value)}>
-          {DISQUALIFY_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone="success">Qualified</Badge>
+        {!open && (
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Mark as unqualified</Button>
+        )}
       </div>
-      <div className="space-y-1.5 flex-1 min-w-[200px]">
-        <Label htmlFor="disqualify-note">Note *</Label>
-        <Input id="disqualify-note" value={text} onChange={(e) => setText(e.target.value)} placeholder="Why isn't this a real lead?" />
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={busy || !text.trim()}
-        onClick={() => act({ action: "disqualify", category: cat, note: text }, "Marked not a lead")}
-      >
-        Mark not a lead
-      </Button>
+      {open && (
+        <div className="space-y-3 rounded-lg border border-border p-3">
+          <p className="text-caption text-text-secondary">Why isn&apos;t this a qualified lead?</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="unqual-reason">Reason</Label>
+              <select id="unqual-reason" className={selectCls} value={cat} onChange={(e) => setCat(e.target.value)}>
+                {DISQUALIFY_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="unqual-note">Note *</Label>
+              <Input id="unqual-note" value={text} onChange={(e) => setText(e.target.value)} placeholder="Details…" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" disabled={busy || !text.trim()} onClick={() => act({ action: "disqualify", category: cat, note: text }, "Marked unqualified")}>
+              Confirm unqualified
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

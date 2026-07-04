@@ -86,8 +86,8 @@ export function LeadActivity({
         </div>
       </section>
 
-      {/* Assessments */}
-      <section className="space-y-3">
+      {/* Assessments — divider separates them clearly from interviews (owner feedback) */}
+      <section className="space-y-3 border-t border-border pt-6">
         <div className="flex items-center justify-between">
           <h3 className="text-text-primary font-semibold">Assessments ({assessments.length})</h3>
           <Button size="sm" variant="outline" onClick={() => setAEdit(aEdit === "new" ? null : "new")}>
