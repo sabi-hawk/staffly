@@ -14,6 +14,8 @@ import { formatCrmDate } from "@/lib/utils";
 type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
 
 const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) : -1);
+const initials = (name?: string | null) =>
+  (name ?? "").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 
 /** Leads tab — a card per company/opportunity, summarising its interviews + assessments (FRD-07). */
 export async function LeadsCards({ searchParams, profiles }: { searchParams: SP; profiles: Opt[] }) {
@@ -24,7 +26,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
     .from("leads")
     .select(
       `id, company, role, status, feedback, updated_at,
-       profile:dev_profiles(name),
+       profile:dev_profiles(name, stack:dev_stacks(name)),
        owner:profiles!leads_owner_bd_id_fkey(full_name),
        interviews(id, round, status, outcome, interview_at, received_date),
        assessments(id, status, entry_date, deadline)`,
@@ -67,11 +69,23 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
                   <Link href={`/crm/leads/${l.id}`} className="block truncate text-h3 font-semibold text-text-primary hover:text-brand-primary">
                     {l.company}
                   </Link>
-                  <div className="text-caption text-text-secondary">
-                    {l.role ? `${l.role} · ` : ""}{l.profile?.name ?? "Unassigned profile"} · {l.owner?.full_name ?? "—"}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
+                    {l.role && <span>{l.role}</span>}
+                    <span>{l.profile?.name ?? "Unassigned profile"}</span>
+                    {l.profile?.stack?.name && <Badge tone="neutral">{l.profile.stack.name}</Badge>}
                   </div>
                 </div>
-                <Badge tone={statusTone(l.status)}>{labelize(l.status)}</Badge>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge tone={statusTone(l.status)}>{labelize(l.status)}</Badge>
+                  {/* BD owner avatar — initials, hover shows the full name (disambiguates same-company leads) */}
+                  <span
+                    title={l.owner?.full_name ?? undefined}
+                    aria-label={`BD: ${l.owner?.full_name ?? "unassigned"}`}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-light text-[11px] font-semibold text-brand-primary"
+                  >
+                    {initials(l.owner?.full_name) || "—"}
+                  </span>
+                </div>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-3 text-caption">

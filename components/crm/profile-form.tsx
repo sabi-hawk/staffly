@@ -24,7 +24,7 @@ export function ProfileForm({
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
     name: initial?.name ?? "",
-    stack_id: initial?.stack_id ?? "",
+    stack: initial?.stack ?? "", // stack NAME (pick from the datalist or type a new one)
     owner_bd_id: initial?.owner_bd_id ?? "",
     email: initial?.email ?? "",
     mobile: initial?.mobile ?? "",
@@ -59,10 +59,17 @@ export function ProfileForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="profile-stack">Stack</Label>
-        <select id="profile-stack" className={selectCls} value={form.stack_id} onChange={(e) => set("stack_id", e.target.value)}>
-          <option value="">—</option>
-          {stacks.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
+        {/* pick an existing stack or type a new one (created on save) */}
+        <Input
+          id="profile-stack"
+          list="profile-stack-options"
+          value={form.stack}
+          onChange={(e) => set("stack", e.target.value)}
+          placeholder="Pick or type a stack…"
+        />
+        <datalist id="profile-stack-options">
+          {stacks.map((s) => <option key={s.id} value={s.label} />)}
+        </datalist>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="profile-owner">Owner (BD)</Label>

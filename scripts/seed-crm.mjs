@@ -62,6 +62,12 @@ async function main() {
   }
   console.log("flagged developers:", devNames.join(", "));
 
+  // Flag one BD as BD-Lead (sees/manages ALL BDs' CRM data) for the "BD Lead" login demo.
+  // Fatima is chosen because Shaiza/Areeba are used as regular-BD subjects in the E2E suite.
+  const bdLead = pid("Fatima Sultan");
+  if (bdLead) await admin.from("profiles").update({ is_bd_lead: true }).eq("id", bdLead);
+  console.log("flagged BD-Lead: Fatima Sultan");
+
   // A demo lead (owned by Shaiza) + one interview + one assessment, for browser/E2E verification.
   const shaiza = bds.find((b) => b.full_name === "Shaiza Maheen")?.id ?? null;
   const { data: sabahat } = await admin.from("dev_profiles").select("id").eq("email", "demo.sabahat@example.com").maybeSingle();

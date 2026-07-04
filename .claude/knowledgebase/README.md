@@ -17,6 +17,7 @@ knowledgebase/
 └── reference/  ← ORIGIN / provenance: where it started (read-once, not day-to-day)
     ├── 00-product-overview.md · 01-architecture-and-conventions.md · 03-business-rules.md (v1)
     ├── 04-v2-softonoma-overhaul.md · 05-testing-and-validation.md · 07-production-readiness.md
+    ├── 08-access-and-accounts.md  ← roles/tiers, access matrix, owner+partner model, credential map
     └── source/  (original Staffly PRD, brand assets)
 ```
 

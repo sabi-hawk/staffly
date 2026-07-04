@@ -9,6 +9,7 @@ export { CRM_DOCS_BUCKET, DOC_MIME, DOC_MAX_BYTES } from "@/lib/crm/docs";
 export interface DevProfileInput {
   name?: string;
   stack_id?: string | null;
+  stack?: string | null; // typed/selected stack NAME (resolved to stack_id, find-or-create)
   owner_bd_id?: string | null;
   email?: string | null;
   mobile?: string | null;
@@ -31,8 +32,40 @@ function clean(input: DevProfileInput) {
   return row;
 }
 
+/**
+ * Resolve a free-text stack NAME to a `stack_id` — find the existing dev_stack (case-insensitive) or
+ * create it (admin-writable lookup). Mutates `input`: sets `stack_id`, removes `stack`. No-op if the
+ * caller didn't send `stack` (leaves any explicit stack_id untouched).
+ */
+async function resolveStack(supabase: SupabaseClient, input: DevProfileInput) {
+  if (input.stack === undefined) return;
+  const name = (input.stack ?? "").trim();
+  delete input.stack; // not in FIELDS — clean() ignores it anyway; dropped here too, defensively
+  if (!name) { input.stack_id = null; return; }
+  // escape ilike wildcards so a name with % or _ is matched LITERALLY (case-insensitive exact find),
+  // not as a pattern — otherwise "Node_JS" would match "NodeXJS" and reuse the wrong stack.
+  const pattern = name.replace(/[%_\\]/g, (ch) => `\\${ch}`);
+  const findByName = () => supabase.from("dev_stacks").select("id").ilike("name", pattern).limit(1).maybeSingle();
+
+  const found = await findByName();
+  if (found.data?.id) { input.stack_id = found.data.id; return; }
+
+  const max = await supabase.from("dev_stacks").select("sort_order").order("sort_order", { ascending: false }).limit(1).maybeSingle();
+  const ins = await supabase
+    .from("dev_stacks")
+    .insert({ name, sort_order: (max.data?.sort_order ?? 0) + 1, is_active: true })
+    .select("id")
+    .single();
+  if (!ins.error) { input.stack_id = ins.data.id; return; }
+  // unique-name race (another insert won) — re-select the winner.
+  const re = await findByName();
+  if (re.data?.id) { input.stack_id = re.data.id; return; }
+  throw new Error(`Could not resolve stack "${name}" — please retry.`);
+}
+
 export async function createDevProfile(supabase: SupabaseClient, input: DevProfileInput) {
   if (!input.name?.trim()) throw new Error("Name is required");
+  await resolveStack(supabase, input);
   const { data, error } = await supabase
     .from("dev_profiles")
     .insert(clean(input))
@@ -43,6 +76,7 @@ export async function createDevProfile(supabase: SupabaseClient, input: DevProfi
 }
 
 export async function updateDevProfile(supabase: SupabaseClient, id: string, input: DevProfileInput) {
+  await resolveStack(supabase, input);
   const row = clean(input);
   if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from("dev_profiles").update(row).eq("id", id);

@@ -93,7 +93,7 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
                 owners={owners}
                 initial={{
                   name: p.name,
-                  stack_id: p.stack_id,
+                  stack: (p.stack as { name: string } | null)?.name ?? "",
                   owner_bd_id: p.owner_bd_id,
                   email: p.email,
                   mobile: p.mobile,

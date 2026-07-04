@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 const DEMOS = [
   { label: "Super Admin", identifier: "super.admin@softonoma.com", password: "Softonoma@SaDM7k29" },
   { label: "Admin / HR", identifier: "admin@softonoma.com", password: "Softonoma@HrAd4n63" },
+  { label: "BD Lead (Fatima)", identifier: "fatima.sultan", password: "Softonoma@3310" },
   { label: "BD (Shaiza)", identifier: "shaiza.maheen", password: "Softonoma@1042" },
   { label: "Engineer (Muzammal)", identifier: "muzammil.faiz", password: "Softonoma@6193" },
 ];
