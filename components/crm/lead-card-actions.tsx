@@ -54,7 +54,7 @@ export function LeadCardActions({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+    <div className="flex flex-1 flex-wrap items-center gap-2">
       <label htmlFor={`lead-status-${leadId}`} className="sr-only">Status</label>
       <select
         id={`lead-status-${leadId}`}

@@ -8,7 +8,7 @@ import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { LeadCardActions } from "@/components/crm/lead-card-actions";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
-import { formatCrmDate } from "@/lib/utils";
+import { formatCrmDate, cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
@@ -16,6 +16,30 @@ type SP = { page?: string; pageSize?: string; status?: string; owner?: string; p
 const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) : -1);
 const initials = (name?: string | null) =>
   (name ?? "").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
+const DOT: Record<string, string> = {
+  success: "bg-success", warning: "bg-warning", danger: "bg-danger", brand: "bg-brand-primary", neutral: "bg-text-secondary",
+};
+/** A clean status pill: a tone-coloured dot + label (top-right of a lead card). */
+function StatusPill({ status }: { status: string }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-caption font-medium text-text-primary">
+      <span className={cn("size-1.5 rounded-full", DOT[statusTone(status)] ?? DOT.neutral)} />
+      {labelize(status)}
+    </span>
+  );
+}
+function BdAvatar({ fullName }: { fullName?: string | null }) {
+  return (
+    <span
+      title={fullName ?? undefined}
+      aria-label={`BD: ${fullName ?? "unassigned"}`}
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-light text-[11px] font-semibold text-brand-primary"
+    >
+      {initials(fullName) || "—"}
+    </span>
+  );
+}
 
 /** Leads tab — a card per company/opportunity, summarising its interviews + assessments (FRD-07). */
 export async function LeadsCards({ searchParams, profiles }: { searchParams: SP; profiles: Opt[] }) {
@@ -63,52 +87,46 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
           const interviews = [...(l.interviews ?? [])].sort((a, b) => roundRank(a.round) - roundRank(b.round));
           const assessments = l.assessments ?? [];
           return (
-            <div key={l.id} className="rounded-xl border border-border bg-card p-4 shadow-card">
+            <div key={l.id} className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Link href={`/crm/leads/${l.id}`} className="block truncate text-h3 font-semibold text-text-primary hover:text-brand-primary">
                     {l.company}
                   </Link>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-secondary">
-                    {l.role && <span>{l.role}</span>}
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-text-secondary">
+                    {l.role && <span className="text-text-primary">{l.role}</span>}
                     <span>{l.profile?.name ?? "Unassigned profile"}</span>
                     {l.profile?.stack?.name && <Badge tone="neutral">{l.profile.stack.name}</Badge>}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge tone={statusTone(l.status)}>{labelize(l.status)}</Badge>
-                  {/* BD owner avatar — initials, hover shows the full name (disambiguates same-company leads) */}
-                  <span
-                    title={l.owner?.full_name ?? undefined}
-                    aria-label={`BD: ${l.owner?.full_name ?? "unassigned"}`}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-light text-[11px] font-semibold text-brand-primary"
-                  >
-                    {initials(l.owner?.full_name) || "—"}
-                  </span>
-                </div>
+                <StatusPill status={l.status} />
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 text-caption">
+              <div className="mt-3 grid grid-cols-2 gap-4 text-caption">
                 <div>
-                  <div className="mb-1 font-medium text-text-secondary">Interviews ({interviews.length})</div>
+                  <div className="mb-1.5 font-medium text-text-secondary">Interviews ({interviews.length})</div>
                   {interviews.length === 0 && <div className="text-text-secondary">—</div>}
-                  {interviews.map((iv: any) => (
-                    <div key={iv.id} className="flex items-center gap-1.5">
-                      <span className="text-text-primary">{iv.round ?? "—"}</span>
-                      <Badge tone={statusTone(iv.outcome || iv.status)}>{labelize(iv.outcome || iv.status)}</Badge>
-                      <span className="text-text-secondary">{formatCrmDate(iv.received_date)}</span>
-                    </div>
-                  ))}
+                  <div className="space-y-1.5">
+                    {interviews.map((iv: any) => (
+                      <div key={iv.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="rounded bg-surface px-1.5 py-0.5 font-medium text-text-primary">{iv.round ?? "—"}</span>
+                        <Badge tone={statusTone(iv.outcome || iv.status)}>{labelize(iv.outcome || iv.status)}</Badge>
+                        <span className="text-text-secondary">{formatCrmDate(iv.received_date)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div>
-                  <div className="mb-1 font-medium text-text-secondary">Assessments ({assessments.length})</div>
+                  <div className="mb-1.5 font-medium text-text-secondary">Assessments ({assessments.length})</div>
                   {assessments.length === 0 && <div className="text-text-secondary">—</div>}
-                  {assessments.map((as: any) => (
-                    <div key={as.id} className="flex items-center gap-1.5">
-                      <Badge tone={statusTone(as.status)}>{labelize(as.status)}</Badge>
-                      <span className="text-text-secondary">{formatCrmDate(as.entry_date)}</span>
-                    </div>
-                  ))}
+                  <div className="space-y-1.5">
+                    {assessments.map((as: any) => (
+                      <div key={as.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <Badge tone={statusTone(as.status)}>{labelize(as.status)}</Badge>
+                        <span className="text-text-secondary">{formatCrmDate(as.entry_date)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -116,7 +134,10 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
                 <CardDescription className="mt-3 border-t border-border pt-2">{l.feedback}</CardDescription>
               )}
 
-              <LeadCardActions leadId={l.id} company={l.company} status={l.status} feedback={l.feedback} />
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                <LeadCardActions leadId={l.id} company={l.company} status={l.status} feedback={l.feedback} />
+                <BdAvatar fullName={l.owner?.full_name} />
+              </div>
             </div>
           );
         })}
