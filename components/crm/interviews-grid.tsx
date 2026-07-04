@@ -5,6 +5,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
 import { ActivityRowActions } from "@/components/crm/activity-row-actions";
+import { interviewShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
 import { formatCrmDatetime, formatCrmDate } from "@/lib/utils";
@@ -25,7 +26,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   let query = supabase
     .from("interviews")
     .select(
-      "id, job_title, company, status, round, outcome, interview_at, received_date, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!interviews_owner_bd_id_fkey(full_name)",
+      "id, job_title, company, status, round, outcome, interview_at, received_date, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!interviews_owner_bd_id_fkey(full_name)",
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
@@ -75,7 +76,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
               <TD className="text-text-secondary">{formatCrmDatetime(iv.interview_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.created_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.updated_at)}</TD>
-              <TD><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} /></TD>
+              <TD><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} copyText={interviewShareText(iv)} /></TD>
             </TR>
           ))}
           {list.length === 0 && <TR><TD colSpan={10} className="py-6 text-center text-text-secondary">No interviews match.</TD></TR>}

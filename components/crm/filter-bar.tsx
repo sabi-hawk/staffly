@@ -1,21 +1,26 @@
 "use client";
+import { useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export type FilterDef = { key: string; label: string; options: { value: string; label: string }[] };
 
 // URL-driven filter bar for CRM list pages: selects + an optional text search. Writes searchParams
-// (resetting ?page) so the server page can read them and filter the query.
+// (resetting ?page) so the server page can read them and filter the query. Uses a transition so the
+// bar shows a pending state during the server round-trip.
 export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search?: { key: string; placeholder?: string } }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const [pending, startTransition] = useTransition();
 
+  function nav(url: string) { startTransition(() => router.push(url)); }
   function setParam(k: string, v: string) {
     const sp = new URLSearchParams(params.toString());
     if (v) sp.set(k, v);
     else sp.delete(k);
     sp.delete("page");
-    router.push(`${pathname}?${sp.toString()}`);
+    nav(`${pathname}?${sp.toString()}`);
   }
 
   const keys = [...filters.map((f) => f.key), ...(search ? [search.key] : [])];
@@ -25,11 +30,11 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
     for (const k of keys) sp.delete(k);
     sp.delete("page");
     const qs = sp.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    nav(qs ? `${pathname}?${qs}` : pathname);
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
+    <div className={`mb-4 flex flex-wrap items-center gap-2 transition-opacity ${pending ? "opacity-60" : ""}`}>
       {filters.map((f) => (
         <select
           key={f.key}
@@ -58,6 +63,7 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
           Clear filters
         </button>
       )}
+      {pending && <Loader2 className="size-4 animate-spin text-text-secondary" aria-label="Loading" />}
     </div>
   );
 }

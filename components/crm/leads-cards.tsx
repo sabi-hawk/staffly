@@ -7,6 +7,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { LeadCardActions } from "@/components/crm/lead-card-actions";
 import { StatusPill } from "@/components/crm/status-pill";
+import { CopyButton } from "@/components/crm/copy-button";
+import { leadShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
@@ -125,7 +127,10 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
 
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
                 <LeadCardActions leadId={l.id} company={l.company} status={l.status} feedback={l.feedback} />
-                <BdAvatar fullName={l.owner?.full_name} />
+                <div className="flex items-center gap-2">
+                  <CopyButton text={leadShareText(l)} title="Copy lead details" />
+                  <BdAvatar fullName={l.owner?.full_name} />
+                </div>
               </div>
             </div>
           );

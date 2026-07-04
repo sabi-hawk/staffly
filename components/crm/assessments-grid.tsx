@@ -5,6 +5,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
 import { ActivityRowActions } from "@/components/crm/activity-row-actions";
+import { assessmentShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
@@ -26,7 +27,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   let query = supabase
     .from("assessments")
     .select(
-      "id, job_title, company, status, priority, duration, deadline, entry_date, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name)",
+      "id, job_title, company, status, priority, duration, deadline, entry_date, budget, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name)",
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
@@ -78,7 +79,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
                 <TD className={overdue ? "font-medium text-danger" : "text-text-secondary"}>{as.deadline ? formatCrmDate(as.deadline) : "—"}{overdue ? " · overdue" : ""}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.created_at)}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.updated_at)}</TD>
-                <TD><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} /></TD>
+                <TD><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} copyText={assessmentShareText(as)} /></TD>
               </TR>
             );
           })}

@@ -5,15 +5,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { CopyButton } from "@/components/crm/copy-button";
 
 export function ActivityRowActions({
   kind,
   id,
   leadId,
+  copyText,
 }: {
   kind: "interviews" | "assessments";
   id: string;
   leadId: string | null;
+  copyText?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -35,6 +38,7 @@ export function ActivityRowActions({
   const btn = "inline-flex size-7 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-surface";
   return (
     <div className="flex items-center justify-end gap-1">
+      {copyText && <CopyButton text={copyText} />}
       {leadId && (
         <>
           <Link href={`/crm/leads/${leadId}`} className={btn} title="Open lead" aria-label="Open lead">
