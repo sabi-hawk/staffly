@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea, Label } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
+import { RichText } from "@/components/crm/rich-text";
 import { labelize, LEAD_STATUS, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
 
@@ -99,13 +100,13 @@ export function LeadForm({
         <Input id="lead-expected" value={form.expected_budget} onChange={(e) => set("expected_budget", e.target.value)} placeholder="what we asked for" />
       </div>
       <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-        <Label htmlFor="lead-jd">Job description</Label>
-        <Textarea id="lead-jd" rows={4} value={form.job_description} onChange={(e) => set("job_description", e.target.value)} placeholder="Paste the job description…" />
+        <Label>Job description</Label>
+        <RichText value={form.job_description} onChange={(html) => set("job_description", html)} placeholder="Paste or type the job description…" />
       </div>
       <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-        <Label htmlFor="lead-notes">BD notes</Label>
+        <Label>BD notes</Label>
         <p className="text-caption text-text-secondary">Private notepad — HR contact/email, call notes, anything useful for this deal.</p>
-        <Textarea id="lead-notes" rows={3} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. HR: jane@acme.com …" />
+        <RichText value={form.notes} onChange={(html) => set("notes", html)} placeholder="e.g. HR: jane@acme.com …" />
       </div>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save lead" : "Create lead"}</Button>

@@ -1,6 +1,15 @@
 // CRM Leads / Interviews / Assessments service. Injected Supabase client (RLS-enforced).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DISQUALIFY_CATEGORIES } from "@/lib/crm/constants";
+import { sanitizeRichText } from "@/lib/sanitize";
+
+// Sanitize any rich-text fields (job_description, notes) at the write path — stored HTML is then
+// always safe to render (leads render these; assessments sanitized defensively even though currently
+// shown as plain text).
+function sanitizeRichFields(input: Record<string, unknown>) {
+  if (input.job_description !== undefined) input.job_description = sanitizeRichText(input.job_description as string);
+  if (input.notes !== undefined) input.notes = sanitizeRichText(input.notes as string);
+}
 
 function pick<T extends object>(input: T, fields: (keyof T)[]) {
   const row: Record<string, unknown> = {};
@@ -39,6 +48,7 @@ async function update(supabase: SupabaseClient, table: string, id: string, row: 
 // ── Leads ──
 export async function createLead(supabase: SupabaseClient, input: Record<string, unknown>) {
   if (!(input.company as string)?.trim()) throw new Error("Company is required");
+  sanitizeRichFields(input);
   return insert(supabase, "leads", pick(input as never, LEAD_FIELDS as never));
 }
 export async function updateLead(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {
@@ -48,6 +58,7 @@ export async function updateLead(supabase: SupabaseClient, id: string, input: Re
   if ((status === "rejected" || status === "dismissed") && !(input.feedback as string)?.trim()) {
     throw new Error("A rejected or dismissed lead needs a reason — add feedback.");
   }
+  sanitizeRichFields(input);
   return update(supabase, "leads", id, pick(input as never, LEAD_FIELDS as never));
 }
 // Dismiss a lead ("we're not proceeding") with a required reason. Reuses the legacy disqualified_*
@@ -99,8 +110,10 @@ export async function updateInterview(supabase: SupabaseClient, id: string, inpu
 export async function createAssessment(supabase: SupabaseClient, input: Record<string, unknown>) {
   if (!(input.job_title as string)?.trim() && !(input.company as string)?.trim())
     throw new Error("Add a job title or company");
+  sanitizeRichFields(input);
   return insert(supabase, "assessments", pick(input as never, ASSESSMENT_FIELDS as never));
 }
 export async function updateAssessment(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {
+  sanitizeRichFields(input);
   return update(supabase, "assessments", id, pick(input as never, ASSESSMENT_FIELDS as never));
 }

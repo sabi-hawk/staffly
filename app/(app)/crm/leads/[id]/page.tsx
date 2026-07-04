@@ -19,6 +19,9 @@ import type { Interview, Assessment } from "@/lib/types";
 // Always render fresh so mutations (resume upload, status change, edit, qualify) reflect on refresh.
 export const dynamic = "force-dynamic";
 
+// list/link styling for the sanitized rich-text (job description / notes) blocks.
+const PROSE = "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-primary [&_a]:underline [&_p]:mb-1";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function LeadDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
@@ -87,13 +90,14 @@ export default async function LeadDetail({ params }: { params: { id: string } })
           {lead.job_description && (
             <div>
               <dt className="mb-1 text-caption text-text-secondary">Job description</dt>
-              <p className="whitespace-pre-wrap text-sm text-text-primary">{lead.job_description}</p>
+              {/* sanitized at write-time (lib/sanitize) — safe to render as HTML */}
+              <div className={`text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: lead.job_description }} />
             </div>
           )}
           {lead.notes && (
             <div>
               <dt className="mb-1 text-caption text-text-secondary">BD notes</dt>
-              <p className="whitespace-pre-wrap text-sm text-text-primary">{lead.notes}</p>
+              <div className={`text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: lead.notes }} />
             </div>
           )}
         </CardContent>
