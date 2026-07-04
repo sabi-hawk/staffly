@@ -11,15 +11,18 @@ function pick<T extends object>(input: T, fields: (keyof T)[]) {
   return row;
 }
 
-const LEAD_FIELDS = ["company", "role", "dev_profile_id", "owner_bd_id", "status", "feedback"] as const;
+const LEAD_FIELDS = [
+  "company", "role", "dev_profile_id", "owner_bd_id", "status", "feedback",
+  "budget", "expected_budget", "job_description", "notes",
+] as const;
 const INTERVIEW_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "job_post_url", "status",
   "given_by", "whom_should_give", "interview_at", "received_date", "round", "outcome", "feedback", "notes", "notes2",
 ] as const;
 const ASSESSMENT_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "status", "entry_date", "deadline",
-  "completion_date", "mail_subject", "job_post_url", "job_description", "completed_by", "priority",
-  "budget", "assessment_link", "duration", "feedback", "notes", "extra",
+  "completion_date", "mail_subject", "job_post_url", "job_description", "completed_by", "whom_should_complete",
+  "priority", "budget", "assessment_link", "duration", "feedback", "notes", "extra",
 ] as const;
 
 async function insert(supabase: SupabaseClient, table: string, row: Record<string, unknown>) {

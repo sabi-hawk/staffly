@@ -101,13 +101,14 @@ export default function LoginPage() {
           {process.env.NODE_ENV !== "production" && (
             <div className="mt-6 border-t border-border pt-4">
               <p className="mb-2 text-caption text-text-secondary">Quick demo login (dev only)</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {DEMOS.map((d) => (
                   <Button
                     key={d.label}
                     variant="secondary"
                     size="sm"
                     disabled={loading}
+                    className="whitespace-nowrap"
                     onClick={() => signIn(undefined, { identifier: d.identifier, password: d.password })}
                   >
                     {d.label}

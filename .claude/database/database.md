@@ -62,6 +62,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   (existing `entry_date` = "Received"). New **`crm_alerts`** table (admin/super read+update RLS; **no
   client insert**) + a SECURITY-DEFINER trigger `crm_alert_on_lead_closed` that inserts one alert when a
   lead transitions **into** `closed`. `disqualified_*` columns retained as the **dismiss** reason.
+- `0021_crm_lead_details.sql` — CRM lead detail fields: `leads` +`budget` +`expected_budget`
+  +`job_description` +`notes` (BD notepad; job_description/notes are rich-text HTML). `assessments`
+  +`whom_should_complete` (uuid→profiles; mirror of `interviews.whom_should_give`). **Backfill**
+  `interviews.received_date` / `assessments.entry_date` from `created_at` where null (so the default
+  1-month grid filter shows pre-existing rows). New **`lead_documents`** table (resume/file attach per
+  lead; owner-scoped RLS via the parent lead; updated_at + audit triggers).
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

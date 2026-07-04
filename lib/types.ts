@@ -56,6 +56,10 @@ export interface Lead {
   owner_bd_id: string;
   status: "in_progress" | "on_hold" | "closed" | "rejected" | "dismissed";
   feedback: string | null;
+  budget: string | null; // company's stated budget (FRD-07)
+  expected_budget: string | null; // what the BD asked for
+  job_description: string | null; // rich-text HTML
+  notes: string | null; // BD notepad (rich-text HTML) — HR contact, deal details
   disqualified_category: "fake_job" | "low_pay" | "unpaid_collab" | "other" | null;
   disqualified_note: string | null;
   disqualified_by: string | null;
@@ -135,6 +139,7 @@ export interface Assessment {
   job_post_url: string | null;
   job_description: string | null;
   completed_by: string | null;
+  whom_should_complete: string | null; // developer who SHOULD do it (mirror of interview.whom_should_give)
   priority: "high" | "medium" | "low" | null;
   budget: string | null;
   assessment_link: string | null;
