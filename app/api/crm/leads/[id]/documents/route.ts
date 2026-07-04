@@ -19,17 +19,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const staged = await stageCrmDoc(`leads/${params.id}`, v.file, v.buf);
   if ("error" in staged) return NextResponse.json({ error: staged.error.message }, { status: staged.error.status });
 
-  const { error } = await createClient().from("lead_documents").insert({
+  const { data: doc, error } = await createClient().from("lead_documents").insert({
     lead_id: params.id,
     doc_type: docType,
     label: (v.form.get("label") as string) || null,
     file_path: staged.objectPath,
     file_name: v.file.name,
     uploaded_by: me.id,
-  });
+  }).select("id, label, file_name, doc_type").single();
   if (error) {
     await staged.rollback();
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, doc });
 }

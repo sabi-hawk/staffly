@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/crm/back-link";
 import { getCurrentProfile } from "@/lib/auth";
 import { isBdLead, isAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
@@ -12,9 +12,12 @@ import { labelize, statusTone } from "@/lib/crm/constants";
 import { LeadEditModal } from "@/components/crm/lead-edit-modal";
 import { QualificationPanel } from "@/components/crm/disqualify-panel";
 import { LeadActivity } from "@/components/crm/lead-activity";
+import { LeadDocuments } from "@/components/crm/lead-documents";
 import { RecordHistory } from "@/components/audit/record-history";
 import type { Interview, Assessment } from "@/lib/types";
-import type { AssessmentDoc } from "@/components/crm/assessment-docs";
+
+// Always render fresh so mutations (resume upload, status change, edit, qualify) reflect on refresh.
+export const dynamic = "force-dynamic";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function LeadDetail({ params }: { params: { id: string } }) {
@@ -39,24 +42,18 @@ export default async function LeadDetail({ params }: { params: { id: string } })
   const interviews = (ivRes.data ?? []) as Interview[];
   const assessments = (asRes.data ?? []) as Assessment[];
 
-  const docsByAssessment: Record<string, AssessmentDoc[]> = {};
-  const asIds = assessments.map((a) => a.id);
-  if (asIds.length) {
-    const { data: docs } = await supabase
-      .from("assessment_documents")
-      .select("id, assessment_id, doc_type, label, file_name")
-      .in("assessment_id", asIds);
-    for (const d of (docs ?? []) as any[]) (docsByAssessment[d.assessment_id] ??= []).push(d);
-  }
+  const { data: leadDocs } = await supabase
+    .from("lead_documents")
+    .select("id, label, file_name, doc_type")
+    .eq("lead_id", params.id)
+    .order("created_at", { ascending: false });
 
   const profileName = (lead.profile as any)?.name ?? "—";
   const ownerName = (lead.owner as any)?.full_name ?? "—";
 
   return (
     <div className="space-y-4">
-      <Link href="/crm/leads" className="inline-flex items-center gap-1 text-caption text-text-secondary hover:text-brand-primary">
-        <ChevronLeft className="size-4" /> Back to leads
-      </Link>
+      <BackLink fallback="/crm/leads" label="Back" />
 
       {/* Top card: the lead's key info + status + an edit modal (no more repetitive inline form). */}
       <Card>
@@ -112,8 +109,15 @@ export default async function LeadDetail({ params }: { params: { id: string } })
             developers={developers}
             interviews={interviews}
             assessments={assessments}
-            docsByAssessment={docsByAssessment}
           />
+        </CardContent>
+      </Card>
+
+      {/* Deal-specific resumes / files attached to this lead (moved off assessments — owner feedback). */}
+      <Card>
+        <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
+        <CardContent>
+          <LeadDocuments leadId={lead.id} docs={(leadDocs ?? []) as any[]} />
         </CardContent>
       </Card>
 

@@ -11,7 +11,6 @@ import type { Interview, Assessment } from "@/lib/types";
 import type { Opt } from "@/lib/crm/options";
 import { InterviewForm } from "./interview-form";
 import { AssessmentForm } from "./assessment-form";
-import { AssessmentDocs, type AssessmentDoc } from "./assessment-docs";
 
 export function LeadActivity({
   leadId,
@@ -20,7 +19,6 @@ export function LeadActivity({
   developers,
   interviews,
   assessments,
-  docsByAssessment,
 }: {
   leadId: string;
   devProfileId: string | null;
@@ -28,7 +26,6 @@ export function LeadActivity({
   developers: Opt[];
   interviews: Interview[];
   assessments: Assessment[];
-  docsByAssessment: Record<string, AssessmentDoc[]>;
 }) {
   const router = useRouter();
   const [iEdit, setIEdit] = useState<string | null>(null); // interview id or "new"
@@ -116,12 +113,8 @@ export function LeadActivity({
                 </span>
               </div>
               {aEdit === as.id && (
-                <div className="mt-3 space-y-4 border-t border-border pt-3">
+                <div className="mt-3 border-t border-border pt-3">
                   <AssessmentForm id={as.id} developers={developers} initial={as as never} onDone={() => setAEdit(null)} />
-                  <div>
-                    <div className="text-caption font-medium text-text-secondary mb-1">Files</div>
-                    <AssessmentDocs assessmentId={as.id} docs={docsByAssessment[as.id] ?? []} />
-                  </div>
                 </div>
               )}
             </div>
