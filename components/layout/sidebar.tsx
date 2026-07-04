@@ -2,10 +2,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "@/lib/nav";
+import { isNavGroup, type NavEntry, type NavGroup, type NavItem } from "@/lib/nav";
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
@@ -21,38 +21,109 @@ function Brand({ collapsed }: { collapsed: boolean }) {
   );
 }
 
+function NavLink({
+  item,
+  collapsed,
+  onNavigate,
+  active,
+  nested,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  onNavigate?: () => void;
+  active: boolean;
+  nested?: boolean;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        nested && "py-1.5",
+        active
+          ? "bg-brand-light text-brand-primary"
+          : "text-text-secondary hover:bg-sidebar-muted hover:text-text-primary"
+      )}
+      title={item.label}
+    >
+      <item.icon className="size-4 shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  );
+}
+
+function NavGroupItem({
+  group,
+  collapsed,
+  onNavigate,
+  isActive,
+}: {
+  group: NavGroup;
+  collapsed: boolean;
+  onNavigate?: () => void;
+  isActive: (href: string) => boolean;
+}) {
+  const anyChildActive = group.children.some((c) => isActive(c.href));
+  const [open, setOpen] = useState(anyChildActive);
+  useEffect(() => { if (anyChildActive) setOpen(true); }, [anyChildActive]);
+
+  // Collapsed rail has no room for a labelled group → show the children as flat icon links.
+  if (collapsed) {
+    return (
+      <>
+        {group.children.map((c) => (
+          <NavLink key={c.href} item={c} collapsed onNavigate={onNavigate} active={isActive(c.href)} />
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          anyChildActive ? "text-text-primary" : "text-text-secondary hover:bg-sidebar-muted hover:text-text-primary"
+        )}
+        aria-expanded={open}
+      >
+        <group.icon className="size-4 shrink-0" />
+        <span className="flex-1 text-left">{group.label}</span>
+        <ChevronDown className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")} />
+      </button>
+      {open && (
+        <div className="mt-1 space-y-1 border-l border-sidebar-border pl-3">
+          {group.children.map((c) => (
+            <NavLink key={c.href} item={c} collapsed={false} onNavigate={onNavigate} active={isActive(c.href)} nested />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NavLinks({
   items,
   collapsed,
   onNavigate,
 }: {
-  items: NavItem[];
+  items: NavEntry[];
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
   return (
-    <nav className="flex-1 space-y-1 px-2 py-3">
-      {items.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-brand-light text-brand-primary"
-                : "text-text-secondary hover:bg-sidebar-muted hover:text-text-primary"
-            )}
-            title={item.label}
-          >
-            <item.icon className="size-4 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+      {items.map((entry) =>
+        isNavGroup(entry) ? (
+          <NavGroupItem key={entry.label} group={entry} collapsed={collapsed} onNavigate={onNavigate} isActive={isActive} />
+        ) : (
+          <NavLink key={entry.href} item={entry} collapsed={collapsed} onNavigate={onNavigate} active={isActive(entry.href)} />
+        )
+      )}
     </nav>
   );
 }
@@ -71,7 +142,7 @@ export function Sidebar({
   mobileOpen = false,
   onClose,
 }: {
-  items: NavItem[];
+  items: NavEntry[];
   role: string;
   mobileOpen?: boolean;
   onClose?: () => void;

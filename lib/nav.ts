@@ -15,6 +15,7 @@ import {
   Briefcase,
   Handshake,
   TrendingUp,
+  FolderKanban,
   type LucideIcon,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
@@ -24,6 +25,18 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+}
+
+/** A collapsible parent with child links (e.g. CRM → Profiles, Leads, …). */
+export interface NavGroup {
+  label: string;
+  icon: LucideIcon;
+  children: NavItem[];
+}
+
+export type NavEntry = NavItem | NavGroup;
+export function isNavGroup(e: NavEntry): e is NavGroup {
+  return (e as NavGroup).children !== undefined;
 }
 
 const employeeNav: NavItem[] = [
@@ -55,21 +68,20 @@ const superAdminNav: NavItem[] = [
 
 type NavProfile = Pick<Profile, "role" | "department" | "is_bd_lead">;
 
-/** CRM nav items for a person who can see the CRM (BD or admin). Empty otherwise.
- * A single /crm/profiles route serves everyone — RLS scopes the rows (a BD sees only their own). */
-function crmNavFor(p: NavProfile): NavItem[] {
+/** CRM as a single collapsible group for anyone who can see it (BD or admin). Empty otherwise.
+ * RLS scopes rows (a BD sees only their own). FRD-07: Interviews/Assessments are tabs inside Leads. */
+function crmNavFor(p: NavProfile): NavGroup[] {
   if (!canSeeCrm(p)) return [];
-  // FRD-07: Interviews & Assessments are now tabs inside the CRM Leads hub, not standalone items.
-  const items: NavItem[] = [
-    { label: "CRM Profiles", href: "/crm/profiles", icon: Contact },
-    { label: "CRM Leads", href: "/crm/leads", icon: Briefcase },
+  const children: NavItem[] = [
+    { label: "Profiles", href: "/crm/profiles", icon: Contact },
+    { label: "Leads", href: "/crm/leads", icon: Briefcase },
     { label: "BD Performance", href: "/crm/analytics", icon: TrendingUp },
   ];
-  if (canSeeDeals(p)) items.push({ label: "Deals", href: "/crm/deals", icon: Handshake });
-  return items;
+  if (canSeeDeals(p)) children.push({ label: "Deals", href: "/crm/deals", icon: Handshake });
+  return [{ label: "CRM", icon: FolderKanban, children }];
 }
 
-export function navForRole(p: NavProfile): NavItem[] {
+export function navForRole(p: NavProfile): NavEntry[] {
   const base =
     p.role === "employee" ? employeeNav : p.role === "admin" ? adminNav : [...adminNav, ...superAdminNav];
   return [...base, ...crmNavFor(p)];
