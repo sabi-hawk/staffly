@@ -16,11 +16,17 @@ const admin = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, pers
 // Employee password convention: Softonoma@<employee_code>.
 const SUPER_ADMIN_PW = "Softonoma@SaDM7k29";
 const ADMIN_PW = "Softonoma@HrAd4n63";
+// Owner/partner accounts — super-admins who are also engineers (see reference/08-access-and-accounts).
+const ALI_PW = "Softonoma@AliK7mQ2";
+const SABAHAT_PW = "Softonoma@SabX4nP9";
 const empPw = (code) => `Softonoma@${code}`;
 
 const USERS = [
   { id: "00000000-0000-0000-0000-000000000001", email: "super.admin@softonoma.com", full_name: "Super Admin", role: "super_admin", password: SUPER_ADMIN_PW },
   { id: "00000000-0000-0000-0000-000000000002", email: "admin@softonoma.com",       full_name: "HR Admin",    role: "admin",       password: ADMIN_PW },
+  // Owners (Softonoma founders) — super_admin + Engineering + is_developer.
+  { id: "00000000-0000-0000-0000-000000000010", email: "ali.softonoma@gmail.com",    full_name: "Ali Ahmad",       role: "super_admin", password: ALI_PW },
+  { id: "00000000-0000-0000-0000-000000000011", email: "miansabby516@gmail.com",     full_name: "Sabahat Atique",  role: "super_admin", password: SABAHAT_PW },
   { id: "00000000-0000-0000-0000-000000000021", email: "029755shaizamaheen@gmail.com", full_name: "Shaiza Maheen",        role: "employee", password: empPw(1042) },
   { id: "00000000-0000-0000-0000-000000000022", email: "ahmad.roshi5@gmail.com",        full_name: "Ahmad Roshan",         role: "employee", password: empPw(2087) },
   { id: "00000000-0000-0000-0000-000000000023", email: "fatimasul89@gmail.com",         full_name: "Fatima Sultan",        role: "employee", password: empPw(3310) },

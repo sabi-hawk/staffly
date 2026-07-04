@@ -53,7 +53,7 @@ async function main() {
   }
 
   // Flag a few developers (interview/assessment "given by / completed by" picker source).
-  const devNames = ["Muzammal Faiz", "Muhammad Aizaz Ansab", "Super Admin"];
+  const devNames = ["Muzammal Faiz", "Muhammad Aizaz Ansab", "Super Admin", "Ali Ahmad", "Sabahat Atique"];
   const { data: allProfiles } = await admin.from("profiles").select("id, full_name");
   const pid = (name) => allProfiles.find((p) => p.full_name === name)?.id ?? null;
   for (const n of devNames) {

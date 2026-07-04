@@ -14,6 +14,8 @@ insert into profiles (id, full_name, email, username, email_secondary, role, emp
                       employment_type, position, department, phone, joining_date) values
 ('00000000-0000-0000-0000-000000000001','Super Admin','super.admin@softonoma.com',null,null,'super_admin','1001','male','onsite','Founder','Exec',null,null),
 ('00000000-0000-0000-0000-000000000002','HR Admin','admin@softonoma.com',null,null,'admin','1002','female','onsite','HR Manager','People',null,null),
+('00000000-0000-0000-0000-000000000010','Ali Ahmad','ali.softonoma@gmail.com','ali.ahmad',null,'super_admin','8801','male','onsite','Co-Founder / Engineer','Engineering',null,null),
+('00000000-0000-0000-0000-000000000011','Sabahat Atique','miansabby516@gmail.com','sabahat.atique',null,'super_admin','8802','male','onsite','Founder / Engineer','Engineering',null,null),
 ('00000000-0000-0000-0000-000000000021','Shaiza Maheen','029755shaizamaheen@gmail.com','shaiza.maheen','shaiza.softonoma@gmail.com','employee','1042','female','remote','Business Developer','Business Development','03084761857','2025-12-15'),
 ('00000000-0000-0000-0000-000000000022','Ahmad Roshan','ahmad.roshi5@gmail.com','ahmad.roshan','softonomaahmad@gmail.com','employee','2087','male','onsite','Sr. Business Executive','Business Development','03227707911','2026-04-27'),
 ('00000000-0000-0000-0000-000000000023','Fatima Sultan','fatimasul89@gmail.com','fatima.sultan','fatima.softonoma21@gmail.com','employee','3310','female','onsite','Jr. Business Executive','Business Development','03298041475','2026-05-05'),
@@ -45,6 +47,8 @@ on conflict (employee_id) do update set cnic=excluded.cnic,
 
 -- ---------- portal credentials (password = Softonoma@<employee_code>) ----------
 insert into employee_credentials (employee_id, portal_password) values
+('00000000-0000-0000-0000-000000000010','Softonoma@AliK7mQ2'),
+('00000000-0000-0000-0000-000000000011','Softonoma@SabX4nP9'),
 ('00000000-0000-0000-0000-000000000021','Softonoma@1042'),
 ('00000000-0000-0000-0000-000000000022','Softonoma@2087'),
 ('00000000-0000-0000-0000-000000000023','Softonoma@3310'),

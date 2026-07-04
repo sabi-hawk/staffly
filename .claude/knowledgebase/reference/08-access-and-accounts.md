@@ -64,10 +64,10 @@ can legitimately be *both* a super-admin and a developer.
 audit trails, and "who did this" become ambiguous, and they'd log in twice. A single super-admin +
 Engineering + is_developer profile keeps one clean identity with full powers.
 
-> **PENDING — owner input needed:** to create the partners' *real* accounts I need, for each: **full
-> name + email + (optional) mobile/CNIC/bank** (bank/CNIC go in `employee_private`, super-admin-only).
-> Until then, the generic **Super Admin** account stands in. Give me those and I'll seed the two real
-> owner accounts (super_admin + Engineering + is_developer).
+> **Created (2026-07-05):** the two owner accounts are seeded — **Ali Ahmad** (`ali.softonoma@gmail.com`)
+> and **Sabahat Atique** (`miansabby516@gmail.com`), both `super_admin` + Engineering + `is_developer`.
+> Passwords are in `scripts/seed.mjs` (`ALI_PW` / `SABAHAT_PW`) — **change them after first login**
+> (they're super-admin). Bank/CNIC (`employee_private`) can be added later if needed.
 
 ---
 
