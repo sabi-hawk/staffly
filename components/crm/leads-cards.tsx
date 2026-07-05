@@ -14,10 +14,10 @@ import { leadShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
+import { resolveRange, type RangeKey } from "@/lib/time";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string; from?: string; to?: string };
-const asDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string; range?: string; from?: string; to?: string };
 
 const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) : -1);
 const initials = (name?: string | null) =>
@@ -54,28 +54,30 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
   if (searchParams.q) query = query.ilike("company", `%${searchParams.q}%`);
-  // Optional last-activity date range (default: All — leads are the top-level pipeline, so we don't
-  // hide older open threads by default; the presets are there when the owner wants to narrow).
-  const rFrom = asDate(searchParams.from);
-  const rTo = asDate(searchParams.to);
-  if (rFrom) query = query.gte("updated_at", `${rFrom}T00:00:00`);
-  if (rTo) query = query.lte("updated_at", `${rTo}T23:59:59`);
+  // Last-activity date range (by updated_at) — default last 30 days, like interviews/assessments.
+  const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
+  query = query.gte("updated_at", `${rFrom}T00:00:00`).lte("updated_at", `${rTo}T23:59:59`);
   const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(from, to);
 
   const bds = await bdOptions(supabase);
   const list = (rows ?? []) as any[];
 
   const toolbar = (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface/40 p-3">
-      <CrmFilterBar
-        filters={[
-          { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-          { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
-          { key: "profile", label: "Profile", options: profiles.map((p) => ({ value: p.id, label: p.label })) },
-        ]}
-        search={{ key: "q", placeholder: "Search company" }}
-      />
-      <CrmDateFilter defaultAll />
+    <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-caption text-text-secondary">Updated {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)</span>
+        <CrmDateFilter range={range} from={rFrom} to={rTo} />
+      </div>
+      <div className="border-t border-border pt-3">
+        <CrmFilterBar
+          filters={[
+            { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+            { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+            { key: "profile", label: "Profile", options: profiles.map((p) => ({ value: p.id, label: p.label })) },
+          ]}
+          search={{ key: "q", placeholder: "Search company" }}
+        />
+      </div>
     </div>
   );
 

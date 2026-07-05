@@ -151,3 +151,10 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 65 | **HR-safe deal directory** — `/admin/deal-assignments` (admin+super) lists which developer is on which deal (name + role + status), via the `deal_directory()` definer fn that returns **no financials** and 0 rows for non-admins. The deal-dev leaves apply-form drops the "8/yr · 1/mo · 21-day" copy in favour of a record-only note. | The earlier-deferred bits: HR needs to know a dev's deal assignment (the owner's "might be") without seeing deal money; and the leave-form helper text shouldn't quote our quotas to a developer whose leave is client-governed. |
+
+## Leave approval + CRM date-filter restyle (2026-07-06)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 66 | **ALL leave requests now require admin approval** — casual & unpaid are created `pending` (they used to auto-approve). Balances still count APPROVED leave only, so "casual this month" stays until an admin approves. The 1-casual/month guard (counts pending+approved) still blocks a 2nd. | Owner: a casual leave was auto-approving; nothing should be approved until the admin acts. Overrides the earlier "casual auto-approved" golden rule. |
+| 67 | **CRM grids' date filter restyled to the attendance style**: preset tabs (Last 30 days / Last 3 months / Custom) on the right + the resolved "from → to (inclusive)" range on the left; default **last 30 days** for Leads / Interviews / Assessments. Uses `?range` + `resolveRange` (was `?from&to` with 1w/1m/3m/All). | Owner wants the clean attendance-summary filter style applied across CRM, with the selected range visible. Leads moves from All-default to 30-day-default for consistency. |

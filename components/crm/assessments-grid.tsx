@@ -10,20 +10,17 @@ import { assessmentShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
-import { crmDaysAgo as isoAgo } from "@/lib/crm/date-utils";
-import { companyToday } from "@/lib/time";
+import { companyToday, resolveRange, type RangeKey } from "@/lib/time";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SP = { page?: string; pageSize?: string; status?: string; priority?: string; duration?: string; q?: string; from?: string; to?: string };
-const asDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+type SP = { page?: string; pageSize?: string; status?: string; priority?: string; duration?: string; q?: string; range?: string; from?: string; to?: string };
 
-/** Assessments tab of the CRM Leads hub — grid filtered by Received (entry_date, default 1 month). */
+/** Assessments tab of the CRM Leads hub — grid filtered by Received (entry_date, default last 30 days). */
 export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const today = companyToday();
-  const rFrom = asDate(searchParams.from) ?? isoAgo(30); // default: last 1 month
-  const rTo = asDate(searchParams.to) ?? isoAgo(0);
+  const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
 
   let query = supabase
     .from("assessments")
@@ -45,16 +42,21 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   const list = (rows ?? []) as any[];
 
   const toolbar = (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface/40 p-3">
-      <CrmFilterBar
-        filters={[
-          { key: "status", label: "Status", options: ASSESSMENT_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-          { key: "priority", label: "Priority", options: PRIORITIES.map((s) => ({ value: s, label: s })) },
-          { key: "duration", label: "Duration", options: DURATIONS.map((s) => ({ value: s, label: s })) },
-        ]}
-        search={{ key: "q", placeholder: "Search job or company" }}
-      />
-      <CrmDateFilter />
+    <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-caption text-text-secondary">Received {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)</span>
+        <CrmDateFilter range={range} from={rFrom} to={rTo} />
+      </div>
+      <div className="border-t border-border pt-3">
+        <CrmFilterBar
+          filters={[
+            { key: "status", label: "Status", options: ASSESSMENT_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+            { key: "priority", label: "Priority", options: PRIORITIES.map((s) => ({ value: s, label: s })) },
+            { key: "duration", label: "Duration", options: DURATIONS.map((s) => ({ value: s, label: s })) },
+          ]}
+          search={{ key: "q", placeholder: "Search job or company" }}
+        />
+      </div>
     </div>
   );
 

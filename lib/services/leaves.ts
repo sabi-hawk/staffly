@@ -1,8 +1,8 @@
 // Leave business logic (PRD §11 + v2 rules).
-// Annual = 8/yr, approval needed, >=21-day notice (admin override). Casual = <=1/month, paid,
-// auto-approved. Unpaid = unlimited, recorded, deducted. Quota usage is derived from
-// leave_requests (the source of truth) — NOT from per-month counter rows — so it is correct
-// across months and across the year.
+// ALL leave requests need admin approval — they're created `pending` and an admin approves/rejects
+// (owner rule, 2026-07-05; casual/unpaid used to auto-approve). Annual = 8/yr, >=21-day notice (admin
+// override); Casual = <=1/month, one request/month; Unpaid = unlimited, deducted. Quota usage is
+// derived from APPROVED leave_requests (the source of truth) — so counts reflect approved leave only.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeaveType } from "@/lib/types";
 import { companyToday } from "@/lib/time";
@@ -244,15 +244,16 @@ export async function requestLeave(
       if (used + daysCount > q.casual)
         throw new Error(`Casual leave is limited to ${q.casual} day(s) per month (already used ${used}).`);
     }
+    // Every leave request now goes to admin for approval (owner rule) — no auto-approve, even casual.
     const { data } = await supabase.from("leave_requests")
-      .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
+      .insert({ ...base(employeeId, input, daysCount), status: "pending" })
       .select().single();
     return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
   if (input.type === "unpaid") {
     const { data } = await supabase.from("leave_requests")
-      .insert({ ...base(employeeId, input, daysCount), status: "approved", approved_at: new Date().toISOString() })
+      .insert({ ...base(employeeId, input, daysCount), status: "pending" })
       .select().single();
     return { requests: [data], overflowOffered: false, lateNotice: false };
   }
