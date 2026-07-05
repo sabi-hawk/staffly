@@ -12,32 +12,28 @@ const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text
 // rejected/dismissed require a reason → set via the dismiss/status action, not the plain dropdown.
 const MANUAL_STATUSES = LEAD_STATUS.filter((s) => !(LEAD_REASON_STATUSES as readonly string[]).includes(s));
 
+// Create-only form used by /crm/leads/new. Editing an existing lead happens IN PLACE on the lead
+// detail page (LeadDetailsCard + LeadRichSection), not through this form.
 export function LeadForm({
-  id,
   profiles,
   owners,
   canAssignOwner,
-  initial,
-  onDone,
 }: {
-  id?: string;
   profiles: Opt[];
   owners: Opt[];
   canAssignOwner: boolean;
-  initial?: Partial<Record<string, string | null>>;
-  onDone?: () => void; // when provided (modal use), close+refresh instead of navigating
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
-    company: initial?.company ?? "",
-    role: initial?.role ?? "",
-    dev_profile_id: initial?.dev_profile_id ?? "",
-    status: initial?.status ?? "in_progress",
-    owner_bd_id: initial?.owner_bd_id ?? "",
-    budget: initial?.budget ?? "",
-    expected_budget: initial?.expected_budget ?? "",
-    job_description: initial?.job_description ?? "",
-    notes: initial?.notes ?? "",
+    company: "",
+    role: "",
+    dev_profile_id: "",
+    status: "in_progress",
+    owner_bd_id: "",
+    budget: "",
+    expected_budget: "",
+    job_description: "",
+    notes: "",
   });
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
@@ -45,17 +41,16 @@ export function LeadForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const res = await fetch(id ? `/api/crm/leads/${id}` : "/api/crm/leads", {
-      method: id ? "PATCH" : "POST",
+    const res = await fetch("/api/crm/leads", {
+      method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(form),
     });
     const json = await res.json();
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed to save");
-    toast.success(id ? "Lead saved" : "Lead created");
-    if (onDone) { onDone(); router.refresh(); return; }
-    router.push(id ? `/crm/leads/${id}` : `/crm/leads/${json.id}`);
+    toast.success("Lead created");
+    router.push(`/crm/leads/${json.id}`);
     router.refresh();
   }
 
@@ -109,7 +104,7 @@ export function LeadForm({
         <RichText value={form.notes} onChange={(html) => set("notes", html)} placeholder="e.g. HR: jane@acme.com …" />
       </div>
       <div className="sm:col-span-2 lg:col-span-3">
-        <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save lead" : "Create lead"}</Button>
+        <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Create lead"}</Button>
       </div>
     </form>
   );

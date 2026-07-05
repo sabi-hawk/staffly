@@ -264,3 +264,10 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
    (email / phone / LinkedIn) with a type (company admin / HR / recruiter / manager / other→free text),
    for future outreach. Per-lead (`lead_contacts` table + RLS). Section explains its purpose + examples.
 7. **Info icons:** a small info icon + explanatory tooltip on each CRM field (lead/interview/assessment).
+
+### 2026-07-05 (cont.) — delivered
+- Lead detail: top card edits **in place** (no modal); **Job Description** + **BD Notes** moved to their
+  own editable sections below Documents; **Company contacts** section (client reps: HR/recruiter/admin/
+  hiring-manager/other + email/phone/LinkedIn) via new `lead_contacts` table; **info icons** on CRM
+  fields (lead/interview/assessment/contact). Edit-link bug + filter redesign + sleeker cards shipped
+  earlier in the batch.

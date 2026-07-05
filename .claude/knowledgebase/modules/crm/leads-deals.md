@@ -43,6 +43,15 @@ Schema: `../../../database/database.md`.
 `CRM → Leads` (BD own pipeline by status; admin/BD-Lead all) with disqualify action. `CRM → Deals`
 (admin): list + detail with documents; "close → deal" action on a won lead; manage accounts/methods.
 
+### Lead detail page (2026-07-05 rework)
+Top card edits **in place** (`LeadDetailsCard`, no modal): company/role/profile/status/budget/expected
+(+ owner for BD-Lead/admin). Below it: **Activity** (interviews/assessments) · **Documents** (lead files)
+· **Job description** + **BD notes** (`LeadRichSection`, own editable sections, rich text, sanitized) ·
+**Company contacts** (`lead_contacts` — the client's HR/recruiter/admin/hiring-manager/other reps with
+email/phone/LinkedIn, for future outreach; owner/BD-Lead/admin manage) · **Qualification** · **History**.
+Every field carries an **info icon** (`InfoHint`, copy in `lib/crm/field-hints.ts`). The interviews/
+assessments grids' **edit** action deep-links `?edit=<kind>:<id>` to open that record's form here.
+
 ## As-built (Plan 03, 2026-07-02) — **Deals shipped**
 - Tables `deals`, `deal_documents`, `receiving_accounts`, `payment_methods` (migration `0014`).
   **admin/super-admin only** (payment_methods lookup readable by any authenticated). Salary = numeric PKR

@@ -80,6 +80,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   0023 a BD owner's own UPDATE that sets `deleted_at` is rejected (the post-update row is no longer
   selectable by that owner), so soft-delete is routed through this function (authorizes via
   `can_manage_dev_docs`, stamps `deleted_by = auth.uid()`). `execute` granted to `authenticated`.
+- `0025_lead_contacts.sql` — new **`lead_contacts`** table: the CLIENT company's representatives logged
+  against a lead (contact_type hr|recruiter|company_admin|hiring_manager|other, other_type, name, email,
+  phone, linkedin_url, note, created_by). For future outreach to past leads. RLS `lead_contacts_scoped`
+  (for ALL) **mirrors `lead_documents`** — visible/writable exactly when the parent lead is (BD owner,
+  BD-Lead, or admin/super). updated_at + audit triggers.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/crm/back-link";
 import { getCurrentProfile } from "@/lib/auth";
@@ -6,20 +5,18 @@ import { isBdLead, isAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { crmProfileOptions, developerOptions, bdOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { StatusPill } from "@/components/crm/status-pill";
-import { LeadEditModal } from "@/components/crm/lead-edit-modal";
+import { LeadDetailsCard } from "@/components/crm/lead-details-card";
+import { LeadRichSection } from "@/components/crm/lead-rich-section";
 import { QualificationPanel } from "@/components/crm/disqualify-panel";
 import { LeadActivity } from "@/components/crm/lead-activity";
 import { LeadDocuments } from "@/components/crm/lead-documents";
+import { LeadContacts, type Contact } from "@/components/crm/lead-contacts";
 import { RecordHistory } from "@/components/audit/record-history";
+import { LEAD_HINTS } from "@/lib/crm/field-hints";
 import type { Interview, Assessment } from "@/lib/types";
 
 // Always render fresh so mutations (resume upload, status change, edit, qualify) reflect on refresh.
 export const dynamic = "force-dynamic";
-
-// list/link styling for the sanitized rich-text (job description / notes) blocks.
-const PROSE = "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-primary [&_a]:underline [&_p]:mb-1";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function LeadDetail({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
@@ -56,57 +53,35 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
     .eq("lead_id", params.id)
     .order("created_at", { ascending: false });
 
+  const { data: contacts } = await supabase
+    .from("lead_contacts")
+    .select("id, contact_type, other_type, name, email, phone, linkedin_url, note")
+    .eq("lead_id", params.id)
+    .order("created_at", { ascending: true });
+
   const profileName = (lead.profile as any)?.name ?? "—";
   const ownerName = (lead.owner as any)?.full_name ?? "—";
+  const canEditLead = isBdLead(me) || lead.owner_bd_id === me.id;
 
   return (
     <div className="space-y-4">
       <BackLink fallback="/crm/leads" label="Back" />
 
-      {/* Top card: the lead's key info + status + an edit modal (no more repetitive inline form). */}
-      <Card>
-        <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-          <CardTitle>{lead.company}{lead.role ? ` · ${lead.role}` : ""}</CardTitle>
-          <div className="flex shrink-0 items-center gap-2">
-            <StatusPill status={lead.status} />
-            {isAdminRole(me.role) && (
-              <Button asChild size="sm" variant="outline"><Link href={`/crm/deals/new?lead=${lead.id}`}>Create deal</Link></Button>
-            )}
-            <LeadEditModal
-              id={lead.id}
-              profiles={profiles}
-              owners={owners}
-              canAssignOwner={isBdLead(me)}
-              initial={{
-                company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id,
-                status: lead.status, owner_bd_id: lead.owner_bd_id, budget: lead.budget,
-                expected_budget: lead.expected_budget, job_description: lead.job_description, notes: lead.notes,
-              }}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
-            <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{profileName}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Owner (BD)</dt><dd>{ownerName}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Budget</dt><dd>{lead.budget || "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Expected</dt><dd>{lead.expected_budget || "—"}</dd></div>
-          </dl>
-          {lead.job_description && (
-            <div>
-              <dt className="mb-1 text-caption text-text-secondary">Job description</dt>
-              {/* sanitized at write-time (lib/sanitize) — safe to render as HTML */}
-              <div className={`text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: lead.job_description }} />
-            </div>
-          )}
-          {lead.notes && (
-            <div>
-              <dt className="mb-1 text-caption text-text-secondary">BD notes</dt>
-              <div className={`text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: lead.notes }} />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Top card: key info in view mode; Edit toggles the SAME section into an inline form (no modal). */}
+      <LeadDetailsCard
+        leadId={lead.id}
+        profileName={profileName}
+        ownerName={ownerName}
+        profiles={profiles}
+        owners={owners}
+        canAssignOwner={isBdLead(me)}
+        canCreateDeal={isAdminRole(me.role)}
+        initial={{
+          company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id,
+          status: lead.status, owner_bd_id: lead.owner_bd_id, budget: lead.budget,
+          expected_budget: lead.expected_budget,
+        }}
+      />
 
       <Card>
         <CardHeader><CardTitle>Activity</CardTitle></CardHeader>
@@ -130,6 +105,29 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
           <LeadDocuments leadId={lead.id} docs={(leadDocs ?? []) as any[]} />
         </CardContent>
       </Card>
+
+      {/* Job description + BD notes as their own editable sections below Documents (owner feedback). */}
+      <LeadRichSection
+        leadId={lead.id}
+        field="job_description"
+        title="Job description"
+        description="The full job description from the client. Paste or type it here so anyone on the team can read the role's requirements."
+        hint={LEAD_HINTS.job_description}
+        valueHtml={lead.job_description}
+        placeholder="Paste or type the job description…"
+      />
+      <LeadRichSection
+        leadId={lead.id}
+        field="notes"
+        title="BD notes"
+        description="Your private notepad for this lead — call notes, next steps, reminders, anything useful for the deal."
+        hint={LEAD_HINTS.notes}
+        valueHtml={lead.notes}
+        placeholder="e.g. Spoke to HR on Mon, awaiting test link…"
+      />
+
+      {/* Company-side contacts (owner feedback): the client's reps, for future outreach. */}
+      <LeadContacts leadId={lead.id} contacts={(contacts ?? []) as Contact[]} canEdit={canEditLead} />
 
       {/* Qualification lives BELOW activity (owner feedback): default Qualified, mark unqualified w/ reason. */}
       <Card>

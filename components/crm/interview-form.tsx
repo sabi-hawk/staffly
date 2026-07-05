@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { FieldLabel } from "@/components/crm/field-label";
+import { INTERVIEW_HINTS } from "@/lib/crm/field-hints";
 import { labelize, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
@@ -83,45 +85,45 @@ export function InterviewForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1.5"><Label htmlFor="interview-job-title">Job title</Label><Input id="interview-job-title" value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label htmlFor="interview-company">Company</Label><Input id="interview-company" value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-job-post-url">Job post URL</Label><Input id="interview-job-post-url" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
+      <div className="space-y-1.5"><FieldLabel htmlFor="interview-job-title" hint={INTERVIEW_HINTS.job_title}>Job title</FieldLabel><Input id="interview-job-title" value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
+      <div className="space-y-1.5"><FieldLabel htmlFor="interview-company" hint={INTERVIEW_HINTS.company}>Company</FieldLabel><Input id="interview-company" value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><FieldLabel htmlFor="interview-job-post-url" hint={INTERVIEW_HINTS.job_post_url}>Job post URL</FieldLabel><Input id="interview-job-post-url" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label htmlFor="interview-status">Status</Label>
+        <FieldLabel htmlFor="interview-status" hint={INTERVIEW_HINTS.status}>Status</FieldLabel>
         <select id="interview-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
           {INTERVIEW_STATUS.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="interview-round">Round</Label>
+        <FieldLabel htmlFor="interview-round" hint={INTERVIEW_HINTS.round}>Round</FieldLabel>
         <select id="interview-round" className={selectCls} value={form.round} onChange={(e) => set("round", e.target.value)}>
           {INTERVIEW_ROUND.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="interview-outcome">Outcome</Label>
+        <FieldLabel htmlFor="interview-outcome" hint={INTERVIEW_HINTS.outcome}>Outcome</FieldLabel>
         <select id="interview-outcome" className={`${selectCls} capitalize`} value={form.outcome} onChange={(e) => set("outcome", e.target.value)}>
           {INTERVIEW_OUTCOME.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5"><Label htmlFor="interview-received">Received (email date)</Label><Input id="interview-received" type="date" value={form.received_date} onChange={(e) => set("received_date", e.target.value)} /></div>
-      <div className="space-y-1.5"><Label htmlFor="interview-interview-at">Interview time</Label><Input id="interview-interview-at" type="datetime-local" value={form.interview_at} onChange={(e) => set("interview_at", e.target.value)} /></div>
+      <div className="space-y-1.5"><FieldLabel htmlFor="interview-received" hint={INTERVIEW_HINTS.received_date}>Received (email date)</FieldLabel><Input id="interview-received" type="date" value={form.received_date} onChange={(e) => set("received_date", e.target.value)} /></div>
+      <div className="space-y-1.5"><FieldLabel htmlFor="interview-interview-at" hint={INTERVIEW_HINTS.interview_at}>Interview time</FieldLabel><Input id="interview-interview-at" type="datetime-local" value={form.interview_at} onChange={(e) => set("interview_at", e.target.value)} /></div>
       <div className="space-y-1.5">
-        <Label htmlFor="interview-given-by">Given by (developer)</Label>
+        <FieldLabel htmlFor="interview-given-by" hint={INTERVIEW_HINTS.given_by}>Given by (developer)</FieldLabel>
         <select id="interview-given-by" className={selectCls} value={form.given_by} onChange={(e) => set("given_by", e.target.value)}>
           <option value="">—</option>
           {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="interview-whom-should-give">Whom should give (next rounds)</Label>
+        <FieldLabel htmlFor="interview-whom-should-give" hint={INTERVIEW_HINTS.whom_should_give}>Whom should give (next rounds)</FieldLabel>
         <select id="interview-whom-should-give" className={selectCls} value={form.whom_should_give} onChange={(e) => set("whom_should_give", e.target.value)}>
           <option value="">—</option>
           {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
       </div>
-      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-notes">Notes</Label><Input id="interview-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
-      <div className="space-y-1.5 lg:col-span-2"><Label htmlFor="interview-notes2">Notes 2</Label><Input id="interview-notes2" value={form.notes2} onChange={(e) => set("notes2", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><FieldLabel htmlFor="interview-notes" hint={INTERVIEW_HINTS.feedback}>Notes</FieldLabel><Input id="interview-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} /></div>
+      <div className="space-y-1.5 lg:col-span-2"><FieldLabel htmlFor="interview-notes2">Notes 2</FieldLabel><Input id="interview-notes2" value={form.notes2} onChange={(e) => set("notes2", e.target.value)} /></div>
       <div className="sm:col-span-2 lg:col-span-4">
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : id ? "Save interview" : "Add interview"}</Button>
       </div>

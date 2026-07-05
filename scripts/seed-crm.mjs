@@ -117,7 +117,7 @@ async function main() {
       .insert({ company: "DemoCorp", role: "Senior Full Stack", dev_profile_id: sabahat.id, owner_bd_id: shaiza, status: "in_progress" })
       .select("id").single();
     const dev = pid("Muzammal Faiz");
-    const rxDate = new Date().toISOString().slice(0, 10); // received/entry = today so the 1-month grid shows them
+    const rxDate = new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10); // today in Asia/Karachi (UTC+5) so the 1-month grid shows them
     await admin.from("interviews").insert({
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Senior Full Stack Engineer",
       company: "DemoCorp", status: "completed", round: "1st", outcome: "selected", given_by: dev, whom_should_give: dev,
@@ -127,6 +127,11 @@ async function main() {
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Take-home", company: "DemoCorp",
       status: "pending", priority: "high", duration: "1h", completed_by: dev, entry_date: rxDate,
     });
+    // Demo company-side contacts (the client's reps — for the Contacts section).
+    await admin.from("lead_contacts").insert([
+      { lead_id: lead.id, contact_type: "hr", name: "Jane Cooper", email: "jane.cooper@democorp.example", linkedin_url: "https://linkedin.com/in/janecooper", note: "First reached out via LinkedIn", created_by: shaiza },
+      { lead_id: lead.id, contact_type: "recruiter", name: "Mark Lee", email: "mark@techrecruit.example", phone: "+1 555 0148", created_by: shaiza },
+    ]);
     console.log("seeded demo lead + interview + assessment (DemoCorp → Shaiza)");
 
     // Demo deal (admin-only) from the DemoCorp lead.

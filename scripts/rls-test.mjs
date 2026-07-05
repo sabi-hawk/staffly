@@ -165,6 +165,25 @@ async function main() {
     await pgc.query(`delete from dev_profile_documents where file_path like '__rls__/%'`);
   }
 
+  // ── lead_contacts (0025): owner BD reads/writes own lead's contacts; non-owner BD + non-BD blocked.
+  const shaizaLead = (await pgc.query(`select id from leads where owner_bd_id=$1 limit 1`, [EMP2])).rows[0]?.id;
+  if (shaizaLead) {
+    const empC = await emp.from("lead_contacts").insert({ lead_id: shaizaLead, contact_type: "hr", email: "x@y.com" }).select();
+    check("employee (non-BD): insert lead_contact → blocked", !!empC.error || (empC.data?.length ?? 0) === 0);
+    const shaiza = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+    const ins = await shaiza.from("lead_contacts").insert({ lead_id: shaizaLead, contact_type: "hr", email: "hr@acme.com" }).select("id");
+    check("BD owner: insert lead_contact on own lead → allowed", (ins.data?.length ?? 0) === 1);
+    const cid = ins.data?.[0]?.id;
+    const sees = await shaiza.from("lead_contacts").select("id").eq("id", cid);
+    check("BD owner: reads own lead_contact", (sees.data?.length ?? 0) === 1);
+    const areeba = await asUser(AREEBA_EMAIL, AREEBA_PW);
+    const aSees = await areeba.from("lead_contacts").select("id").eq("id", cid);
+    check("BD non-owner: cannot read another lead's contact", (aSees.data?.length ?? 0) === 0);
+    const aUpd = await areeba.from("lead_contacts").update({ email: "hacked@x.com" }).eq("id", cid).select("id");
+    check("BD non-owner: cannot update another lead's contact", (aUpd.data?.length ?? 0) === 0);
+    if (cid) await pgc.query(`delete from lead_contacts where id=$1`, [cid]);
+  }
+
   // employee cannot update another employee's attendance
   await pgc.query(
     `insert into attendance (employee_id, work_date, check_in_time, expected_hours)
