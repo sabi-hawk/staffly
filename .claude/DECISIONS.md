@@ -127,3 +127,9 @@ build instruction to keep going rather than ask.
 |---|----------|-----------|
 | 60 | **Deals get a free-text `name` + a many-to-many `deal_developers` assignment** (role = developer|closer; a person can be both, a dev can be on many deals). Assigned via an "Assigned developers" card on the deal detail (admin/super). Kept the legacy single `working_developer` column. | Owner: associate developer(s)/closer(s) with a deal; a dev can be closer and/or developer across deals. Extends the existing CRM deals (owner's choice) rather than a new module. |
 | 61 | **A developer sees only their deal NAME(s)** on their dashboard, via the security-definer `my_deals()` — never the `deals` table (admin-only) or financials. | Owner: the associated developer sees just the deal name, not the money; HR/others don't see deal details. RLS is row-level (can't hide columns), so a definer function that returns only name+role is the safe boundary. (Financial split for Admin/HR = a later slice.) |
+
+## Deals → super-admin only (Tier-2 slice 2, 2026-07-05)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 62 | **Deal details (incl. financials) are super-admin only** (0030): `deals`/`deal_documents`/`receiving_accounts`/`deal_developers` tightened from admin+super to super_admin. `canSeeDeals`→super; middleware + nav + all deal pages/routes + the lead "Create deal" button gate on super_admin. | Owner: HR (the `admin` role) must not see a deal's salary/payment/details. RLS is row-level (can't hide just the money), so the whole deal surface is super-only; the developer's name-only view (`my_deals()`) is unaffected. The optional HR "which-deal-is-X-on" name+assignment directory is deferred (owner phrased it as a "might be"). |

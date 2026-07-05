@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole, isUuid } from "@/lib/crm/access";
+import { isSuperAdminRole, isUuid } from "@/lib/crm/access";
 import { updateDeal } from "@/lib/services/crm-deals";
 import { CRM_DOCS_BUCKET } from "@/lib/services/dev-profiles";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isSuperAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   try {
     await updateDeal(createClient(), params.id, await req.json());
@@ -22,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isSuperAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   // Collect the deal's document paths first (row cascade won't remove the storage objects).

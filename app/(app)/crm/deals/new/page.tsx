@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole } from "@/lib/crm/access";
+import { isSuperAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { leadOptions, crmProfileOptions, developerOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { DealForm } from "@/components/crm/deal-form";
 
 export default async function NewDealPage({ searchParams }: { searchParams: { lead?: string } }) {
   const me = await getCurrentProfile();
-  if (!me || !isAdminRole(me.role)) redirect("/dashboard");
+  if (!me || !isSuperAdminRole(me.role)) redirect("/dashboard");
   const supabase = createClient();
   const [leads, profiles, developers, accounts, methods] = await Promise.all([
     leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase),

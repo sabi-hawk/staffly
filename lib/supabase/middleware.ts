@@ -82,8 +82,8 @@ export async function updateSession(request: NextRequest) {
         url.pathname = profile.role === "employee" ? "/dashboard" : "/admin/dashboard";
         return NextResponse.redirect(url);
       }
-      // Deals are admin/super-admin only.
-      if (path.startsWith(CRM_DEALS_PREFIX) && !isAdmin) {
+      // Deals (name, financials, assignments) are SUPER-ADMIN only (0030). HR/admin can't see them.
+      if (path.startsWith(CRM_DEALS_PREFIX) && profile.role !== "super_admin") {
         const url = request.nextUrl.clone();
         url.pathname = "/crm/profiles";
         return NextResponse.redirect(url);

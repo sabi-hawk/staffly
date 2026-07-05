@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isAdminRole } from "@/lib/crm/access";
+import { isSuperAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DealsSettings } from "@/components/crm/deals-settings";
@@ -10,7 +10,7 @@ import type { ReceivingAccount, PaymentMethod } from "@/lib/types";
 
 export default async function DealsSettingsPage() {
   const me = await getCurrentProfile();
-  if (!me || !isAdminRole(me.role)) redirect("/dashboard");
+  if (!me || !isSuperAdminRole(me.role)) redirect("/dashboard");
   const supabase = createClient();
   const [{ data: accounts }, { data: methods }] = await Promise.all([
     supabase.from("receiving_accounts").select("*").order("holder_name"),

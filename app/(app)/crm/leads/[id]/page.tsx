@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/crm/back-link";
 import { getCurrentProfile } from "@/lib/auth";
-import { isBdLead, isAdminRole } from "@/lib/crm/access";
+import { isBdLead, isAdminRole, isSuperAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { crmProfileOptions, developerOptions, bdOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -75,7 +75,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
         profiles={profiles}
         owners={owners}
         canAssignOwner={isBdLead(me)}
-        canCreateDeal={isAdminRole(me.role)}
+        canCreateDeal={isSuperAdminRole(me.role)}
         initial={{
           company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id,
           status: lead.status, owner_bd_id: lead.owner_bd_id, budget: lead.budget,

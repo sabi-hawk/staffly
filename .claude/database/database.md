@@ -99,6 +99,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `late` bool). Enforces the rules + updates ONLY the summary columns. Needed because `att_update` (0019)
   blocks employees from updating PAST rows — a direct late-add would silently no-op; the definer lets an
   employee late-add to a past row without being able to edit past times/hours. `execute` to `authenticated`.
+- `0030_deals_super_only.sql` — **deals are SUPER-ADMIN only now**: `deals`, `deal_documents`,
+  `receiving_accounts`, `deal_developers` (manage) + `payment_methods` (write) tightened from admin+super
+  to **super_admin only**. HR (`admin`) can no longer see deal financials/details; developers still see
+  their own deal NAME via `my_deals()`. `canSeeDeals` → super only; middleware `/crm/deals` + nav +
+  all deal pages/routes gate on super_admin; the lead "Create deal" button is super-only.
 - `0029_deal_developers.sql` — `deals` +`name`; new **`deal_developers`** join (deal_id, developer_id→
   profiles, role ∈ developer|closer; unique per (deal,dev,role)) = many-to-many deal↔developer. RLS:
   admin/super manage; a developer may READ their own assignment rows only. **`my_deals()`** security-

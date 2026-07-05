@@ -34,9 +34,10 @@ export function isBdLead(p: CrmProfile): boolean {
   return isAdminRole(p.role) || !!p.is_bd_lead;
 }
 
-/** Deals + deal financials are admin/super-admin only (BD Leads TBD per FRD-04/05 Q6). */
+/** Deals (name, financials, assignments) are SUPER-ADMIN only — HR/admin can't see deal details
+ *  (0030). Developers see only their own deal NAME via my_deals(). */
 export function canSeeDeals(p: RoleLike): boolean {
-  return isAdminRole(p.role);
+  return isSuperAdminRole(p.role);
 }
 
 /** Owner BD to stamp on a new lead/interview/assessment: BD-Leads/admins may assign to any BD

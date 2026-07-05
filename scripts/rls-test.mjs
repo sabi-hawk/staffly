@@ -97,7 +97,9 @@ async function main() {
   // admin satisfies auth_is_bd_lead() → sees ALL leads (asserts scope, not just liveness)
   check("admin: leads → readable, sees all (auth_is_bd_lead)", !hiraLeads.error && (hiraLeads.data?.length ?? 0) >= 1, `${hiraLeads.data?.length ?? 0} rows`);
   const hiraDeals = await hira.from("deals").select("id");
-  check("admin: deals → readable (deals_admin)", !hiraDeals.error && (hiraDeals.data?.length ?? 0) >= 1, `${hiraDeals.data?.length ?? 0} rows`);
+  check("admin/HR: deals → 0 rows (super-admin only now, 0030)", (hiraDeals.data?.length ?? 0) === 0, `${hiraDeals.data?.length ?? 0} rows`);
+  const hiraAccts = await hira.from("receiving_accounts").select("id");
+  check("admin/HR: receiving_accounts → 0 rows (super-admin only)", (hiraAccts.data?.length ?? 0) === 0);
   const founderDeals = await founder.from("deals").select("id");
   check("super_admin: deals → readable", !founderDeals.error && (founderDeals.data?.length ?? 0) >= 1);
 
