@@ -150,6 +150,27 @@ describe("§14.4 integration flows (cloud)", () => {
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
   });
 
+  it("deal-developer leave — record-only pending, bypasses notice + casual cap", async () => {
+    await admin.from("profiles").update({ is_deal_developer: true }).eq("id", AREEBA);
+    await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-DDEV%");
+    try {
+      // annual within 21 days would normally be rejected — for a deal-dev it's just recorded as pending
+      const soon = new Date(); soon.setDate(soon.getDate() + 3);
+      const a = await requestLeave(admin, AREEBA, { type: "annual", start_date: ymd(soon), end_date: ymd(soon), reason: "INT-DDEV annual" });
+      expect(a.requests[0].status).toBe("pending");
+      // two casual requests in the same month are allowed (our 1/month cap doesn't apply) — both pending
+      const d1 = new Date(); d1.setDate(12);
+      const d2 = new Date(); d2.setDate(18);
+      const c1 = await requestLeave(admin, AREEBA, { type: "casual", start_date: ymd(d1), end_date: ymd(d1), reason: "INT-DDEV c1" });
+      const c2 = await requestLeave(admin, AREEBA, { type: "casual", start_date: ymd(d2), end_date: ymd(d2), reason: "INT-DDEV c2" });
+      expect(c1.requests[0].status).toBe("pending");
+      expect(c2.requests[0].status).toBe("pending");
+    } finally {
+      await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-DDEV%");
+      await admin.from("profiles").update({ is_deal_developer: false }).eq("id", AREEBA);
+    }
+  });
+
   // NOTE: the daily-summary rules run through the security-definer save_daily_summary() RPC (0028),
   // which reads auth.uid() — so it's exercised as a real signed-in user in scripts/rls-test.mjs, not
   // here (this suite uses the service-role client, which has no auth.uid()).

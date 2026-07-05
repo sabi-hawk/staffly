@@ -235,6 +235,11 @@ async function main() {
     await pgc.query(`delete from deal_developers where deal_id=$1 and developer_id=$2`, [anyDeal, EMP]);
   }
 
+  // ── is_deal_developer flag (0031): only admins may set it; a non-admin self-set is blocked by the guard.
+  const empFlag = await emp.from("profiles").update({ is_deal_developer: true }).eq("id", EMP).select();
+  const flagAfter = (await pgc.query(`select is_deal_developer from profiles where id=$1`, [EMP])).rows[0]?.is_deal_developer;
+  check("employee: cannot self-set is_deal_developer (guard trigger)", !!empFlag.error || flagAfter === false);
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);

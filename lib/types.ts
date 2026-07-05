@@ -26,6 +26,7 @@ export interface Profile {
   department_id: string | null;
   is_bd_lead: boolean;
   is_developer: boolean;
+  is_deal_developer: boolean;
   reports_to: string | null;
   employment_type: EmploymentType;
   contract_type: "permanent" | "probation";

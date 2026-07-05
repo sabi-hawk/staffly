@@ -59,6 +59,15 @@ export default function HandbookPage() {
         </ul>
       </Section>
 
+      <Section title="Developers assigned to a client deal">
+        <ul>
+          <li>Some engineering-department developers are <strong>assigned to a specific client deal</strong> and work as part of that company&apos;s team. Not every engineer is deal-assigned — some assist a lead developer internally and follow the company leave policy above.</li>
+          <li>For a deal-assigned developer, <strong>leave is governed by the client company</strong> you work for — so our standard annual/casual balances do <strong>not</strong> apply to you and are not shown in your portal.</li>
+          <li>When you take leave, <strong>first get it approved by the client company</strong> you&apos;re working with. Then log it here (dates + type + reason) purely so we have it on record; the request is confirmed by an admin.</li>
+          <li>Annual leave in particular depends on the deal — if you&apos;re the only developer on a deal, time off has to be cleared with that company before it can be recorded.</li>
+        </ul>
+      </Section>
+
       <Section title="Payroll & payslips">
         <ul>
           <li>Salary = <strong>base salary + approved additions − deductions</strong> for the month.</li>

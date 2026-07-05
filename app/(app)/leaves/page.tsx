@@ -15,7 +15,10 @@ const tone = (s: string) =>
 export default async function LeavesPage() {
   const profile = (await getCurrentProfile())!;
   const supabase = createClient();
-  const summary = await leaveSummary(supabase, profile.id);
+  // Deal-assigned developers don't follow our leave policy (their leave is governed by the client
+  // company), so we don't show them our annual/casual balances — only the request flow (record-only).
+  const isDealDev = !!(profile as any).is_deal_developer;
+  const summary = isDealDev ? null : await leaveSummary(supabase, profile.id);
 
   const { data: requests } = await supabase
     .from("leave_requests")
@@ -25,11 +28,19 @@ export default async function LeavesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Annual remaining" value={summary.annualRemaining} icon={CalendarDays} />
-        <StatCard label="Casual this month" value={summary.casualRemaining} icon={CalendarDays} tone="success" />
-        <StatCard label="Unpaid taken (yr)" value={summary.unpaidUsed} icon={CalendarDays} tone="warning" />
-      </div>
+      {isDealDev ? (
+        <div className="rounded-lg border border-border bg-surface/50 px-4 py-3 text-sm text-text-secondary">
+          <span className="font-medium text-text-primary">You&apos;re assigned to a client deal.</span> Your leave is
+          governed by the company you work for — so we don&apos;t track annual/casual balances for you here. Still log
+          your leave below (with the dates and reason) so we have it on record; it goes to admin for confirmation.
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard label="Annual remaining" value={summary!.annualRemaining} icon={CalendarDays} />
+          <StatCard label="Casual this month" value={summary!.casualRemaining} icon={CalendarDays} tone="success" />
+          <StatCard label="Unpaid taken (yr)" value={summary!.unpaidUsed} icon={CalendarDays} tone="warning" />
+        </div>
+      )}
 
       <LeaveApplyForm />
 

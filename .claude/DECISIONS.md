@@ -133,3 +133,9 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 62 | **Deal details (incl. financials) are super-admin only** (0030): `deals`/`deal_documents`/`receiving_accounts`/`deal_developers` tightened from admin+super to super_admin. `canSeeDeals`→super; middleware + nav + all deal pages/routes + the lead "Create deal" button gate on super_admin. | Owner: HR (the `admin` role) must not see a deal's salary/payment/details. RLS is row-level (can't hide just the money), so the whole deal surface is super-only; the developer's name-only view (`my_deals()`) is unaffected. The optional HR "which-deal-is-X-on" name+assignment directory is deferred (owner phrased it as a "might be"). |
+
+## Deal-assigned developer role (Tier-2 slice 3, 2026-07-05)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 63 | **New `is_deal_developer` flag** (profiles, admin-set, guarded like the other privileged flags, 0031). A flagged developer: annual/casual **balances hidden** on their Leaves page (a note explains why); leave requests are **record-only** — `requestLeave` bypasses our quota/notice/casual-cap and creates a **pending** request (admin marks) for any type. Toggled on the admin employee detail via a new "Roles & flags" card (which also surfaces the previously-UI-less Developer / BD-Lead flags). Handbook section added. | Owner: deal-assigned engineers work as part of a client company's team — their leave is governed by that company, not our policy. We still record leave (for our log) but don't apply our balances/caps, and it needs admin confirmation. Not all engineers are deal-assigned. |

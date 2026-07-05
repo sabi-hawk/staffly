@@ -99,6 +99,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `late` bool). Enforces the rules + updates ONLY the summary columns. Needed because `att_update` (0019)
   blocks employees from updating PAST rows — a direct late-add would silently no-op; the definer lets an
   employee late-add to a past row without being able to edit past times/hours. `execute` to `authenticated`.
+- `0031_deal_developer_flag.sql` — `profiles` +`is_deal_developer boolean default false` (admin-set,
+  guarded from non-admins). A deal-assigned developer's leave is client-company-governed: the portal
+  **hides their annual/casual balances** and `requestLeave` makes their requests **record-only (pending
+  → admin marks)** — bypassing our quota/notice/casual-cap checks. Toggled on the admin employee detail
+  ("Roles & flags"). Handbook section added.
 - `0030_deals_super_only.sql` — **deals are SUPER-ADMIN only now**: `deals`, `deal_documents`,
   `receiving_accounts`, `deal_developers` (manage) + `payment_methods` (write) tightened from admin+super
   to **super_admin only**. HR (`admin`) can no longer see deal financials/details; developers still see

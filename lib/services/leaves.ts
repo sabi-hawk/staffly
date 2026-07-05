@@ -33,8 +33,12 @@ export const PROBATION_MONTHS = 3;
 /** Employee leave context. */
 async function leaveCtx(supabase: SupabaseClient, employeeId: string) {
   const { data } = await supabase
-    .from("profiles").select("contract_type, joining_date").eq("id", employeeId).maybeSingle();
-  return { contract_type: data?.contract_type ?? "permanent", joining_date: data?.joining_date ?? null };
+    .from("profiles").select("contract_type, joining_date, is_deal_developer").eq("id", employeeId).maybeSingle();
+  return {
+    contract_type: data?.contract_type ?? "permanent",
+    joining_date: data?.joining_date ?? null,
+    is_deal_developer: !!data?.is_deal_developer,
+  };
 }
 
 function addMonths(d: Date, n: number) {
@@ -206,6 +210,15 @@ export async function requestLeave(
 
   if (await hasOverlap(supabase, employeeId, input.start_date, input.end_date))
     throw new Error("This range overlaps an existing leave request.");
+
+  // Deal-assigned developers: their leave is governed by the client company, so OUR quotas/notice/caps
+  // don't apply — the request is recorded for our log and goes to admin as pending (no auto-approve).
+  if (ctx.is_deal_developer) {
+    const { data } = await supabase.from("leave_requests")
+      .insert({ ...base(employeeId, input, daysCount), status: "pending" })
+      .select().single();
+    return { requests: [data], overflowOffered: false, lateNotice: false };
+  }
 
   const today = new Date();
   const noticeCutoff = new Date(today.getTime() + ANNUAL_NOTICE_DAYS * 86400000);

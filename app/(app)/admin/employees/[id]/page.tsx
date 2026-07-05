@@ -14,6 +14,7 @@ import { PrivateEditor } from "@/components/admin/private-editor";
 import { ShiftEditor } from "@/components/admin/shift-editor";
 import { CompensationEditor } from "@/components/admin/compensation-editor";
 import { CredentialsCard } from "@/components/admin/credentials-card";
+import { ProfileFlags } from "@/components/admin/profile-flags";
 import { CommissionEditor } from "@/components/admin/commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
 import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12, formatCrmDatetime } from "@/lib/utils";
@@ -93,6 +94,19 @@ export default async function EmployeeDetail({
           </CardHeader>
           <CardContent>
             <CredentialsCard employeeId={p.id} fullName={p.full_name} username={p.username} password={creds?.portal_password ?? null} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Roles & flags (admin + super admin) */}
+      {adminViewer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Roles &amp; flags</CardTitle>
+            <CardDescription>Developer / BD-Lead / deal-assigned. A deal-assigned developer has leave balances hidden and leave requests recorded (client company governs their leave).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer }} />
           </CardContent>
         </Card>
       )}
