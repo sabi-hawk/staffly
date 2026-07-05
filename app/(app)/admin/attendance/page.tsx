@@ -1,6 +1,6 @@
-import { Clock, TrendingDown, CalendarCheck, CalendarX, Plane } from "lucide-react";
+import { Clock, TrendingDown, CalendarCheck, CalendarX, Plane, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { resolveRange, type RangeKey } from "@/lib/time";
+import { resolveRange, companyToday, type RangeKey } from "@/lib/time";
 import { buildEmployeeReport } from "@/lib/services/reports";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -30,6 +30,15 @@ export default async function AdminAttendancePage({
 
   const summary = employeeId ? await buildEmployeeReport(supabase, employeeId, from, to) : null;
 
+  // Who checked in today but hasn't written their task summary yet (admin visibility).
+  const today = companyToday();
+  const { data: missingToday } = await supabase
+    .from("attendance")
+    .select("employee_id, profiles!attendance_employee_id_fkey(full_name)")
+    .eq("work_date", today)
+    .not("check_in_time", "is", null)
+    .is("daily_summary", null);
+
   let query = supabase
     .from("attendance")
     .select("*, profiles!attendance_employee_id_fkey(full_name, employee_code)", { count: "exact" })
@@ -55,6 +64,19 @@ export default async function AdminAttendancePage({
         </CardContent>
       </Card>
 
+      {(missingToday ?? []).length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2 text-warning"><AlertTriangle className="size-4" /> Missing today's task summary ({(missingToday ?? []).length})</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {(missingToday ?? []).map((m: any) => (
+              <span key={m.employee_id} className="rounded-md border border-warning/40 bg-warning/5 px-2.5 py-1 text-caption text-text-primary">
+                {m.profiles?.full_name ?? "—"}
+              </span>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {summary && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <StatCard label="Total hours" value={formatHours(summary.totalHours)} icon={Clock} />
@@ -75,7 +97,7 @@ export default async function AdminAttendancePage({
             <THead>
               <TR>
                 <TH>Code</TH><TH>Employee</TH><TH>Date</TH><TH>In</TH><TH>Out</TH>
-                <TH>Hours</TH><TH>Deficit/Extra</TH><TH>Edit</TH>
+                <TH>Hours</TH><TH>Deficit/Extra</TH><TH>Summary</TH><TH>Edit</TH>
               </TR>
             </THead>
             <TBody>
@@ -93,6 +115,16 @@ export default async function AdminAttendancePage({
                       {Number(r.deficit_hours) > 0 && <Badge tone="danger">-{formatHours(r.deficit_hours)}</Badge>}
                       {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                     </TD>
+                    <TD className="max-w-[220px]">
+                      {(r.daily_summary ?? "").replace(/<[^>]*>/g, "").trim() ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate text-text-secondary">{(r.daily_summary as string).replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
+                          {r.summary_late && <Badge tone="warning">late</Badge>}
+                        </span>
+                      ) : (
+                        <Badge tone="warning">missing</Badge>
+                      )}
+                    </TD>
                     <TD>
                       <EditAttendance
                         attendanceId={r.id}
@@ -106,7 +138,7 @@ export default async function AdminAttendancePage({
                 );
               })}
               {(rows ?? []).length === 0 && (
-                <TR><TD className="py-6 text-center text-text-secondary">No attendance in this range.</TD></TR>
+                <TR><TD colSpan={9} className="py-6 text-center text-text-secondary">No attendance in this range.</TD></TR>
               )}
             </TBody>
           </Table>

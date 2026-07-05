@@ -5,6 +5,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { shiftDurationHours, isLate } from "@/lib/hours";
 import { companyToday } from "@/lib/time";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 async function activeShift(supabase: SupabaseClient, employeeId: string) {
   const { data } = await supabase
@@ -151,3 +152,28 @@ export async function editAttendance(
 }
 
 export const editCheckout = editAttendance;
+
+/**
+ * Save (or update) the employee's daily task summary (rich-text HTML) for a work day. Rules:
+ *  - same-day (workDate == today): freely add/edit;
+ *  - past day with a summary already present: LOCKED (throws);
+ *  - past day still missing: allowed as a LATE add (summary_late = true);
+ *  - future day: rejected. The day must have an attendance row (they must have checked in).
+ * HTML is sanitized at the write path (like the lead job-description/notes fields).
+ */
+export async function saveDailySummary(
+  supabase: SupabaseClient,
+  workDate: string,
+  rawHtml: string | null
+) {
+  const html = sanitizeRichText(rawHtml);
+  const text = (html ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+  if (!text) throw new Error("Please write a short summary before saving.");
+
+  // The rules (same-day edit / past-locked / past-late / no-future / must-have-attendance) and the
+  // write to the summary columns only are enforced by the security-definer function (0028), which uses
+  // auth.uid() — so a late add on a past row works without letting employees edit past times.
+  const { data, error } = await supabase.rpc("save_daily_summary", { p_work_date: workDate, p_html: html });
+  if (error) throw new Error(error.message);
+  return { late: !!data };
+}

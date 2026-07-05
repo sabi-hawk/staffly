@@ -149,4 +149,8 @@ describe("§14.4 integration flows (cloud)", () => {
     ).rejects.toThrow(/per month/);
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
   });
+
+  // NOTE: the daily-summary rules run through the security-definer save_daily_summary() RPC (0028),
+  // which reads auth.uid() — so it's exercised as a real signed-in user in scripts/rls-test.mjs, not
+  // here (this suite uses the service-role client, which has no auth.uid()).
 });

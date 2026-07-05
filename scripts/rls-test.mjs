@@ -194,6 +194,28 @@ async function main() {
   const upd = await emp.from("attendance").update({ edit_reason: "hacked" }).eq("id", otherRow.id).select();
   check("employee: UPDATE another employee's attendance → blocked by RLS", (upd.data?.length ?? 0) === 0);
 
+  // ── daily task summary (0027/0028): the save_daily_summary RPC (security-definer, auth.uid()) lets
+  //    an employee write their own day's summary — same-day free, past-missing = late, past-present = locked.
+  const pkt = (offset) => { const d = new Date(Date.now() + 5 * 3600_000); d.setUTCDate(d.getUTCDate() - offset); return d.toISOString().slice(0, 10); };
+  const dsToday = pkt(0);
+  const dsPast = pkt(10); // outside the canonical day-3..7 pattern used by the compute-trigger checks
+  await pgc.query(`delete from attendance where employee_id=$1 and work_date = any($2)`, [EMP, [dsToday, dsPast]]);
+  await pgc.query(
+    `insert into attendance (employee_id, work_date, check_in_time, expected_hours)
+     values ($1,$2, now(), 9), ($1,$3, now() - interval '10 days', 9)`, [EMP, dsToday, dsPast]);
+
+  const sToday = await emp.rpc("save_daily_summary", { p_work_date: dsToday, p_html: "<p>Shipped the summary feature.</p>" });
+  check("employee: save today's summary via RPC → allowed, not late", !sToday.error && sToday.data === false, sToday.error?.message ?? "");
+  const sEmpty = await emp.rpc("save_daily_summary", { p_work_date: dsToday, p_html: "   " });
+  check("employee: empty summary → rejected", !!sEmpty.error);
+  const sLate = await emp.rpc("save_daily_summary", { p_work_date: dsPast, p_html: "<p>Forgot to log this.</p>" });
+  check("employee: past-missing summary → allowed as LATE", !sLate.error && sLate.data === true, sLate.error?.message ?? "");
+  const lateFlag = (await pgc.query(`select summary_late from attendance where employee_id=$1 and work_date=$2`, [EMP, dsPast])).rows[0]?.summary_late;
+  check("employee: late add sets summary_late = true", lateFlag === true);
+  const sLocked = await emp.rpc("save_daily_summary", { p_work_date: dsPast, p_html: "<p>Trying to edit a locked day.</p>" });
+  check("employee: past-present summary → locked (rejected)", !!sLocked.error);
+  await pgc.query(`delete from attendance where employee_id=$1 and work_date = any($2)`, [EMP, [dsToday, dsPast]]);
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);

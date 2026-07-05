@@ -3,11 +3,11 @@ import { getCurrentProfile } from "@/lib/auth";
 import { todayAttendance } from "@/lib/services/attendance";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
+import { DailySummary } from "@/components/attendance/daily-summary";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatHours } from "@/lib/utils";
-import { workLogPreview } from "@/lib/worklog";
 
 // The employee dashboard is intentionally minimal: today's check-in, upcoming holidays, and recent
 // days. Leave balances and extra/deficit-hour stats are NOT shown here (they nudge behaviour); the
@@ -15,6 +15,7 @@ import { workLogPreview } from "@/lib/worklog";
 export default async function EmployeeDashboard() {
   const profile = (await getCurrentProfile())!;
   const supabase = createClient();
+  const today = companyToday();
   const todayData = await todayAttendance(supabase, profile.id);
 
   const { data: recent } = await supabase
@@ -62,7 +63,7 @@ export default async function EmployeeDashboard() {
                 <TH>In</TH>
                 <TH>Out</TH>
                 <TH>Hours</TH>
-                <TH>Log</TH>
+                <TH>Task summary</TH>
               </TR>
             </THead>
             <TBody>
@@ -72,12 +73,12 @@ export default async function EmployeeDashboard() {
                   <TD className="tabular">{r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—"}</TD>
                   <TD className="tabular">{r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : <Badge tone="danger">open</Badge>}</TD>
                   <TD className="tabular">{formatHours(r.total_hours)}</TD>
-                  <TD className="max-w-[220px] truncate text-text-secondary">{workLogPreview(r.work_log) || "—"}</TD>
+                  <TD><DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} /></TD>
                 </TR>
               ))}
               {(recent ?? []).length === 0 && (
                 <TR>
-                  <TD className="py-6 text-center text-text-secondary">No attendance yet — check in to start.</TD>
+                  <TD colSpan={5} className="py-6 text-center text-text-secondary">No attendance yet — check in to start.</TD>
                 </TR>
               )}
             </TBody>

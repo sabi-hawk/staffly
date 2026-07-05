@@ -7,12 +7,12 @@ import { buildEmployeeReport } from "@/lib/services/reports";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { SummaryRange } from "@/components/attendance/summary-range";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
+import { DailySummary } from "@/components/attendance/daily-summary";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatHours } from "@/lib/utils";
-import { workLogPreview } from "@/lib/worklog";
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -42,9 +42,23 @@ export default async function AttendancePage({
     .from("attendance").select("*").eq("employee_id", profile.id)
     .order("work_date", { ascending: false }).limit(30);
 
+  // Prompt to add today's task summary if they've worked today but not written it yet.
+  const todayRow = (history ?? []).find((r) => r.work_date === today);
+  const todaySummaryMissing = !!todayRow && !(todayRow.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+
   return (
     <div className="space-y-6">
       <CheckWidget today={todayData as any} />
+
+      {todaySummaryMissing && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/5 px-4 py-3">
+          <p className="text-sm text-text-primary">
+            <span className="font-medium">Today's task summary is missing.</span>{" "}
+            <span className="text-text-secondary">Add a couple of lines on what you worked on today.</span>
+          </p>
+          <DailySummary workDate={today} today={today} html={todayRow!.daily_summary} late={todayRow!.summary_late} />
+        </div>
+      )}
 
       {summary && (
         <Card>
@@ -70,7 +84,7 @@ export default async function AttendancePage({
         <CardContent>
           <Table>
             <THead>
-              <TR><TH>Date</TH><TH>In</TH><TH>Out</TH><TH>Hours</TH>{showSummary && <TH>Deficit/Extra</TH>}<TH>Log</TH><TH></TH></TR>
+              <TR><TH>Date</TH><TH>In</TH><TH>Out</TH><TH>Hours</TH>{showSummary && <TH>Deficit/Extra</TH>}<TH>Task summary</TH><TH></TH></TR>
             </THead>
             <TBody>
               {(history ?? []).map((r) => {
@@ -87,7 +101,7 @@ export default async function AttendancePage({
                         {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                       </TD>
                     )}
-                    <TD className="max-w-[200px] truncate text-text-secondary">{workLogPreview(r.work_log) || "—"}</TD>
+                    <TD><DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} /></TD>
                     <TD>{r.work_date === today && r.check_in_time && (
                       <EditAttendance
                         attendanceId={r.id}

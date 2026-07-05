@@ -89,6 +89,16 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   null default true`. Admin-toggleable (super-admin settings page): gates whether employees see their
   attendance summary + the deficit/extra column on the Attendance tab (admins always see them). Read by
   all (`settings_read`), written by super_admin (`settings_super_write`).
+- `0027_daily_summary.sql` — `attendance` +`daily_summary text` (rich-text HTML, sanitized) +`summary_at
+  timestamptz` +`summary_late boolean default false`. One task summary per work day. Rules enforced in
+  `saveDailySummary` (service): edit freely same-day; a **past day with a summary is locked**; a past
+  day still **missing may be added late** (`summary_late=true`). Self-writable via the existing
+  `att_update` RLS (own rows); admins see all + a "missing today" list. (Legacy `work_log` jsonb is now
+  superseded by this HTML field in the UI.)
+- `0028_daily_summary_fn.sql` — **`save_daily_summary(work_date, html)`** security-definer RPC (returns
+  `late` bool). Enforces the rules + updates ONLY the summary columns. Needed because `att_update` (0019)
+  blocks employees from updating PAST rows — a direct late-add would silently no-op; the definer lets an
+  employee late-add to a past row without being able to edit past times/hours. `execute` to `authenticated`.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,
