@@ -4,17 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
+import { FilterShell } from "@/components/crm/filter-shell";
 import { ActivityRowActions } from "@/components/crm/activity-row-actions";
 import { assessmentShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
+import { crmDaysAgo as isoAgo } from "@/lib/crm/date-utils";
 import { companyToday } from "@/lib/time";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SP = { page?: string; pageSize?: string; status?: string; priority?: string; duration?: string; q?: string; from?: string; to?: string };
 const asDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
-const isoAgo = (offset: number) => { const d = new Date(Date.now() + 5 * 3600_000); d.setUTCDate(d.getUTCDate() - offset); return d.toISOString().slice(0, 10); };
 
 /** Assessments tab of the CRM Leads hub — grid filtered by Received (entry_date, default 1 month). */
 export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
@@ -43,21 +44,22 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
     .range(from, to);
   const list = (rows ?? []) as any[];
 
+  const toolbar = (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface/40 p-3">
+      <CrmFilterBar
+        filters={[
+          { key: "status", label: "Status", options: ASSESSMENT_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+          { key: "priority", label: "Priority", options: PRIORITIES.map((s) => ({ value: s, label: s })) },
+          { key: "duration", label: "Duration", options: DURATIONS.map((s) => ({ value: s, label: s })) },
+        ]}
+        search={{ key: "q", placeholder: "Search job or company" }}
+      />
+      <CrmDateFilter />
+    </div>
+  );
+
   return (
-    <>
-      <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
-        <CrmDateFilter />
-        <div className="border-t border-border pt-3">
-          <CrmFilterBar
-            filters={[
-              { key: "status", label: "Status", options: ASSESSMENT_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-              { key: "priority", label: "Priority", options: PRIORITIES.map((s) => ({ value: s, label: s })) },
-              { key: "duration", label: "Duration", options: DURATIONS.map((s) => ({ value: s, label: s })) },
-            ]}
-            search={{ key: "q", placeholder: "Search job or company" }}
-          />
-        </div>
-      </div>
+    <FilterShell toolbar={toolbar}>
       <Table>
         <THead>
           <TR>
@@ -87,6 +89,6 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
         </TBody>
       </Table>
       <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
-    </>
+    </FilterShell>
   );
 }

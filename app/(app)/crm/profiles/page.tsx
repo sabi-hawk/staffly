@@ -11,6 +11,7 @@ import { RowLink } from "@/components/ui/row-link";
 import { StatusPill } from "@/components/crm/status-pill";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
+import { FilterShell } from "@/components/crm/filter-shell";
 import { parsePaging } from "@/lib/pagination";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -51,14 +52,20 @@ export default async function CrmProfilesPage({
         )}
       </CardHeader>
       <CardContent>
-        <CrmFilterBar
-          filters={[
-            ...(canFilterOwner ? [{ key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) }] : []),
-            { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
-            { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
-          ]}
-          search={{ key: "q", placeholder: "Search name or email" }}
-        />
+        <FilterShell
+          toolbar={
+            <div className="mb-4">
+              <CrmFilterBar
+                filters={[
+                  ...(canFilterOwner ? [{ key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) }] : []),
+                  { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
+                  { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
+                ]}
+                search={{ key: "q", placeholder: "Search name or email" }}
+              />
+            </div>
+          }
+        >
         <Table>
           <THead>
             <TR><TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
@@ -79,6 +86,7 @@ export default async function CrmProfilesPage({
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
+        </FilterShell>
       </CardContent>
     </Card>
   );

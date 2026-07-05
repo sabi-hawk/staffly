@@ -54,6 +54,15 @@ shares. Requirements-of-record: [FRD-00](../../frds/FRD-00-crm-vision.md) + FRD-
 - **Placement/tech:** same Next.js app under `/crm/*`; logic in `lib/services/*` (injected Supabase
   client); new tables ship RLS in the same migration; follow `../../reference/01-architecture-and-conventions.md`
   + `../../../rules/conventions.md`.
+- **List UX (2026-07-05):** CRM list/grid pages wrap their table in **`FilterShell`** (`components/crm/
+  filter-shell.tsx`) — a client shell holding one `useTransition`; the filter controls
+  (`CrmFilterBar`, `CrmDateFilter`) read `nav`/`pending` from its context so the loading spinner shows
+  **over the grid**, not the toolbar. `CrmFilterBar` selects keep their **filter name visible**
+  ("Outcome ▸ value") and clear via a circular **✕** icon. `CrmDateFilter` = custom range + presets
+  (1w/1m/3m); grids default 1-month, the **Leads** tab uses `defaultAll` (adds an "All" segment, filters
+  by `updated_at`). The interview/assessment grid **edit** action deep-links
+  `/crm/leads/{id}?edit=<kind>:<id>` → the lead page opens that record's edit form (`LeadActivity`
+  `initialEdit`).
 
 ## Known follow-ups (from the 2026-07-02 multi-agent CRM audit; 0 blockers)
 Fixed in the audit pass: filters+search on all 5 list pages; same-developer-across-rounds default

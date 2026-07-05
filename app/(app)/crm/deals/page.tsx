@@ -10,6 +10,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
+import { FilterShell } from "@/components/crm/filter-shell";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatPKR } from "@/lib/utils";
@@ -39,10 +40,16 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
         </div>
       </CardHeader>
       <CardContent>
-        <CrmFilterBar
-          filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
-          search={{ key: "q", placeholder: "Search designation" }}
-        />
+        <FilterShell
+          toolbar={
+            <div className="mb-4">
+              <CrmFilterBar
+                filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
+                search={{ key: "q", placeholder: "Search designation" }}
+              />
+            </div>
+          }
+        >
         <Table>
           <THead>
             <TR><TH>Company</TH><TH>Designation</TH><TH>Profile</TH><TH>Working dev</TH><TH>Salary</TH><TH>Joining</TH><TH>Status</TH><TH></TH></TR>
@@ -64,6 +71,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
+        </FilterShell>
       </CardContent>
     </Card>
   );

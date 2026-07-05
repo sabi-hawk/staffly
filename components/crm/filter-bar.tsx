@@ -1,20 +1,18 @@
 "use client";
-import { useTransition } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
+import { useFilterTransition } from "./filter-shell";
 
 export type FilterDef = { key: string; label: string; options: { value: string; label: string }[] };
 
-// URL-driven filter bar for CRM list pages: selects + an optional text search. Writes searchParams
-// (resetting ?page) so the server page can read them and filter the query. Uses a transition so the
-// bar shows a pending state during the server round-trip.
+// URL-driven filter bar for CRM list pages: labelled selects + an optional text search. Each select
+// keeps its filter NAME visible ("Outcome" ▸ value) so a chosen value is never ambiguous. Navigation
+// runs through the shared FilterShell transition, so the loading spinner shows over the grid.
 export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search?: { key: string; placeholder?: string } }) {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { nav } = useFilterTransition();
 
-  function nav(url: string) { startTransition(() => router.push(url)); }
   function setParam(k: string, v: string) {
     const sp = new URLSearchParams(params.toString());
     if (v) sp.set(k, v);
@@ -34,19 +32,27 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
   }
 
   return (
-    <div className={`mb-4 flex flex-wrap items-center gap-2 transition-opacity ${pending ? "opacity-60" : ""}`}>
-      {filters.map((f) => (
-        <select
-          key={f.key}
-          aria-label={f.label}
-          value={params.get(f.key) ?? ""}
-          onChange={(e) => setParam(f.key, e.target.value)}
-          className="h-9 rounded-md border border-border bg-white px-3 text-sm"
-        >
-          <option value="">{f.label}: all</option>
-          {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      ))}
+    <div className="flex flex-wrap items-center gap-2">
+      {filters.map((f) => {
+        const active = !!params.get(f.key);
+        return (
+          <label
+            key={f.key}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-md border bg-white pl-2.5 pr-1 text-sm ${active ? "border-brand-primary/60" : "border-border"}`}
+          >
+            <span className="text-caption font-medium text-text-secondary">{f.label}</span>
+            <select
+              aria-label={f.label}
+              value={params.get(f.key) ?? ""}
+              onChange={(e) => setParam(f.key, e.target.value)}
+              className="h-full cursor-pointer border-0 bg-transparent pr-1 text-sm font-medium text-text-primary focus:outline-none"
+            >
+              <option value="">All</option>
+              {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+        );
+      })}
       {search && (
         <input
           type="search"
@@ -59,11 +65,15 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
         />
       )}
       {anyActive && (
-        <button onClick={clearAll} className="h-9 rounded-md border border-border px-3 text-sm text-text-secondary hover:bg-surface">
-          Clear filters
+        <button
+          onClick={clearAll}
+          title="Clear filters"
+          aria-label="Clear filters"
+          className="inline-flex size-8 items-center justify-center rounded-full bg-surface text-text-secondary transition-colors hover:bg-border hover:text-text-primary"
+        >
+          <X className="size-4" />
         </button>
       )}
-      {pending && <Loader2 className="size-4 animate-spin text-text-secondary" aria-label="Loading" />}
     </div>
   );
 }

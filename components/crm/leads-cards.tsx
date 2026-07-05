@@ -5,6 +5,8 @@ import { CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
+import { CrmDateFilter } from "@/components/crm/crm-date-filter";
+import { FilterShell } from "@/components/crm/filter-shell";
 import { LeadCardActions } from "@/components/crm/lead-card-actions";
 import { StatusPill } from "@/components/crm/status-pill";
 import { CopyButton } from "@/components/crm/copy-button";
@@ -14,7 +16,8 @@ import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/co
 import { formatCrmDate } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string };
+type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string; from?: string; to?: string };
+const asDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
 
 const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) : -1);
 const initials = (name?: string | null) =>
@@ -51,13 +54,19 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
   if (searchParams.q) query = query.ilike("company", `%${searchParams.q}%`);
+  // Optional last-activity date range (default: All — leads are the top-level pipeline, so we don't
+  // hide older open threads by default; the presets are there when the owner wants to narrow).
+  const rFrom = asDate(searchParams.from);
+  const rTo = asDate(searchParams.to);
+  if (rFrom) query = query.gte("updated_at", `${rFrom}T00:00:00`);
+  if (rTo) query = query.lte("updated_at", `${rTo}T23:59:59`);
   const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(from, to);
 
   const bds = await bdOptions(supabase);
   const list = (rows ?? []) as any[];
 
-  return (
-    <>
+  const toolbar = (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface/40 p-3">
       <CrmFilterBar
         filters={[
           { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
@@ -66,7 +75,12 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
         ]}
         search={{ key: "q", placeholder: "Search company" }}
       />
+      <CrmDateFilter defaultAll />
+    </div>
+  );
 
+  return (
+    <FilterShell toolbar={toolbar}>
       {list.length === 0 && (
         <div className="rounded-lg border border-dashed border-border py-10 text-center text-text-secondary">
           No leads match. Use <span className="font-medium">Add</span> to start a company thread.
@@ -78,7 +92,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
           const interviews = [...(l.interviews ?? [])].sort((a, b) => roundRank(a.round) - roundRank(b.round));
           const assessments = l.assessments ?? [];
           return (
-            <div key={l.id} className="flex flex-col rounded-xl border border-border bg-card p-4 shadow-card">
+            <div key={l.id} className="flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Link href={`/crm/leads/${l.id}`} className="block truncate text-h3 font-semibold text-text-primary hover:text-brand-primary">
@@ -140,6 +154,6 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
       <div className="mt-4">
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
       </div>
-    </>
+    </FilterShell>
   );
 }

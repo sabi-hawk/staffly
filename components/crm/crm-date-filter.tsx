@@ -1,16 +1,13 @@
 "use client";
-// Received-date range filter for the Interviews/Assessments grids: quick presets (1wk / 1mo / 3mo) as
-// a segmented control + an optional custom range. Pushes ?from&to (YYYY-MM-DD). Default = 1 month.
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+// Date-range control for the CRM grids: an optional custom range followed by quick presets
+// (1wk / 1mo / 3mo), meant to sit at the right of the toolbar row. No "Received" label — the range
+// is understood to bound the grid. Pushes ?from&to (YYYY-MM-DD). Navigates via the shared FilterShell
+// transition so the spinner shows over the grid. `defaultAll` (Leads) adds an "All" segment and treats
+// an empty range as All; without it (Interviews/Assessments) an empty range means the 1-month default.
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-
-// YYYY-MM-DD `days` before today in Asia/Karachi (UTC+5, no DST).
-function daysAgo(days: number): string {
-  const d = new Date(Date.now() + 5 * 3600_000);
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().slice(0, 10);
-}
-const todayPkt = () => new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
+import { crmDaysAgo as daysAgo, crmToday as todayPkt } from "@/lib/crm/date-utils";
+import { useFilterTransition } from "./filter-shell";
 
 const PRESETS = [
   { key: "1w", label: "1 week", days: 7 },
@@ -18,10 +15,10 @@ const PRESETS = [
   { key: "3m", label: "3 months", days: 90 },
 ] as const;
 
-export function CrmDateFilter() {
-  const router = useRouter();
+export function CrmDateFilter({ defaultAll = false }: { defaultAll?: boolean }) {
   const pathname = usePathname();
   const params = useSearchParams();
+  const { nav } = useFilterTransition();
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
 
@@ -32,32 +29,24 @@ export function CrmDateFilter() {
     if (f) sp.set("from", f); else sp.delete("from");
     if (t) sp.set("to", t); else sp.delete("to");
     sp.delete("page");
-    router.push(`${pathname}?${sp.toString()}`);
+    const qs = sp.toString();
+    nav(qs ? `${pathname}?${qs}` : pathname);
   }
+  const clearRange = () => push({ from: "", to: "" });
 
-  // No explicit range → 1 month is the active default (the grid defaults the same window server-side).
-  const activePreset = !from && !to ? "1m" : PRESETS.find((p) => from === daysAgo(p.days) && (to === "" || to === todayPkt()))?.key;
+  const empty = !from && !to;
+  // Which preset (if any) is currently active. Empty range → 1-month default, or "all" when defaultAll.
+  const activePreset = empty
+    ? (defaultAll ? "all" : "1m")
+    : PRESETS.find((p) => from === daysAgo(p.days) && (to === "" || to === todayPkt()))?.key;
+
+  const seg = "rounded-md px-3 py-1 text-caption font-medium transition-colors";
+  const on = "bg-white text-brand-primary shadow-card";
+  const off = "text-text-secondary hover:text-text-primary";
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-caption font-medium text-text-secondary">Received</span>
-        <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">
-          {PRESETS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => push({ from: daysAgo(p.days), to: todayPkt() })}
-              className={cn(
-                "rounded-md px-3 py-1 text-caption font-medium transition-colors",
-                activePreset === p.key ? "bg-white text-brand-primary shadow-card" : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* Custom range (before the presets) */}
       <div className="flex items-center gap-1.5">
         <label htmlFor="crm-from" className="sr-only">From date</label>
         <input
@@ -72,19 +61,22 @@ export function CrmDateFilter() {
           onChange={(e) => push({ to: e.target.value })}
           className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         />
-        {(from || to) && (
-          <button
-            onClick={() => {
-              const sp = new URLSearchParams(params.toString());
-              sp.delete("from"); sp.delete("to"); sp.delete("page");
-              const qs = sp.toString();
-              router.push(qs ? `${pathname}?${qs}` : pathname);
-            }}
-            className="h-8 rounded-md border border-border px-2.5 text-caption text-text-secondary hover:bg-surface"
-          >
-            Clear
-          </button>
+      </div>
+
+      {/* Quick presets (rightmost) */}
+      <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">
+        {defaultAll && (
+          <button onClick={clearRange} className={cn(seg, activePreset === "all" ? on : off)}>All</button>
         )}
+        {PRESETS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => push({ from: daysAgo(p.days), to: todayPkt() })}
+            className={cn(seg, activePreset === p.key ? on : off)}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
     </div>
   );

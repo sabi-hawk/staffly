@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus } from "lucide-react";
@@ -19,6 +19,7 @@ export function LeadActivity({
   developers,
   interviews,
   assessments,
+  initialEdit,
 }: {
   leadId: string;
   devProfileId: string | null;
@@ -26,10 +27,18 @@ export function LeadActivity({
   developers: Opt[];
   interviews: Interview[];
   assessments: Assessment[];
+  initialEdit?: { kind: "interviews" | "assessments"; id: string } | null;
 }) {
   const router = useRouter();
-  const [iEdit, setIEdit] = useState<string | null>(null); // interview id or "new"
-  const [aEdit, setAEdit] = useState<string | null>(null); // assessment id or "new"
+  // Open the record's edit form when deep-linked from the grid (?edit=kind:id).
+  const [iEdit, setIEdit] = useState<string | null>(initialEdit?.kind === "interviews" ? initialEdit.id : null);
+  const [aEdit, setAEdit] = useState<string | null>(initialEdit?.kind === "assessments" ? initialEdit.id : null);
+
+  useEffect(() => {
+    if (!initialEdit) return;
+    const el = document.getElementById(`edit-${initialEdit.kind}-${initialEdit.id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [initialEdit]);
   const devName = (id: string | null) => developers.find((d) => d.id === id)?.label ?? "—";
   // Same-developer-across-rounds (FRD-02): a new round defaults to round 1's (or the earliest) developer.
   const firstDeveloper =
@@ -58,7 +67,7 @@ export function LeadActivity({
         )}
         <div className="space-y-2">
           {interviews.map((iv) => (
-            <div key={iv.id} className="rounded-md border border-border p-3">
+            <div key={iv.id} id={`edit-interviews-${iv.id}`} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-medium">{iv.job_title || iv.company || "Interview"}</span>
@@ -98,7 +107,7 @@ export function LeadActivity({
         )}
         <div className="space-y-2">
           {assessments.map((as) => (
-            <div key={as.id} className="rounded-md border border-border p-3">
+            <div key={as.id} id={`edit-assessments-${as.id}`} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-medium">{as.job_title || as.company || "Assessment"}</span>

@@ -247,3 +247,20 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
   **admin-only "Deleted (history)"** list (view / download / permanent hard-delete — no restore); an
   in-app **browser-native inline viewer** (eye button) for PDFs/images; dummy seed resumes + cover
   letters per demo profile. Enforced by RLS (`can_manage_dev_docs`) + a security-definer soft-delete RPC.
+
+## 2026-07-05 — CRM lead detail + filters batch (owner feedback)
+1. **Bug:** interview/assessment grid "edit" link opens the lead page, not the record's edit form
+   (the lead detail page ignores the `?edit=kind:id` param). Deep-link it to auto-open that edit form.
+2. **Sleeker cards + status pill:** less rounded, modern/not-bulky, on lead cards + opened lead.
+3. **Grid loader:** show the loading state over the GRID being fetched, not on the filter bar — app-wide.
+4. **Filter redesign (interviews/assessments/leads):** cleaner two-row layout; date presets (1wk/1mo/3mo)
+   pushed to the right of a row with the custom range before them; drop the "Received" label; each
+   selected dropdown shows its filter name (e.g. "Outcome: Pending"); Clear-filters = a gray circular X
+   icon with a "Clear filters" tooltip. Add the same date presets to the **Leads** tab.
+5. **Lead detail restructure:** clicking Edit makes the top section editable **in place** (company, role,
+   profile, status, budget, expected — NOT owner, admin-only), no modal. Move **Job Description** and
+   **BD Notes** out of the modal into their own editable sections **below Documents**, each explained.
+6. **NEW — Lead contact details:** BDs can optionally log the company representative's contact info
+   (email / phone / LinkedIn) with a type (company admin / HR / recruiter / manager / other→free text),
+   for future outreach. Per-lead (`lead_contacts` table + RLS). Section explains its purpose + examples.
+7. **Info icons:** a small info icon + explanatory tooltip on each CRM field (lead/interview/assessment).

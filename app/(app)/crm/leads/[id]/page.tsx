@@ -7,8 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { crmProfileOptions, developerOptions, bdOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { labelize, statusTone } from "@/lib/crm/constants";
+import { StatusPill } from "@/components/crm/status-pill";
 import { LeadEditModal } from "@/components/crm/lead-edit-modal";
 import { QualificationPanel } from "@/components/crm/disqualify-panel";
 import { LeadActivity } from "@/components/crm/lead-activity";
@@ -23,10 +22,16 @@ export const dynamic = "force-dynamic";
 const PROSE = "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-primary [&_a]:underline [&_p]:mb-1";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export default async function LeadDetail({ params }: { params: { id: string } }) {
+export default async function LeadDetail({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
   const me = await getCurrentProfile();
   if (!me) notFound();
   const supabase = createClient();
+
+  // Deep-link from the grid "edit" action: ?edit=interviews:<id> | assessments:<id> → auto-open that
+  // record's edit form in the Activity section (and scroll to it).
+  const [editKind, editId] = (searchParams.edit ?? "").split(":");
+  const initialEdit =
+    (editKind === "interviews" || editKind === "assessments") && editId ? { kind: editKind, id: editId } : null;
 
   const { data: lead } = await supabase
     .from("leads")
@@ -63,7 +68,7 @@ export default async function LeadDetail({ params }: { params: { id: string } })
         <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
           <CardTitle>{lead.company}{lead.role ? ` · ${lead.role}` : ""}</CardTitle>
           <div className="flex shrink-0 items-center gap-2">
-            <Badge tone={statusTone(lead.status)}>{labelize(lead.status)}</Badge>
+            <StatusPill status={lead.status} />
             {isAdminRole(me.role) && (
               <Button asChild size="sm" variant="outline"><Link href={`/crm/deals/new?lead=${lead.id}`}>Create deal</Link></Button>
             )}
@@ -113,6 +118,7 @@ export default async function LeadDetail({ params }: { params: { id: string } })
             developers={developers}
             interviews={interviews}
             assessments={assessments}
+            initialEdit={initialEdit as { kind: "interviews" | "assessments"; id: string } | null}
           />
         </CardContent>
       </Card>
