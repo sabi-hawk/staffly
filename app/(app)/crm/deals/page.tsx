@@ -24,7 +24,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
+    .select("id, name, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.q) query = query.ilike("designation", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
@@ -57,7 +57,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
           <TBody>
             {list.map((d) => (
               <TR key={d.id}>
-                <TD className="font-medium"><Link href={`/crm/deals/${d.id}`} className="text-text-primary hover:text-brand-primary">{d.lead?.company ?? "—"}</Link></TD>
+                <TD className="font-medium"><Link href={`/crm/deals/${d.id}`} className="text-text-primary hover:text-brand-primary">{d.name || d.lead?.company || "—"}</Link></TD>
                 <TD>{d.designation ?? "—"}</TD>
                 <TD>{d.profile?.name ?? "—"}</TD>
                 <TD>{d.dev?.full_name ?? "—"}</TD>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatPKR } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
+import { DealDevelopers } from "@/components/crm/deal-developers";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
 import { RecordHistory } from "@/components/audit/record-history";
 
@@ -29,6 +30,11 @@ export default async function DealDetail({ params }: { params: { id: string } })
   const { data: docRows } = await supabase.from("deal_documents").select("id, label, file_name").eq("deal_id", params.id).order("created_at");
   const docs = (docRows ?? []) as DealDoc[];
 
+  const { data: devRows } = await supabase
+    .from("deal_developers").select("developer_id, role, dev:profiles!deal_developers_developer_id_fkey(full_name)")
+    .eq("deal_id", params.id);
+  const assignments = (devRows ?? []).map((r: any) => ({ developer_id: r.developer_id, role: r.role }));
+
   const [leads, profiles, developers, accounts, methods] = await Promise.all([
     leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase),
     accountOptions(supabase), methodOptions(supabase),
@@ -43,7 +49,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>{d.lead?.company ?? "Deal"}{d.designation ? ` · ${d.designation}` : ""}</CardTitle>
+          <CardTitle>{d.name || d.lead?.company || "Deal"}{d.designation ? ` · ${d.designation}` : ""}</CardTitle>
           <Badge tone={statusTone(d.status)}>{labelize(d.status)}</Badge>
         </CardHeader>
         <CardContent>
@@ -57,6 +63,11 @@ export default async function DealDetail({ params }: { params: { id: string } })
             <div><dt className="text-caption text-text-secondary">Profile DOB</dt><dd>{d.profile_dob ?? "—"}</dd></div>
           </dl>
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Assigned developers</CardTitle></CardHeader>
+        <CardContent><DealDevelopers dealId={d.id} developers={developers} initial={assignments} /></CardContent>
       </Card>
 
       <Card>
@@ -75,7 +86,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             accounts={accounts}
             methods={methods}
             initial={{
-              lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
+              name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
               designation: d.designation, joining_date: d.joining_date, salary: d.salary != null ? String(d.salary) : "",
               receiving_account_id: d.receiving_account_id, payment_method_id: d.payment_method_id,
               profile_dob: d.profile_dob, status: d.status,

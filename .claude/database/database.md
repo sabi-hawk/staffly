@@ -99,6 +99,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `late` bool). Enforces the rules + updates ONLY the summary columns. Needed because `att_update` (0019)
   blocks employees from updating PAST rows — a direct late-add would silently no-op; the definer lets an
   employee late-add to a past row without being able to edit past times/hours. `execute` to `authenticated`.
+- `0029_deal_developers.sql` — `deals` +`name`; new **`deal_developers`** join (deal_id, developer_id→
+  profiles, role ∈ developer|closer; unique per (deal,dev,role)) = many-to-many deal↔developer. RLS:
+  admin/super manage; a developer may READ their own assignment rows only. **`my_deals()`** security-
+  definer fn returns `{deal_id, name, role}` for the caller's deals — so a developer sees the deal NAME
+  on their dashboard **without** the admin-only `deals` table (financials) ever being readable to them.
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

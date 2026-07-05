@@ -31,6 +31,10 @@ export default async function EmployeeDashboard() {
   const todayRow = (recent ?? []).find((r) => r.work_date === today);
   const summaryMissing = !!todayRow?.check_in_time && !(todayRow.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
 
+  // Deals this employee is assigned to (NAME only — never financials; via the my_deals() definer fn).
+  const { data: myDeals } = await supabase.rpc("my_deals");
+  const dealNames = Array.from(new Set(((myDeals ?? []) as any[]).map((d) => d.name).filter(Boolean)));
+
   return (
     <div className="space-y-6">
       <div>
@@ -39,6 +43,17 @@ export default async function EmployeeDashboard() {
       </div>
 
       <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />
+
+      {dealNames.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle>Your deals</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {dealNames.map((n) => (
+              <span key={n as string} className="rounded-md border border-border bg-surface px-3 py-1.5 text-caption font-medium text-text-primary">{n as string}</span>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {(upcomingHolidays ?? []).length > 0 && (
         <Card>

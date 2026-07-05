@@ -28,6 +28,7 @@ export function DealForm({
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
+    name: initial?.name ?? "",
     lead_id: initial?.lead_id ?? "",
     dev_profile_id: initial?.dev_profile_id ?? "",
     working_developer: initial?.working_developer ?? "",
@@ -70,6 +71,7 @@ export function DealForm({
 
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-1.5"><Label htmlFor="deal-name">Deal name</Label><Input id="deal-name" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Acme · Senior FS" /></div>
       {sel("lead_id", "Lead", leads)}
       {sel("dev_profile_id", "Selected profile", profiles)}
       {sel("working_developer", "Working developer", developers)}

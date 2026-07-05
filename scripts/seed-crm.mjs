@@ -140,11 +140,16 @@ async function main() {
       .insert({ holder_name: "Demo Holder", bank_name: "Demo Bank", account_number: "PK00DEMO0000" }).select("id").single();
     const { data: pm } = await admin.from("payment_methods").select("id").eq("name", "Wise").maybeSingle();
     await admin.from("deals").delete().eq("lead_id", lead.id);
-    await admin.from("deals").insert({
-      lead_id: lead.id, designation: "Senior Full Stack", dev_profile_id: sabahat.id, working_developer: dev,
+    const { data: deal } = await admin.from("deals").insert({
+      name: "DemoCorp · Senior FS", lead_id: lead.id, designation: "Senior Full Stack", dev_profile_id: sabahat.id, working_developer: dev,
       salary: 750000, receiving_account_id: acct?.id ?? null, payment_method_id: pm?.id ?? null, status: "active",
-    });
-    console.log("seeded demo deal (DemoCorp)");
+    }).select("id").single();
+    // Assign Muzammal as the developer on this deal (so his dashboard shows the deal name).
+    if (deal) {
+      await admin.from("deal_developers").delete().eq("deal_id", deal.id);
+      await admin.from("deal_developers").insert({ deal_id: deal.id, developer_id: dev, role: "developer" });
+    }
+    console.log("seeded demo deal (DemoCorp) + developer assignment");
   }
   console.log("CRM demo seed done ✅");
 }

@@ -216,6 +216,23 @@ async function main() {
   check("employee: past-present summary → locked (rejected)", !!sLocked.error);
   await pgc.query(`delete from attendance where employee_id=$1 and work_date = any($2)`, [EMP, [dsToday, dsPast]]);
 
+  // ── deal_developers (0029): admin manages; a developer reads only their own assignment rows and can
+  //    see the deal NAME via my_deals() (definer) — never the deals table (admin-only) or financials.
+  const anyDeal = (await pgc.query(`select id from deals limit 1`)).rows[0]?.id;
+  if (anyDeal) {
+    await pgc.query(`delete from deal_developers where deal_id=$1 and developer_id=$2`, [anyDeal, EMP]);
+    await pgc.query(`insert into deal_developers (deal_id, developer_id, role) values ($1,$2,'developer')`, [anyDeal, EMP]);
+    const empDeals = await emp.from("deals").select("id, salary");
+    check("employee (dev): cannot read the deals table (admin-only)", (empDeals.data?.length ?? 0) === 0);
+    const empAssign = await emp.from("deal_developers").select("deal_id");
+    check("employee (dev): reads own deal_developers rows", (empAssign.data?.length ?? 0) >= 1);
+    const myD = await emp.rpc("my_deals");
+    check("employee (dev): my_deals() returns name (no financials)", !myD.error && (myD.data?.length ?? 0) >= 1 && myD.data[0].salary === undefined);
+    const empWrite = await emp.from("deal_developers").insert({ deal_id: anyDeal, developer_id: EMP2, role: "developer" }).select();
+    check("employee (dev): cannot assign developers (admin-only)", !!empWrite.error || (empWrite.data?.length ?? 0) === 0);
+    await pgc.query(`delete from deal_developers where deal_id=$1 and developer_id=$2`, [anyDeal, EMP]);
+  }
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);
