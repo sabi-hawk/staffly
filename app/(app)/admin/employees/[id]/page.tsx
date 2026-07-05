@@ -16,7 +16,7 @@ import { CompensationEditor } from "@/components/admin/compensation-editor";
 import { CredentialsCard } from "@/components/admin/credentials-card";
 import { CommissionEditor } from "@/components/admin/commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
-import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12 } from "@/lib/utils";
+import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12, formatCrmDatetime } from "@/lib/utils";
 
 export default async function EmployeeDetail({
   params,
@@ -113,18 +113,32 @@ export default async function EmployeeDetail({
             <StatCard label="Missing" value={report.missingDays} icon={CalendarX} tone="warning" />
           </div>
           <Table>
-            <THead><TR><TH>Date</TH><TH>Hours</TH><TH>Deficit/Extra</TH></TR></THead>
+            <THead><TR><TH>Date</TH><TH>Hours</TH><TH>Deficit/Extra</TH><TH>Task summary</TH></TR></THead>
             <TBody>
-              {report.daily.slice(-15).reverse().map((r: any) => (
-                <TR key={r.work_date}>
-                  <TD className="tabular">{r.work_date}</TD>
-                  <TD className="tabular">{formatHours(r.total_hours)}</TD>
-                  <TD>
-                    {Number(r.deficit_hours) > 0 && <Badge tone="danger">-{formatHours(r.deficit_hours)}</Badge>}
-                    {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
-                  </TD>
-                </TR>
-              ))}
+              {report.daily.slice(-15).reverse().map((r: any) => {
+                const summaryText = (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+                return (
+                  <TR key={r.work_date}>
+                    <TD className="tabular">{r.work_date}</TD>
+                    <TD className="tabular">{formatHours(r.total_hours)}</TD>
+                    <TD>
+                      {Number(r.deficit_hours) > 0 && <Badge tone="danger">-{formatHours(r.deficit_hours)}</Badge>}
+                      {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
+                    </TD>
+                    <TD className="max-w-[260px]">
+                      {summaryText ? (
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-text-secondary">{summaryText}</span>
+                            {r.summary_late && <Badge tone="warning">late</Badge>}
+                          </div>
+                          {r.summary_late && r.summary_at && <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>}
+                        </div>
+                      ) : r.check_in_time ? <Badge tone="warning">missing</Badge> : <span className="text-text-secondary">—</span>}
+                    </TD>
+                  </TR>
+                );
+              })}
             </TBody>
           </Table>
         </CardContent>

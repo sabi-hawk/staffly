@@ -298,3 +298,31 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
 - The attendance **history grid** shows, per day, whether the summary is present/missing (+ late flag).
 - **Admin** gets clear visibility of who has **not** added today's summary.
 - Likely maps onto the existing `attendance.work_log` field (currently a plain "Log" column).
+
+## 2026-07-05 — Summary polish + deal-assigned developer role + deals mgmt + product doc
+### Attendance / daily-summary polish (Tier-1, build now)
+1. **Late timestamp on admin:** where a summary shows "late", also show WHEN it was added (`summary_at`
+   date/time) on the admin side (admin attendance grid + admin employee detail "recent days").
+2. **Missing-summary intimation:** today = a clear warning ("add before you sign off"); past-missing =
+   a distinct "needs to be added" warning. Added+day-passed = locked; added+not-passed = still editable.
+3. **Checkout tip:** on check-out, if today's summary is still missing, prompt "Are you done? add today's
+   summary." Re-show on each checkout while missing; suppress once the summary is added.
+4. **Attendance range fixes:** the history grid must follow the same range as the Summary card (currently
+   it shows last 30 rows regardless — they were desynced). Show the resolved date range (from→to,
+   inclusive) on the summary. Add a custom range to the employee attendance page (BD capped at 3 months).
+
+### Deal-assigned developer role + deals management (Tier-2, needs sign-off)
+5. **New concept — engineering developer assigned to a DEAL.** An admin/super-admin **flag** marks an
+   eng employee as deal-assigned. For them: HIDE annual/casual leave counts (their leave is governed by
+   the client company they work for — admin can't approve annual in-portal, it's record-only). They can
+   still submit leave requests (type + date + reason) for the record. Business rule → handbook + shown
+   on their portal. Not all eng employees are deal-assigned (some just assist a lead dev → normal policy).
+6. **Deals model + management (admin/super):** manage deals with name (start), designation, joining date,
+   associated profile, developer(s), closer, salary/compensation, payment method, + extensible extras.
+   Associate developer(s) with a deal (many-to-many: a dev on many deals, a deal with many devs; a person
+   can be closer and/or developer). The associated developer sees only the deal **NAME** on their
+   dashboard. **HR (admin) must not see deal financial details** — only name + assignment. Super-admin
+   sees all. (Likely extends the existing `deals` table.)
+7. **Product documentation page (super-admin):** a growing "product overview + roles & access" page —
+   what the product is today, the roles, why they exist, the applied business rules. Update the (emptied)
+   role/access doc for the new role too.

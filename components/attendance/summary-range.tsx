@@ -13,10 +13,11 @@ const seg = "rounded-md px-3 py-1 text-caption font-medium transition-colors";
 const on = "bg-white text-brand-primary shadow-card";
 const off = "text-text-secondary hover:text-text-primary";
 
-export function SummaryRange({ range, from, to, allowCustom }: { range: RangeKey; from: string; to: string; allowCustom: boolean }) {
+export function SummaryRange({ range, from, to, allowCustom, minFrom }: { range: RangeKey; from: string; to: string; allowCustom: boolean; minFrom?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const todayStr = to && range !== "custom" ? to : new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
 
   function nav(next: Record<string, string | undefined>) {
     const sp = new URLSearchParams(params.toString());
@@ -39,10 +40,10 @@ export function SummaryRange({ range, from, to, allowCustom }: { range: RangeKey
       </div>
       {allowCustom && range === "custom" && (
         <div className="flex items-center gap-1.5">
-          <input type="date" value={from} max={to || undefined} onChange={(e) => nav({ range: "custom", from: e.target.value, to })}
+          <input type="date" value={from} min={minFrom} max={to || todayStr} onChange={(e) => nav({ range: "custom", from: e.target.value, to })}
             className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
           <span className="text-caption text-text-secondary">–</span>
-          <input type="date" value={to} min={from || undefined} onChange={(e) => nav({ range: "custom", from, to: e.target.value })}
+          <input type="date" value={to} min={from || minFrom} max={todayStr} onChange={(e) => nav({ range: "custom", from, to: e.target.value })}
             className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
         </div>
       )}

@@ -28,6 +28,9 @@ export default async function EmployeeDashboard() {
   const { data: upcomingHolidays } = await supabase
     .from("holidays").select("*").gte("holiday_date", companyToday()).order("holiday_date").limit(4);
 
+  const todayRow = (recent ?? []).find((r) => r.work_date === today);
+  const summaryMissing = !!todayRow?.check_in_time && !(todayRow.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+
   return (
     <div className="space-y-6">
       <div>
@@ -35,7 +38,7 @@ export default async function EmployeeDashboard() {
         <p className="text-caption text-text-secondary">Here's your day at a glance.</p>
       </div>
 
-      <CheckWidget today={todayData as any} />
+      <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />
 
       {(upcomingHolidays ?? []).length > 0 && (
         <Card>

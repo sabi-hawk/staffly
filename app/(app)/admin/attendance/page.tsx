@@ -10,7 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { parsePaging } from "@/lib/pagination";
 import { AttendanceControls } from "@/components/attendance/attendance-controls";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
-import { formatHours, formatCode } from "@/lib/utils";
+import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -117,10 +117,15 @@ export default async function AdminAttendancePage({
                     </TD>
                     <TD className="max-w-[220px]">
                       {(r.daily_summary ?? "").replace(/<[^>]*>/g, "").trim() ? (
-                        <span className="flex items-center gap-1.5">
-                          <span className="truncate text-text-secondary">{(r.daily_summary as string).replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
-                          {r.summary_late && <Badge tone="warning">late</Badge>}
-                        </span>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-text-secondary">{(r.daily_summary as string).replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
+                            {r.summary_late && <Badge tone="warning">late</Badge>}
+                          </div>
+                          {r.summary_late && r.summary_at && (
+                            <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>
+                          )}
+                        </div>
                       ) : (
                         <Badge tone="warning">missing</Badge>
                       )}

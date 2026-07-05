@@ -32,7 +32,7 @@ export async function buildEmployeeReport(
 
   const { data: rows } = await supabase
     .from("attendance")
-    .select("work_date, status, total_hours, deficit_hours, extra_hours, check_in_time, check_out_time, work_log")
+    .select("work_date, status, total_hours, deficit_hours, extra_hours, check_in_time, check_out_time, daily_summary, summary_late, summary_at")
     .eq("employee_id", employeeId)
     .gte("work_date", from)
     .lte("work_date", to)

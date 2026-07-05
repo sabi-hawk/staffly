@@ -25,7 +25,7 @@ function fmt(totalSec: number) {
 }
 const time = (t: string) => new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" });
 
-export function CheckWidget({ today }: { today: Today }) {
+export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMissing?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const working = !!today.openSince;
@@ -51,7 +51,13 @@ export function CheckWidget({ today }: { today: Today }) {
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed");
     if (path.includes("check-in")) toast.success(json.alreadyCheckedIn ? "Already working" : json.late ? "Checked in (late)" : "Checked in");
-    else toast.success(okMsg);
+    else {
+      toast.success(okMsg);
+      // Nudge on checkout while today's summary is still missing (suppressed once it's added).
+      if (summaryMissing) {
+        toast.warning("Done for the day? Don't forget to add today's task summary.", { duration: 6000 });
+      }
+    }
     router.refresh();
   }
 
