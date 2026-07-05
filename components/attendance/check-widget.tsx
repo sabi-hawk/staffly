@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -74,11 +75,11 @@ export function CheckWidget({ today }: { today: Today }) {
         <div className="flex gap-2">
           {working ? (
             <Button onClick={() => act("/api/attendance/check-out", "Checked out")} disabled={busy} size="lg" variant="danger">
-              Check out
+              {busy ? <><Loader2 className="size-4 animate-spin" /> Checking out…</> : "Check out"}
             </Button>
           ) : (
             <Button onClick={() => act("/api/attendance/check-in", "Checked in")} disabled={busy} size="lg" variant="success">
-              {today.sessions.length ? "Resume (check in)" : "Check in"}
+              {busy ? <><Loader2 className="size-4 animate-spin" /> Checking in…</> : today.sessions.length ? "Resume (check in)" : "Check in"}
             </Button>
           )}
         </div>

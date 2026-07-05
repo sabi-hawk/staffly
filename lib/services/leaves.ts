@@ -5,6 +5,7 @@
 // across months and across the year.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeaveType } from "@/lib/types";
+import { companyToday } from "@/lib/time";
 
 export const ANNUAL_TOTAL = 8;
 export const CASUAL_MONTHLY_LIMIT = 1; // golden rule: casual 1/mo (no carry)
@@ -101,7 +102,7 @@ export async function annualUsedThisYear(supabase: SupabaseClient, employeeId: s
 }
 
 /** Approved casual days used in the calendar month of `date`. */
-export async function casualUsedThisMonth(supabase: SupabaseClient, employeeId: string, date = new Date().toISOString().slice(0, 10)) {
+export async function casualUsedThisMonth(supabase: SupabaseClient, employeeId: string, date = companyToday()) {
   const d = new Date(date);
   const y = d.getFullYear();
   const m = d.getMonth(); // 0-based
@@ -113,6 +114,22 @@ export async function casualUsedThisMonth(supabase: SupabaseClient, employeeId: 
     .eq("employee_id", employeeId).eq("type", "casual").eq("status", "approved")
     .gte("start_date", start).lte("start_date", end);
   return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
+}
+
+/** Count casual leave REQUESTS (pending OR approved) in the calendar month of `date` — used to enforce
+ *  "one casual request per month" (blocks a 2nd even before the first is decided). */
+export async function casualRequestsThisMonth(supabase: SupabaseClient, employeeId: string, date = companyToday()) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const start = `${y}-${pad(m + 1)}-01`;
+  const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+  const { count } = await supabase
+    .from("leave_requests").select("id", { count: "exact", head: true })
+    .eq("employee_id", employeeId).eq("type", "casual").in("status", ["pending", "approved"])
+    .gte("start_date", start).lte("start_date", end);
+  return count ?? 0;
 }
 
 async function unpaidUsedThisYear(supabase: SupabaseClient, employeeId: string, year = new Date().getFullYear()) {
@@ -206,6 +223,10 @@ export async function requestLeave(
       if (used + daysCount > 1)
         throw new Error("During probation only 1 casual leave is allowed — please file it as unpaid.");
     } else {
+      // One casual request per month (counts a pending/approved request too, so a 2nd is blocked
+      // before the first is even decided) — and never more than the monthly day quota.
+      if (await casualRequestsThisMonth(supabase, employeeId, input.start_date) >= 1)
+        throw new Error("You already have a casual leave request for this month — only one is allowed per month.");
       const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
       if (used + daysCount > q.casual)
         throw new Error(`Casual leave is limited to ${q.casual} day(s) per month (already used ${used}).`);

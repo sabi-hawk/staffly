@@ -27,8 +27,9 @@ export function companyDow(date: Date = new Date()): number {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
 }
 
-export type RangeKey = "3w" | "1m" | "3m" | "custom";
+export type RangeKey = "month" | "3w" | "1m" | "3m" | "custom";
 export const RANGE_LABELS: Record<RangeKey, string> = {
+  month: "This month",
   "3w": "Last 3 weeks",
   "1m": "Last month",
   "3m": "Last 3 months",
@@ -36,9 +37,11 @@ export const RANGE_LABELS: Record<RangeKey, string> = {
 };
 
 function isoDaysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
+  // Anchor to Karachi-midnight today, then step back `days`, and format back in Karachi — so the
+  // `from` boundary doesn't slip a day during the 00:00–04:59 UTC window.
+  const d = new Date(`${companyToday()}T00:00:00+05:00`);
+  d.setUTCDate(d.getUTCDate() - days);
+  return companyToday(d);
 }
 
 /** Resolve a {from,to} window (YYYY-MM-DD) from a range key + optional custom dates. */
@@ -51,6 +54,10 @@ export function resolveRange(
   const r: RangeKey = range ?? "1m";
   if (r === "custom") {
     return { from: customFrom || isoDaysAgo(30), to: customTo || today, range: "custom" };
+  }
+  if (r === "month") {
+    // Current calendar month, 1st → today (company timezone).
+    return { from: `${today.slice(0, 7)}-01`, to: today, range: "month" };
   }
   const days = r === "3w" ? 21 : r === "3m" ? 90 : 30;
   return { from: isoDaysAgo(days), to: today, range: r };

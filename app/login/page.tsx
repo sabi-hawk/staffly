@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -21,10 +22,14 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Which demo button is signing in (so only that one shows a spinner); "" = the main form.
+  const [activeDemo, setActiveDemo] = useState<string | null>(null);
 
-  async function signIn(e?: React.FormEvent, preset?: { identifier: string; password: string }) {
+  async function signIn(e?: React.FormEvent, preset?: { label: string; identifier: string; password: string }) {
     e?.preventDefault();
     setLoading(true);
+    setActiveDemo(preset?.label ?? null);
+    const fail = (msg: string) => { setLoading(false); setActiveDemo(null); toast.error(msg); };
     const supabase = createClient();
     const id = (preset?.identifier ?? identifier).trim();
     const pwd = preset?.password ?? password;
@@ -33,20 +38,14 @@ export default function LoginPage() {
     let loginEmail = id;
     if (!id.includes("@")) {
       const { data, error: rpcErr } = await supabase.rpc("resolve_login_email", { identifier: id });
-      if (rpcErr || !data) {
-        setLoading(false);
-        toast.error("Invalid username or password");
-        return;
-      }
+      if (rpcErr || !data) return fail("Invalid username or password");
       loginEmail = data as string;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: pwd });
-    setLoading(false);
-    if (error) {
-      toast.error("Invalid username/email or password");
-      return;
-    }
+    if (error) return fail("Invalid username/email or password");
+    // Keep the loading state through the navigation (router.push + refresh take ~1-2s) so the button
+    // doesn't flash back to "Sign in" while the app shell loads.
     fetch("/api/audit/login", { method: "POST" }).catch(() => {});
     toast.success("Welcome back");
     router.push("/");
@@ -94,7 +93,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+              {loading && activeDemo === null ? <><Loader2 className="size-4 animate-spin" /> Signing in…</> : "Sign in"}
             </Button>
           </form>
 
@@ -109,9 +108,9 @@ export default function LoginPage() {
                     size="sm"
                     disabled={loading}
                     className="whitespace-nowrap"
-                    onClick={() => signIn(undefined, { identifier: d.identifier, password: d.password })}
+                    onClick={() => signIn(undefined, { label: d.label, identifier: d.identifier, password: d.password })}
                   >
-                    {d.label}
+                    {activeDemo === d.label && <Loader2 className="size-4 animate-spin" />} {d.label}
                   </Button>
                 ))}
               </div>

@@ -85,6 +85,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   phone, linkedin_url, note, created_by). For future outreach to past leads. RLS `lead_contacts_scoped`
   (for ALL) **mirrors `lead_documents`** — visible/writable exactly when the parent lead is (BD owner,
   BD-Lead, or admin/super). updated_at + audit triggers.
+- `0026_employee_summary_flag.sql` — `company_settings` +`show_employee_attendance_summary boolean not
+  null default true`. Admin-toggleable (super-admin settings page): gates whether employees see their
+  attendance summary + the deficit/extra column on the Attendance tab (admins always see them). Read by
+  all (`settings_read`), written by super_admin (`settings_super_write`).
 
 ## Leave rules (current)
 - Annual: accrues 1/month (from Jan 1 or probation-end) up to 8, carried within the calendar year,

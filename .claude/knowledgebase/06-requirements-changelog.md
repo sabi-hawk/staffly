@@ -271,3 +271,30 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
   hiring-manager/other + email/phone/LinkedIn) via new `lead_contacts` table; **info icons** on CRM
   fields (lead/interview/assessment/contact). Edit-link bug + filter redesign + sleeker cards shipped
   earlier in the batch.
+
+## 2026-07-05 — Login loader, dashboard/leaves privacy, attendance summary, check-in loader
+1. **Login loader:** clicking a demo login (or submitting credentials) must show progress — the button
+   keeps a loading state until the request resolves.
+2. **Dashboard privacy:** remove the four stat cards (extra/deficit hours etc.) and the annual/casual
+   leave counts from the **dashboard** (seeing "leaves left" nudges employees to take leave). Keep the
+   annual-left / casual-this-month counts in the **Leaves** tab.
+3. **Leave rules:** apply for Annual / Casual / Unpaid + reason. **Casual = max 1 request per month**
+   (block a 2nd). Annual allowed but goes to admin for approval.
+4. **Attendance summary (moved off dashboard):** worked days, leaves taken, missing hours, extra/deficit
+   hours = a summary shown in the **Attendance** tab with a date-range picker (default = current month
+   1st→today). **BD** can pick current month or last 3 months; **admin** can pick any range.
+5. **Admin flag for the summary:** a company setting to show/hide the employee summary. **Default ON**
+   (employees see it for now); admin can toggle. Admin always sees it.
+6. **Check-in / check-out loader:** the check-in/out button shows a spinner while the request is in flight.
+
+## 2026-07-05 — Daily task summary (per-employee, per-day)
+- After checkout (and available all day, even before), each employee adds ONE **daily task summary**
+  for the day — a rich-text editor (like the lead BD-notes editor: format text, attach links).
+- **Compulsory daily** (field itself optional content, but expected every working day). If today's
+  summary is missing, the employee sees a clear prompt to add it (dashboard + attendance).
+- Editable/updatable **same day** (add → save → edit again). Once the day has passed: if a summary was
+  added, it's **locked** (no edits). If it was missing, they may still add it the **next day(s)**, but
+  a late add is **flagged as a warning** (not encouraged).
+- The attendance **history grid** shows, per day, whether the summary is present/missing (+ late flag).
+- **Admin** gets clear visibility of who has **not** added today's summary.
+- Likely maps onto the existing `attendance.work_log` field (currently a plain "Log" column).
