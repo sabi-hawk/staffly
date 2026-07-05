@@ -22,7 +22,7 @@ function pick<T extends object>(input: T, fields: (keyof T)[]) {
 
 const LEAD_FIELDS = [
   "company", "role", "dev_profile_id", "owner_bd_id", "status", "feedback",
-  "budget", "expected_budget", "job_description", "notes",
+  "budget", "expected_budget", "shift", "job_description", "notes",
 ] as const;
 const INTERVIEW_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "job_post_url", "status",

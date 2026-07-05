@@ -44,12 +44,16 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
     return () => clearInterval(iv);
   }, [working, today.openSince, today.completedSeconds]);
 
+  // Keep the button in its loading state through the server refresh (below), so it flips straight from
+  // the spinner to the OTHER action — never flashing back to "Resume (check in)" for a beat. `today`
+  // gets a fresh reference on each server re-render, so this clears busy once the new state has landed.
+  useEffect(() => { setBusy(false); }, [today]);
+
   async function act(path: string, okMsg: string) {
     setBusy(true);
     const res = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
     const json = await res.json();
-    setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Failed");
+    if (!res.ok) { setBusy(false); return toast.error(json.error ?? "Failed"); }
     if (path.includes("check-in")) toast.success(json.alreadyCheckedIn ? "Already working" : json.late ? "Checked in (late)" : "Checked in");
     else {
       toast.success(okMsg);
@@ -58,6 +62,8 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
         toast.warning("Done for the day? Don't forget to add today's task summary.", { duration: 6000 });
       }
     }
+    // Do NOT clear busy here — the useEffect above clears it after the refreshed props arrive, so the
+    // button stays "Checking in…/out…" until it can render the correct next action.
     router.refresh();
   }
 

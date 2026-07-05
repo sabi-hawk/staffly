@@ -32,6 +32,7 @@ export function LeadForm({
     owner_bd_id: "",
     budget: "",
     expected_budget: "",
+    shift: "",
     job_description: "",
     notes: "",
   });
@@ -88,11 +89,15 @@ export function LeadForm({
       )}
       <div className="space-y-1.5">
         <Label htmlFor="lead-budget">Budget</Label>
-        <Input id="lead-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $3000/mo (company)" />
+        <Input id="lead-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $5,000–$7,000/mo" />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="lead-expected">Expected budget</Label>
         <Input id="lead-expected" value={form.expected_budget} onChange={(e) => set("expected_budget", e.target.value)} placeholder="what we asked for" />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="lead-shift">Shift</Label>
+        <Input id="lead-shift" value={form.shift} onChange={(e) => set("shift", e.target.value)} placeholder="e.g. US EST · 6pm–2am PKT" />
       </div>
       <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
         <Label>Job description</Label>

@@ -10,6 +10,7 @@ export const LEAD_HINTS: Record<string, string> = {
   owner: "The BD who owns this lead. Only a BD-Lead or admin can reassign it to someone else.",
   budget: "The budget the company is offering (what they're willing to pay).",
   expected_budget: "The rate we asked for / expect for this role.",
+  shift: "The working hours/timezone for this role, if known in advance (free text — e.g. \"US EST · 6pm–2am PKT\").",
   job_description: "The full job description from the client — paste it here so anyone can read the requirements.",
   notes: "Private BD notepad: call notes, next steps, anything useful for this deal.",
 };

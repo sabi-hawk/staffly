@@ -21,7 +21,7 @@ const MANUAL_STATUSES = LEAD_STATUS.filter((s) => !(LEAD_REASON_STATUSES as read
 
 type Initial = {
   company: string; role: string | null; dev_profile_id: string | null; status: string;
-  owner_bd_id: string | null; budget: string | null; expected_budget: string | null;
+  owner_bd_id: string | null; budget: string | null; expected_budget: string | null; shift: string | null;
 };
 
 export function LeadDetailsCard({
@@ -47,6 +47,7 @@ export function LeadDetailsCard({
     owner_bd_id: initial.owner_bd_id ?? "",
     budget: initial.budget ?? "",
     expected_budget: initial.expected_budget ?? "",
+    shift: initial.shift ?? "",
   });
   const set = (k: keyof typeof form, v: string) => setForm((s) => ({ ...s, [k]: v }));
 
@@ -54,7 +55,7 @@ export function LeadDetailsCard({
     setForm({
       company: initial.company ?? "", role: initial.role ?? "", dev_profile_id: initial.dev_profile_id ?? "",
       status: initial.status ?? "in_progress", owner_bd_id: initial.owner_bd_id ?? "",
-      budget: initial.budget ?? "", expected_budget: initial.expected_budget ?? "",
+      budget: initial.budget ?? "", expected_budget: initial.expected_budget ?? "", shift: initial.shift ?? "",
     });
     setEditing(false);
   }
@@ -127,11 +128,15 @@ export function LeadDetailsCard({
             )}
             <div className="space-y-1.5">
               <FieldLabel htmlFor="ld-budget" hint={LEAD_HINTS.budget}>Budget</FieldLabel>
-              <Input id="ld-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $3000/mo (company)" />
+              <Input id="ld-budget" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="e.g. $5,000–$7,000/mo" />
             </div>
             <div className="space-y-1.5">
               <FieldLabel htmlFor="ld-expected" hint={LEAD_HINTS.expected_budget}>Expected budget</FieldLabel>
               <Input id="ld-expected" value={form.expected_budget} onChange={(e) => set("expected_budget", e.target.value)} placeholder="what we asked for" />
+            </div>
+            <div className="space-y-1.5">
+              <FieldLabel htmlFor="ld-shift" hint={LEAD_HINTS.shift}>Shift</FieldLabel>
+              <Input id="ld-shift" value={form.shift} onChange={(e) => set("shift", e.target.value)} placeholder="e.g. US EST · 6pm–2am PKT" />
             </div>
             <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
               <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
@@ -144,6 +149,7 @@ export function LeadDetailsCard({
             <div><dt className="text-caption text-text-secondary">Owner (BD)</dt><dd>{ownerName}</dd></div>
             <div><dt className="text-caption text-text-secondary">Budget</dt><dd>{initial.budget || "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Expected</dt><dd>{initial.expected_budget || "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Shift</dt><dd>{initial.shift || "—"}</dd></div>
           </dl>
         )}
       </CardContent>

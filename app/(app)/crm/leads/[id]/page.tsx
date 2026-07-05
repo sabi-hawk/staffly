@@ -79,7 +79,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
         initial={{
           company: lead.company, role: lead.role, dev_profile_id: lead.dev_profile_id,
           status: lead.status, owner_bd_id: lead.owner_bd_id, budget: lead.budget,
-          expected_budget: lead.expected_budget,
+          expected_budget: lead.expected_budget, shift: lead.shift,
         }}
       />
 

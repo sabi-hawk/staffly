@@ -99,6 +99,8 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `late` bool). Enforces the rules + updates ONLY the summary columns. Needed because `att_update` (0019)
   blocks employees from updating PAST rows — a direct late-add would silently no-op; the definer lets an
   employee late-add to a past row without being able to edit past times/hours. `execute` to `authenticated`.
+- `0033_lead_shift.sql` — `leads` +`shift text` (optional working-hours/timezone note, free text). Note:
+  `leads.budget` / `expected_budget` are already **text** (support ranges like "$5,000–$7,000/mo").
 - `0032_deal_directory.sql` — **`deal_directory()`** security-definer fn returning deal **name +
   developer + role + status** (NO financials) for **admin/super** callers only (0 rows otherwise). Powers
   the HR-safe `/admin/deal-assignments` page — HR sees which dev is on which deal without the money.
