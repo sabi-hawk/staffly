@@ -158,3 +158,9 @@ build instruction to keep going rather than ask.
 |---|----------|-----------|
 | 66 | **ALL leave requests now require admin approval** — casual & unpaid are created `pending` (they used to auto-approve). Balances still count APPROVED leave only, so "casual this month" stays until an admin approves. The 1-casual/month guard (counts pending+approved) still blocks a 2nd. | Owner: a casual leave was auto-approving; nothing should be approved until the admin acts. Overrides the earlier "casual auto-approved" golden rule. |
 | 67 | **CRM grids' date filter restyled to the attendance style**: preset tabs (Last 30 days / Last 3 months / Custom) on the right + the resolved "from → to (inclusive)" range on the left; default **last 30 days** for Leads / Interviews / Assessments. Uses `?range` + `resolveRange` (was `?from&to` with 1w/1m/3m/All). | Owner wants the clean attendance-summary filter style applied across CRM, with the selected range visible. Leads moves from All-default to 30-day-default for consistency. |
+
+## Shared CRM interview calendar (2026-07-06)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 68 | **Shared CRM interview calendar** (`/crm/calendar`, BD + admin) via the security-definer `crm_calendar()` fn — every scheduled interview shows as a chip (time · stack), coloured by the owning BD (deterministic golden-angle hue from their id). **Cross-BD privacy:** other BDs see only time + stack + colour; the owner (or admin/super) sees + can expand full details (company, role, developer, round). | Owner: BDs need a shared view of interview bookings (to not double-book a developer) without leaking one BD's pipeline to another. Interviews are RLS-owner-scoped, so a definer fn masks non-owned rows. Reminder/alerts are the next slices. |

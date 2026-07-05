@@ -78,6 +78,7 @@ function crmNavFor(p: NavProfile): NavGroup[] {
   const children: NavItem[] = [
     { label: "Profiles", href: "/crm/profiles", icon: Contact },
     { label: "Leads", href: "/crm/leads", icon: Briefcase },
+    { label: "Calendar", href: "/crm/calendar", icon: CalendarRange },
     { label: "BD Performance", href: "/crm/analytics", icon: TrendingUp },
   ];
   if (canSeeDeals(p)) children.push({ label: "Deals", href: "/crm/deals", icon: Handshake });

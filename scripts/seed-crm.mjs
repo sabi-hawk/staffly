@@ -118,11 +118,21 @@ async function main() {
       .select("id").single();
     const dev = pid("Muzammal Faiz");
     const rxDate = new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10); // today in Asia/Karachi (UTC+5) so the 1-month grid shows them
+    // scheduled a couple of days out (Asia/Karachi ~3pm) so it shows on the interview calendar
+    const schedISO = (daysAhead, hourPkt) => new Date(new Date(Date.now() + daysAhead * 86400_000).toISOString().slice(0, 10) + `T${String(hourPkt).padStart(2, "0")}:00:00+05:00`).toISOString();
     await admin.from("interviews").insert({
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Senior Full Stack Engineer",
-      company: "DemoCorp", status: "completed", round: "1st", outcome: "selected", given_by: dev, whom_should_give: dev,
-      received_date: rxDate,
+      company: "DemoCorp", status: "scheduled", round: "2nd", given_by: dev, whom_should_give: dev,
+      received_date: rxDate, interview_at: schedISO(2, 15),
     });
+    // a 2nd interview owned by another BD (Areeba) → shows on the shared calendar in her colour, masked to Shaiza
+    const areeba = bds.find((b) => b.full_name === "Areeba Zaidi")?.id ?? null;
+    if (areeba) {
+      await admin.from("interviews").insert({
+        lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: areeba, job_title: "Backend Engineer",
+        company: "OtherCo", status: "scheduled", round: "1st", received_date: rxDate, interview_at: schedISO(3, 18),
+      });
+    }
     await admin.from("assessments").insert({
       lead_id: lead.id, dev_profile_id: sabahat.id, owner_bd_id: shaiza, job_title: "Take-home", company: "DemoCorp",
       status: "pending", priority: "high", duration: "1h", completed_by: dev, entry_date: rxDate,

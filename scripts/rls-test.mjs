@@ -22,6 +22,7 @@ const SHAIZA_EMAIL = "029755shaizamaheen@gmail.com";
 const SHAIZA_PW = "Softonoma@1042";
 const AREEBA_EMAIL = "areebazaidi027@gmail.com";
 const AREEBA_PW = "Softonoma@4765";
+const AREEBA_ID = "00000000-0000-0000-0000-000000000024";
 
 const results = [];
 function check(name, pass, detail = "") {
@@ -244,6 +245,24 @@ async function main() {
   const empFlag = await emp.from("profiles").update({ is_deal_developer: true }).eq("id", EMP).select();
   const flagAfter = (await pgc.query(`select is_deal_developer from profiles where id=$1`, [EMP])).rows[0]?.is_deal_developer;
   check("employee: cannot self-set is_deal_developer (guard trigger)", !!empFlag.error || flagAfter === false);
+
+  // ── crm_calendar (0034): a BD sees every booking (time+stack), full details only for their own
+  //    (or admin); other BDs' interviews are masked (no company). Non-BD/non-admin gets 0 rows.
+  const calProfile = (await pgc.query(`select id from dev_profiles where owner_bd_id=$1 limit 1`, [EMP2])).rows[0]?.id;
+  if (calProfile) {
+    const iat = new Date(Date.now() + 2 * 86400000).toISOString();
+    const i1 = (await pgc.query(`insert into interviews (owner_bd_id, dev_profile_id, company, job_title, interview_at, status) values ($1,$2,'CalTestCo','X',$3,'scheduled') returning id`, [EMP2, calProfile, iat])).rows[0].id;
+    const i2 = (await pgc.query(`insert into interviews (owner_bd_id, dev_profile_id, company, job_title, interview_at, status) values ($1,$2,'CalTestOther','Y',$3,'scheduled') returning id`, [AREEBA_ID, calProfile, iat])).rows[0].id;
+    const shaizaC = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+    const cal = await shaizaC.rpc("crm_calendar", { p_from: new Date(Date.now() - 86400000).toISOString(), p_to: new Date(Date.now() + 5 * 86400000).toISOString() });
+    const mine = (cal.data ?? []).find((e) => e.company === "CalTestCo");
+    const other = (cal.data ?? []).find((e) => e.id === i2);
+    check("BD: crm_calendar own interview → expandable + company visible", !!mine && mine.can_expand === true && mine.is_mine === true);
+    check("BD: crm_calendar other BD's interview → masked (no company, has stack)", !!other && other.can_expand === false && other.company === null);
+    const empCal = await emp.rpc("crm_calendar", { p_from: new Date(Date.now() - 86400000).toISOString(), p_to: new Date(Date.now() + 5 * 86400000).toISOString() });
+    check("employee (non-BD): crm_calendar → 0 rows", (empCal.data?.length ?? 0) === 0);
+    await pgc.query(`delete from interviews where id = any($1)`, [[i1, i2]]);
+  }
 
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;

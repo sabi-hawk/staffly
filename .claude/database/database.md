@@ -252,3 +252,8 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 
 ## Known caveats
 - Direct `DATABASE_URL` host is IPv6-only; tooling uses `SUPABASE_DB_URL` (session pooler, same DB).
+
+- `0034_crm_calendar.sql` — **`crm_calendar(from, to)`** security-definer fn for the shared CRM interview
+  calendar. Returns scheduled interviews (interview_at) in a range with time + stack + owner (for colour);
+  **company / job_title / developer only for the caller's OWN interviews** (or admin/super). Non-BD,
+  non-admin callers get 0 rows. Powers `/crm/calendar` (cross-BD privacy: others see time+stack only).
