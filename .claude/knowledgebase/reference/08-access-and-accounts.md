@@ -18,7 +18,7 @@ Access = a **base role** (on `profiles.role`) **plus** CRM tiers (flags/columns 
 | Role | Who | Can do | Cannot do |
 |------|-----|--------|-----------|
 | **super_admin** | The owner(s) / founders | **Everything** — HR + attendance + leave + **payroll, salary, compensation, payslips, login events, full audit log**, all CRM incl. **Deals** (financial). | — |
-| **admin** (HR) | HR / office manager | Employees, attendance, leaves, calendar, announcements, reports, **non-financial** audit; full CRM incl. Deals. | **NOT** payroll / salary / compensation / payslips / login-events (super_admin-only). |
+| **admin** (HR) | HR / office manager | Employees, attendance, leaves, calendar, announcements, reports, **non-financial** audit; CRM (Profiles / Leads). | **NOT** payroll / salary / compensation / payslips / login-events **nor Deals** (all super_admin-only, 0030). |
 | **employee** | All staff (engineers, BDs, designers…) | Self-service: own attendance, leave, calendar, handbook, **own profile**. | No admin screens; no other employees' data. |
 
 ### CRM tiers (layer on top of the base role)
@@ -26,8 +26,9 @@ Access = a **base role** (on `profiles.role`) **plus** CRM tiers (flags/columns 
 |------|--------------|--------|
 | **BD** | `department = 'Business Development'` (text) | Manage **their own** CRM: dev-profiles assigned to them, their leads / interviews / assessments (RLS: `owner_bd_id = auth.uid()`). |
 | **BD Lead** | `is_bd_lead = true` | See **and manage all** BDs' CRM data (a senior editing a junior's lead) + read **non-financial** audit entries. |
-| **Developer** | `is_developer = true` | Appears in the interview "given by" / assessment "completed by" pickers. Orthogonal to CRM access. |
-| **Deals** (financial) | `role in (admin, super_admin)` | Deals + receiving accounts + payment methods (salary/bank data) — **admins & super-admins only; BDs never**. |
+| **Developer** | `is_developer = true` | Appears in the interview "given by" / assessment "completed by" / deal-developer pickers. Orthogonal to CRM access. |
+| **Deal-assigned developer** | `is_deal_developer = true` (0031) | An engineer working a **client deal**. Leave is client-governed: portal **hides annual/casual balances**; leave requests are **record-only (pending → admin marks)**, bypassing our quotas/caps. Sees only their deal **name(s)** on the dashboard (via `my_deals()`), never financials. Set on the admin employee "Roles & flags" card. |
+| **Deals** (financial) | `role = super_admin` (0030) | Deals + deal documents + receiving accounts + payment methods (salary/bank data) + developer assignments — **super-admin only**. HR/admin can't see deal details; assigned developers see only the name. |
 
 **Key rule:** a plain **employee** (e.g. an engineer) with no BD department and no flags sees **no CRM at
 all**. CRM is BD/admin territory.

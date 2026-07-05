@@ -139,3 +139,9 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 63 | **New `is_deal_developer` flag** (profiles, admin-set, guarded like the other privileged flags, 0031). A flagged developer: annual/casual **balances hidden** on their Leaves page (a note explains why); leave requests are **record-only** — `requestLeave` bypasses our quota/notice/casual-cap and creates a **pending** request (admin marks) for any type. Toggled on the admin employee detail via a new "Roles & flags" card (which also surfaces the previously-UI-less Developer / BD-Lead flags). Handbook section added. | Owner: deal-assigned engineers work as part of a client company's team — their leave is governed by that company, not our policy. We still record leave (for our log) but don't apply our balances/caps, and it needs admin confirmation. Not all engineers are deal-assigned. |
+
+## Product documentation page (Tier-2 slice 4, 2026-07-05)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 64 | **Super-admin "Product doc" page** (`/admin/product`, nav under Payroll/Settings): a living in-app doc of what the product is, the roles & why they exist, and the applied business rules. Mirrors `reference/00-product-overview` + `08-access`. | Owner wants an authentic, growing product overview + roles/access reference for the super-admin. Updated the KB `08-access-and-accounts.md` for the new roles (deal-assigned developer) + deals-super-only. |

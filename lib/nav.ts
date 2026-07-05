@@ -16,6 +16,7 @@ import {
   Handshake,
   TrendingUp,
   FolderKanban,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
@@ -64,6 +65,7 @@ const adminNav: NavItem[] = [
 const superAdminNav: NavItem[] = [
   { label: "Payroll", href: "/admin/payroll", icon: Wallet },
   { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Product doc", href: "/admin/product", icon: FileText },
 ];
 
 type NavProfile = Pick<Profile, "role" | "department" | "is_bd_lead">;
