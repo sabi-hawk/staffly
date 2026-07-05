@@ -58,6 +58,7 @@ const adminNav: NavItem[] = [
   { label: "Calendar", href: "/calendar", icon: CalendarRange },
   { label: "Announcements", href: "/announcements", icon: Megaphone },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { label: "Deal assignments", href: "/admin/deal-assignments", icon: Handshake },
   { label: "Activity Log", href: "/admin/logs", icon: ScrollText },
   { label: "Handbook", href: "/handbook", icon: BookOpen },
 ];

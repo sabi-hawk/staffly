@@ -139,7 +139,9 @@ async function main() {
     const { data: acct } = await admin.from("receiving_accounts")
       .insert({ holder_name: "Demo Holder", bank_name: "Demo Bank", account_number: "PK00DEMO0000" }).select("id").single();
     const { data: pm } = await admin.from("payment_methods").select("id").eq("name", "Wise").maybeSingle();
+    // clean prior DemoCorp deals (old runs recreate the lead with a new id, orphaning by-lead deletes)
     await admin.from("deals").delete().eq("lead_id", lead.id);
+    await admin.from("deals").delete().eq("name", "DemoCorp · Senior FS");
     const { data: deal } = await admin.from("deals").insert({
       name: "DemoCorp · Senior FS", lead_id: lead.id, designation: "Senior Full Stack", dev_profile_id: sabahat.id, working_developer: dev,
       salary: 750000, receiving_account_id: acct?.id ?? null, payment_method_id: pm?.id ?? null, status: "active",

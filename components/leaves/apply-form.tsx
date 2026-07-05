@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-export function LeaveApplyForm() {
+export function LeaveApplyForm({ dealDev = false }: { dealDev?: boolean }) {
   const router = useRouter();
   const [type, setType] = useState("annual");
   const [start, setStart] = useState("");
@@ -48,8 +48,8 @@ export function LeaveApplyForm() {
                 onChange={(e) => setType(e.target.value)}
                 className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
               >
-                <option value="annual">Annual (8/yr)</option>
-                <option value="casual">Casual (1/mo)</option>
+                <option value="annual">{dealDev ? "Annual" : "Annual (8/yr)"}</option>
+                <option value="casual">{dealDev ? "Casual" : "Casual (1/mo)"}</option>
                 <option value="unpaid">Unpaid</option>
               </select>
             </div>
@@ -67,8 +67,9 @@ export function LeaveApplyForm() {
             </div>
           </div>
           <p className="text-caption text-text-secondary">
-            Annual: 8/year, request at least 21 days ahead. Casual: max 1 day per month.
-            Unpaid: unlimited (deducted).
+            {dealDev
+              ? "Recorded for our log — the client company you work for governs your leave. An admin confirms it."
+              : "Annual: 8/year, request at least 21 days ahead. Casual: max 1 day per month. Unpaid: unlimited (deducted)."}
           </p>
           <Button type="submit" disabled={busy}>
             {busy ? "Submitting…" : "Submit request"}

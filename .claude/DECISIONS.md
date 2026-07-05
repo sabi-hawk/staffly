@@ -145,3 +145,9 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 64 | **Super-admin "Product doc" page** (`/admin/product`, nav under Payroll/Settings): a living in-app doc of what the product is, the roles & why they exist, and the applied business rules. Mirrors `reference/00-product-overview` + `08-access`. | Owner wants an authentic, growing product overview + roles/access reference for the super-admin. Updated the KB `08-access-and-accounts.md` for the new roles (deal-assigned developer) + deals-super-only. |
+
+## HR deal directory + deal-dev leave-form copy (2026-07-05)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 65 | **HR-safe deal directory** — `/admin/deal-assignments` (admin+super) lists which developer is on which deal (name + role + status), via the `deal_directory()` definer fn that returns **no financials** and 0 rows for non-admins. The deal-dev leaves apply-form drops the "8/yr · 1/mo · 21-day" copy in favour of a record-only note. | The earlier-deferred bits: HR needs to know a dev's deal assignment (the owner's "might be") without seeing deal money; and the leave-form helper text shouldn't quote our quotas to a developer whose leave is client-governed. |

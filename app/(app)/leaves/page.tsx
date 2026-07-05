@@ -42,7 +42,7 @@ export default async function LeavesPage() {
         </div>
       )}
 
-      <LeaveApplyForm />
+      <LeaveApplyForm dealDev={isDealDev} />
 
       <Card>
         <CardHeader>

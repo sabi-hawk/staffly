@@ -230,6 +230,11 @@ async function main() {
     check("employee (dev): reads own deal_developers rows", (empAssign.data?.length ?? 0) >= 1);
     const myD = await emp.rpc("my_deals");
     check("employee (dev): my_deals() returns name (no financials)", !myD.error && (myD.data?.length ?? 0) >= 1 && myD.data[0].salary === undefined);
+    // deal_directory() (0032): admin/HR sees name+assignment (no financials); a dev/non-admin gets 0.
+    const hiraDir = await hira.rpc("deal_directory");
+    check("admin/HR: deal_directory() → name+assignment (no salary col)", !hiraDir.error && (hiraDir.data?.length ?? 0) >= 1 && hiraDir.data[0].salary === undefined && hiraDir.data[0].deal_name !== undefined);
+    const empDir = await emp.rpc("deal_directory");
+    check("employee (dev): deal_directory() → 0 rows (admin/super only)", (empDir.data?.length ?? 0) === 0);
     const empWrite = await emp.from("deal_developers").insert({ deal_id: anyDeal, developer_id: EMP2, role: "developer" }).select();
     check("employee (dev): cannot assign developers (admin-only)", !!empWrite.error || (empWrite.data?.length ?? 0) === 0);
     await pgc.query(`delete from deal_developers where deal_id=$1 and developer_id=$2`, [anyDeal, EMP]);
