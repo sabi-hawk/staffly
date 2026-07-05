@@ -170,3 +170,9 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 69 | **Admin dashboard "Needs your attention" card** — surfaces **pending leave approvals** + **interviews scheduled today** (each linking to /admin/leaves and /crm/calendar), above the existing Notifications/Alerts. | Owner: on login the admin should immediately see what needs action (esp. pending leaves, now that nothing auto-approves). Reuses existing RLS (admin reads all leaves/interviews); no new tables. |
+
+## Interview reminders (calendar/alerts/reminders slice 3, 2026-07-06)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 70 | **In-app interview reminders** — a global `InterviewReminders` client (mounted in the app shell for CRM users) polls the caller's OWN upcoming interviews every 60s and, ~30 min before, fires a toast + a soft Web-Audio beep (once per interview, deduped via localStorage). Audio is best-effort (armed on the first user gesture, per browser autoplay rules). | Owner: a BD should be nudged ~30 min before their interview while the tab is open. Own-interviews only (RLS + owner filter); no server push needed — a light client poll. |
