@@ -164,3 +164,9 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 68 | **Shared CRM interview calendar** (`/crm/calendar`, BD + admin) via the security-definer `crm_calendar()` fn — every scheduled interview shows as a chip (time · stack), coloured by the owning BD (deterministic golden-angle hue from their id). **Cross-BD privacy:** other BDs see only time + stack + colour; the owner (or admin/super) sees + can expand full details (company, role, developer, round). | Owner: BDs need a shared view of interview bookings (to not double-book a developer) without leaking one BD's pipeline to another. Interviews are RLS-owner-scoped, so a definer fn masks non-owned rows. Reminder/alerts are the next slices. |
+
+## Admin "needs your attention" (calendar/alerts/reminders slice 2, 2026-07-06)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 69 | **Admin dashboard "Needs your attention" card** — surfaces **pending leave approvals** + **interviews scheduled today** (each linking to /admin/leaves and /crm/calendar), above the existing Notifications/Alerts. | Owner: on login the admin should immediately see what needs action (esp. pending leaves, now that nothing auto-approves). Reuses existing RLS (admin reads all leaves/interviews); no new tables. |

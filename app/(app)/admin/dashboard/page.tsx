@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Users, UserCheck, Clock, Plane, Wifi, Bell } from "lucide-react";
+import { Users, UserCheck, Clock, Plane, Wifi, Bell, AlertTriangle, CalendarClock, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { companyToday } from "@/lib/time";
+import { companyToday, karachiMidnightISO } from "@/lib/time";
 import { refreshAdminNotifications, getAdminNotifications } from "@/lib/services/notifications";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -38,6 +38,18 @@ export default async function AdminDashboard() {
   await refreshAdminNotifications(supabase);
   const notifications = await getAdminNotifications(supabase);
 
+  // "Needs your attention" — pending leave approvals + interviews scheduled today.
+  const { count: pendingLeaves } = await supabase
+    .from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending");
+  const dayStart = karachiMidnightISO(today);
+  const dayEnd = new Date(new Date(dayStart).getTime() + 86400000).toISOString();
+  const { count: interviewsToday } = await supabase
+    .from("interviews").select("id", { count: "exact", head: true }).gte("interview_at", dayStart).lt("interview_at", dayEnd);
+  const attention = [
+    (pendingLeaves ?? 0) > 0 && { href: "/admin/leaves", label: `${pendingLeaves} leave request${pendingLeaves === 1 ? "" : "s"} awaiting approval`, icon: Plane },
+    (interviewsToday ?? 0) > 0 && { href: "/crm/calendar", label: `${interviewsToday} interview${interviewsToday === 1 ? "" : "s"} scheduled today`, icon: CalendarClock },
+  ].filter(Boolean) as { href: string; label: string; icon: any }[];
+
   function statusFor(empId: string) {
     if (onLeave.has(empId)) return <StatusBadge status="on_leave" />;
     const a = attByEmp.get(empId);
@@ -55,6 +67,20 @@ export default async function AdminDashboard() {
         <StatCard label="On leave" value={onLeave.size} icon={Plane} tone="neutral" />
         <StatCard label="Remote" value={remote} icon={Wifi} tone="brand" />
       </div>
+
+      {attention.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2 text-warning"><AlertTriangle className="size-4" /> Needs your attention</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {attention.map((a) => (
+              <Link key={a.href} href={a.href} className="flex items-center justify-between gap-3 rounded-md border border-warning/30 bg-warning/5 px-3 py-2 hover:bg-warning/10">
+                <span className="flex items-center gap-2 text-sm text-text-primary"><a.icon className="size-4 text-warning" /> {a.label}</span>
+                <ChevronRight className="size-4 text-text-secondary" />
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {notifications.length > 0 && (
         <Card>
