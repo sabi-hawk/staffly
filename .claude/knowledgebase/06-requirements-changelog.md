@@ -394,3 +394,14 @@ Deal-assigned Developer's edit button wrapped below the card text (long reason +
 actions top-right on all cards. And the roles that auto-set a capability flag on assignment
 (BD Lead → is_bd_lead, Deal-assigned Developer → is_deal_developer) must show a coloured flag chip
 on the card with a hover tooltip explaining the flag. **Shipped same day.**
+
+## 2026-07-06 — Company settings cleanup + holiday audiences (owner)
+1. Company name not editable (branding fixed). 2. Leave quotas stay. 3. Explain check-in buffer /
+missed-checkout grace / overtime warning — the latter renamed to "Still checked-in alert" since it's
+an admin heads-up about forgotten checkouts, never a warning to the employee. 4. Info icons (ⓘ +
+hover tooltip) on settings fields — platform-wide pattern, CRM already has it. 5. Holidays move from
+Settings to the Announcements page, with an option to announce a holiday from there. 6. **Holiday
+audiences**: a holiday targets Everyone or specific teams (multi-select covers "everyone except X"),
+plus an explicit "also applies to deal-assigned developers" control — outside the audience the date
+stays a normal working day (attendance, leave counts, payroll missing-day checks all follow).
+**Shipped same day** (migration 0041).

@@ -165,7 +165,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   compensation_components/payroll_runs/payslip_components. **Super-admin read only.**
 - **login_events** — user_id, email, ip_address, user_agent, created_at (captured at sign-in by
   `/api/audit/login`). **Super-admin read only.**
-- **announcements, holidays, documents, alerts_log, company_settings** — supporting.
+- **announcements, documents, alerts_log, company_settings** — supporting.
+- **holidays** — name, holiday_date, year, **department_ids uuid[]** (null = everyone),
+  **include_deal_developers** (0041). Managed from /announcements; applicability drives visibility
+  AND working-day math via `employee_holidays()` / `working_days()`.
 - **employee_notifications** (0039) — employee_id, type (`leave_decision`|`announcement`), message,
   link, read_at. Self read/mark-read only; inserted by definer triggers (leave decision, announcement
   fan-out). Surfaced by the topbar bell for every user.
@@ -310,3 +313,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0040_fix_leave_notify_enum_cast.sql` — hotfix: `notify_leave_decision` used `initcap(NEW.type)` but
   `type` is the `leave_type` **enum** → every approve/reject failed with "function initcap(leave_type)
   does not exist". Recast to `initcap(NEW.type::text)` (0039's inline copy also fixed for fresh DBs).
+
+- `0041_holiday_audience.sql` — **holiday audiences**: `holidays.department_ids uuid[]` (null =
+  whole company) + `holidays.include_deal_developers bool default true`; unique(holiday_date)
+  relaxed to unique(holiday_date, name). New `employee_holidays(emp, from, to)` (invoker; holidays +
+  profiles are readable) used by dashboard/calendar/announcements/payroll, and `working_days()` now
+  applies the same audience predicate — a holiday outside an employee's audience leaves that date a
+  working day for them (attendance, leave counting, payroll missing-day checks).

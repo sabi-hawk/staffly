@@ -72,7 +72,8 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
         .lte("start_date", opts.to)
         .gte("end_date", opts.from),
       supabase.from("shifts").select("days_of_week").eq("employee_id", employeeId).eq("is_active", true).maybeSingle(),
-      supabase.from("holidays").select("holiday_date").gte("holiday_date", opts.from).lte("holiday_date", opts.to),
+      // audience-aware (0041): only holidays that apply to THIS employee count as non-working days
+      supabase.rpc("employee_holidays", { p_employee: employeeId, p_from: opts.from, p_to: opts.to }),
     ]);
 
     const workingDays = Number(wdRes.data) || 0;

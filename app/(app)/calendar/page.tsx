@@ -19,8 +19,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: { m
   const monthStart = `${ym(base)}-01`;
   const monthEnd = `${ym(base)}-${String(daysInMonth).padStart(2, "0")}`;
 
+  // audience-aware: only holidays that apply to the viewer (dept scope + deal-dev flag, 0041)
+  const { data: { user } } = await supabase.auth.getUser();
   const { data: holidays } = await supabase
-    .from("holidays").select("*").gte("holiday_date", monthStart).lte("holiday_date", monthEnd);
+    .rpc("employee_holidays", { p_employee: user!.id, p_from: monthStart, p_to: monthEnd });
   const { data: leaves } = await supabase
     .from("leave_requests")
     .select("start_date, end_date, type, profiles!leave_requests_employee_id_fkey(full_name)")

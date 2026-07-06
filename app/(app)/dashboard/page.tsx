@@ -25,8 +25,10 @@ export default async function EmployeeDashboard() {
     .order("work_date", { ascending: false })
     .limit(7);
 
+  // audience-aware: only holidays that apply to THIS employee (dept scope + deal-dev flag, 0041)
   const { data: upcomingHolidays } = await supabase
-    .from("holidays").select("*").gte("holiday_date", companyToday()).order("holiday_date").limit(4);
+    .rpc("employee_holidays", { p_employee: profile.id, p_from: companyToday(), p_to: "2099-12-31" })
+    .limit(4);
 
   const todayRow = (recent ?? []).find((r) => r.work_date === today);
   const summaryMissing = !!todayRow?.check_in_time && !(todayRow.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
@@ -59,7 +61,7 @@ export default async function EmployeeDashboard() {
         <Card>
           <CardHeader><CardTitle>Upcoming holidays</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {(upcomingHolidays ?? []).map((h) => (
+            {(upcomingHolidays ?? []).map((h: { id: string; name: string; holiday_date: string }) => (
               <span key={h.id} className="rounded-md border border-border px-3 py-1.5 text-caption">
                 <span className="font-medium text-text-primary">{h.name}</span>
                 <span className="text-text-secondary"> · {h.holiday_date}</span>
