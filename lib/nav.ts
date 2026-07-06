@@ -18,6 +18,7 @@ import {
   TrendingUp,
   FolderKanban,
   FileText,
+  FileStack,
   type LucideIcon,
 } from "lucide-react";
 import { PERM } from "@/lib/access/permissions";
@@ -42,36 +43,27 @@ export function isNavGroup(e: NavEntry): e is NavGroup {
 
 type PermNavItem = NavItem & { perm: string };
 
-// Permission-driven nav (FRD-08 slice 2): every entry declares the permission that reveals it.
-// The self-service block prefers the employee pages; the ops block appears for whoever holds each
-// grant — so HR sees people ops without payroll, Accounts sees payroll without employees, custom
-// roles compose freely.
-const selfNav: PermNavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, perm: PERM.dashboardSelf },
-  { label: "Attendance", href: "/attendance", icon: CalendarClock, perm: PERM.attendanceSelf },
-  { label: "Leaves", href: "/leaves", icon: CalendarDays, perm: PERM.leavesSelf },
-  { label: "Calendar", href: "/calendar", icon: CalendarRange, perm: PERM.calendarView },
-  { label: "Announcements", href: "/announcements", icon: Megaphone, perm: PERM.announcementsView },
-  { label: "Handbook", href: "/handbook", icon: BookOpen, perm: PERM.handbookView },
-  { label: "Profile", href: "/profile", icon: User, perm: PERM.profileSelf },
-];
+const strip = ({ label, href, icon }: PermNavItem): NavItem => ({ label, href, icon });
 
-const opsNav: PermNavItem[] = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, perm: PERM.attendanceViewAll },
-  { label: "Attendance", href: "/admin/attendance", icon: CalendarClock, perm: PERM.attendanceViewAll },
-  { label: "Employees", href: "/admin/employees", icon: Users, perm: PERM.employeesView },
-  { label: "Leaves", href: "/admin/leaves", icon: CalendarDays, perm: PERM.leavesApprove },
-  { label: "Calendar", href: "/calendar", icon: CalendarRange, perm: PERM.calendarView },
-  { label: "Announcements", href: "/announcements", icon: Megaphone, perm: PERM.announcementsView },
-  { label: "Reports", href: "/admin/reports", icon: BarChart3, perm: PERM.reportsView },
-  { label: "Deal assignments", href: "/admin/deal-assignments", icon: Handshake, perm: PERM.dealsDirectory },
-  { label: "Activity Log", href: "/admin/logs", icon: ScrollText, perm: PERM.activityViewOps },
-  { label: "Payroll", href: "/admin/payroll", icon: Wallet, perm: PERM.payrollView },
-  { label: "Settings", href: "/admin/settings", icon: Settings, perm: PERM.settingsManage },
-  { label: "Roles", href: "/admin/roles", icon: ShieldCheck, perm: PERM.rolesManage },
-  { label: "Product doc", href: "/admin/product", icon: FileText, perm: PERM.productDocView },
-  { label: "Handbook", href: "/handbook", icon: BookOpen, perm: PERM.handbookView },
-];
+// ---------------------------------------------------------------------------
+// Permission-driven nav (FRD-08), grouped IA (owner ask 2026-07-06): ≤10 top-level
+// entries. Each slot lists candidates ops-page-first — the first granted candidate
+// wins, so an HR admin gets /admin/attendance while an employee gets /attendance.
+// A group with one visible child renders as a flat item (no pointless expander).
+// ---------------------------------------------------------------------------
+
+/** First granted candidate per slot (ops page shadows the self page of the same slot). */
+function pick(has: (p: string) => boolean, ...candidates: PermNavItem[]): NavItem[] {
+  const hit = candidates.find((c) => has(c.perm));
+  return hit ? [strip(hit)] : [];
+}
+
+/** Group with 0 children → dropped; 1 child → that child flat; else a NavGroup. */
+function group(label: string, icon: LucideIcon, children: NavItem[]): NavEntry[] {
+  if (children.length === 0) return [];
+  if (children.length === 1) return [children[0]];
+  return [{ label, icon, children }];
+}
 
 const crmChildren: PermNavItem[] = [
   { label: "Profiles", href: "/crm/profiles", icon: Contact, perm: PERM.crmProfilesOwn },
@@ -81,27 +73,53 @@ const crmChildren: PermNavItem[] = [
   { label: "Deals", href: "/crm/deals", icon: Handshake, perm: PERM.dealsView },
 ];
 
-const strip = ({ label, href, icon }: PermNavItem): NavItem => ({ label, href, icon });
-
-/** Build the nav from the caller's permission grants. An "ops" user (any people-ops/financial grant)
- * gets the ops block (which links the admin pages) and drops the duplicate self-service rows the ops
- * block already covers; everyone else gets the self-service block. CRM is a group when any CRM
- * permission is held. */
+/** Build the nav from the caller's permission grants. */
 export function navForPerms(perms: ReadonlySet<string> | string[]): NavEntry[] {
   const set = perms instanceof Set ? perms : new Set(perms);
   const has = (p: string) => set.has(p);
 
-  const ops = opsNav.filter((i) => has(i.perm));
-  const isOps = ops.some((i) => i.href.startsWith("/admin"));
-  // ops users keep self-service pages that the ops block doesn't already offer under the same label
-  const opsLabels = new Set(ops.map((i) => i.label));
-  const self = selfNav.filter((i) => has(i.perm) && (!isOps || !opsLabels.has(i.label)));
-
-  const base: NavItem[] = isOps
-    ? [...ops.map(strip), ...self.map(strip)]
-    : [...self.map(strip)];
-
   const crm = has(PERM.crmAccess) ? crmChildren.filter((i) => has(i.perm)).map(strip) : [];
-  const groups: NavEntry[] = crm.length ? [{ label: "CRM", icon: FolderKanban, children: crm }] : [];
-  return [...base, ...groups];
+
+  return [
+    // Daily-use, flat
+    ...pick(has,
+      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, perm: PERM.attendanceViewAll },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, perm: PERM.dashboardSelf },
+    ),
+    ...group("Attendance & Leaves", CalendarClock, [
+      ...pick(has,
+        { label: "Attendance", href: "/admin/attendance", icon: CalendarClock, perm: PERM.attendanceViewAll },
+        { label: "Attendance", href: "/attendance", icon: CalendarClock, perm: PERM.attendanceSelf },
+      ),
+      ...pick(has,
+        { label: "Leaves", href: "/admin/leaves", icon: CalendarDays, perm: PERM.leavesApprove },
+        { label: "Leaves", href: "/leaves", icon: CalendarDays, perm: PERM.leavesSelf },
+      ),
+    ]),
+    ...pick(has, { label: "Calendar", href: "/calendar", icon: CalendarRange, perm: PERM.calendarView }),
+    ...pick(has, { label: "Announcements", href: "/announcements", icon: Megaphone, perm: PERM.announcementsView }),
+
+    // Big modules
+    ...(crm.length ? group("CRM", FolderKanban, crm) : []),
+    ...pick(has, { label: "Payroll", href: "/admin/payroll", icon: Wallet, perm: PERM.payrollView }),
+
+    // Management
+    ...group("People", Users, [
+      ...pick(has, { label: "Employees", href: "/admin/employees", icon: Users, perm: PERM.employeesView }),
+      ...pick(has, { label: "Roles", href: "/admin/roles", icon: ShieldCheck, perm: PERM.rolesManage }),
+      ...pick(has, { label: "Deal assignments", href: "/admin/deal-assignments", icon: Handshake, perm: PERM.dealsDirectory }),
+    ]),
+    ...group("Reports & Logs", BarChart3, [
+      ...pick(has, { label: "Reports", href: "/admin/reports", icon: BarChart3, perm: PERM.reportsView }),
+      ...pick(has, { label: "Activity Log", href: "/admin/logs", icon: ScrollText, perm: PERM.activityViewOps }),
+    ]),
+    ...group("Documents", FileStack, [
+      ...pick(has, { label: "Handbook", href: "/handbook", icon: BookOpen, perm: PERM.handbookView }),
+      ...pick(has, { label: "Product doc", href: "/admin/product", icon: FileText, perm: PERM.productDocView }),
+    ]),
+    ...group("Settings", Settings, [
+      ...pick(has, { label: "Company settings", href: "/admin/settings", icon: Settings, perm: PERM.settingsManage }),
+      ...pick(has, { label: "My profile", href: "/profile", icon: User, perm: PERM.profileSelf }),
+    ]),
+  ];
 }

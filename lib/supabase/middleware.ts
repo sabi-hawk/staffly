@@ -53,17 +53,28 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
-  // Unauthenticated → force to /login (except public paths)
+  // Unauthenticated → force to /login, carrying the intended destination so signing back in
+  // resumes exactly where the user was (deep link / idle-return resume).
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
+    if (path !== "/") url.searchParams.set("next", path + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
-  // Authenticated hitting /login → send to home
+  // Authenticated hitting /login → send to ?next (same-origin path only) or home
   if (user && path === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    const next = request.nextUrl.searchParams.get("next");
+    url.search = "";
+    if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login")) {
+      const [p, q = ""] = next.split("?");
+      url.pathname = p;
+      url.search = q ? `?${q}` : "";
+    } else {
+      url.pathname = "/";
+    }
     return NextResponse.redirect(url);
   }
 

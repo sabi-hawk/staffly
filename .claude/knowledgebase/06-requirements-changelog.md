@@ -378,3 +378,13 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
    + 0040 (enum-cast hotfix — leave approve/reject was failing in the trigger); payslip deductions
    column now renders the per-day justification; browser-verified end-to-end (bell badge → announcement
    fan-out, dismiss, edit/delete + pagination, ⌘K palette incl. employee search, payslip missing line).
+
+## 2026-07-06 — Sessions must last all day + sidebar IA simplification (owner)
+1. **Sessions:** a BD works in the portal all day (leads back and forth) — sessions must be very long,
+   refresh tokens must genuinely work, and an idle user coming back should resume seamlessly
+   (automatic is fine). Owner asked what the current strategy + session length is.
+2. **Sidebar IA:** super admin sees too many flat items (~16). Group like the CRM parent menu:
+   attendance+leaves together; calendar/reports(/activity-log?) together; employees+roles = user
+   management; handbook+product doc = documents; profile+settings somewhere common; announcements,
+   payroll, CRM stay separate. Target ≤10 top-level items; final grouping is my call ("it's up to
+   you… analyze and decide"), tabs-on-one-screen also acceptable where a parent menu is overkill.

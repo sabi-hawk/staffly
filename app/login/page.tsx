@@ -48,7 +48,10 @@ export default function LoginPage() {
     // doesn't flash back to "Sign in" while the app shell loads.
     fetch("/api/audit/login", { method: "POST" }).catch(() => {});
     toast.success("Welcome back");
-    router.push("/");
+    // Resume where the user was (middleware/session-guard put the path in ?next); same-origin only.
+    const next = new URLSearchParams(window.location.search).get("next");
+    const safe = next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login");
+    router.push(safe ? next : "/");
     router.refresh();
   }
 
@@ -66,6 +69,12 @@ export default function LoginPage() {
           {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("disabled") && (
             <div className="mb-4 rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-caption text-danger">
               Your account is deactivated. Please contact an administrator.
+            </div>
+          )}
+
+          {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("expired") && (
+            <div className="mb-4 rounded-md border border-warning/30 bg-warning/5 px-3 py-2 text-caption text-warning">
+              Your session ended. Sign in to pick up right where you left off.
             </div>
           )}
 

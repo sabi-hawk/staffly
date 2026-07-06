@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { CommandPalette, type PaletteItem } from "./command-palette";
+import { SessionGuard } from "./session-guard";
 import { navForPerms, isNavGroup } from "@/lib/nav";
 import { PERM } from "@/lib/access/permissions";
 import type { Profile } from "@/lib/types";
@@ -45,6 +46,7 @@ export function AppShell({ profile, perms, children }: { profile: Profile; perms
         />
         <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6">{children}</main>
         <CommandPalette items={paletteItems} canSearchEmployees={perms.includes(PERM.employeesView)} />
+        <SessionGuard />
       </div>
     </div>
   );
