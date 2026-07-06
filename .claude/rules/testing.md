@@ -16,7 +16,8 @@ See the `browser-verify` skill. This catches the bugs unit tests miss (it caught
 client-import 0-row-grid bug and the broken alerts feed).
 
 ## Definition of done (a change is shippable when)
-- `npx tsc --noEmit` clean and `npm run build` green.
+- `npx tsc --noEmit` clean and `npm run verify:build` green (isolated `.next-verify`; **never**
+  `npm run build` while the owner's dev server may be running — shared `.next` corrupts it).
 - `npm run report` → all suites PASS.
 - The affected screens verified via screenshots (no broken layout / dead control).
 - KB updated (`.claude/database/database.md` + relevant `knowledgebase/<module>/`).

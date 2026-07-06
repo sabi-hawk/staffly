@@ -7,6 +7,8 @@
     "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
     "start": "next start",
+    "verify:build": "NEXT_DIST_DIR=.next-verify next build",
+    "verify:start": "NEXT_DIST_DIR=.next-verify next start",
     "lint": "next lint",
     "db:migrate": "node scripts/db-migrate.mjs",
     "storage:setup": "node scripts/setup-storage.mjs",

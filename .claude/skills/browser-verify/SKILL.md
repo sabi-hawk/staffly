@@ -17,9 +17,17 @@ There is no in-IDE clickable browser here, so we drive a **headless browser and 
 writing screenshots to `test-artifacts/`. Then **Read** the PNGs to confirm rendering.
 
 ## Ad-hoc flow check (recommended for a specific change)
-Start the dev server, then run a short Playwright script that logs in and screenshots the screen you
-changed. Pattern:
-1. `npm run dev` (background) and wait for "Ready".
+Serve a production build from the **isolated** dist dir, then run a short Playwright script that
+logs in and screenshots the screen you changed.
+
+> ⚠️ **Never run `npm run build`/`npm start` while the owner's `npm run dev` may be running** — they
+> share `.next` and the build corrupts the dev server's cache ("Cannot find module './NNNN.js'",
+> unstyled pages, owner has to restart). Always use the `verify:*` scripts, which build into
+> `.next-verify`.
+
+Pattern:
+1. `npm run verify:build`, then `npm run verify:start -- -p 3100` (background; port 3100 avoids the
+   owner's dev server on 3000) and wait for it to answer.
 2. A throwaway `.mjs` using `import { chromium } from "@playwright/test"` that:
    - logs in (admin by email `super.admin@softonoma.com`; employee by username, e.g. `test.employee` / `Softonoma@9999` — see `CREDENTIALS.md`),
    - navigates to the page, performs the action, `page.screenshot({ path: "test-artifacts/<name>.png", fullPage: true })`.
