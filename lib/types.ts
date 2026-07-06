@@ -27,6 +27,11 @@ export interface Profile {
   is_bd_lead: boolean;
   is_developer: boolean;
   is_deal_developer: boolean;
+  app_role_id: string | null;
+  /** Permission grants + role identity, attached by getCurrentProfile() (FRD-08). */
+  perms?: string[];
+  app_role_key?: string | null;
+  app_role_name?: string | null;
   reports_to: string | null;
   employment_type: EmploymentType;
   contract_type: "permanent" | "probation";

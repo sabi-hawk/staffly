@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isAdmin, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
@@ -24,7 +25,7 @@ export default async function LogsPage({
   searchParams: { page?: string; pageSize?: string; entity?: string; action?: string; actor?: string; from?: string; to?: string };
 }) {
   const viewer = await getCurrentProfile();
-  if (!viewer || !isAdmin(viewer.role)) redirect("/admin/dashboard");
+  if (!viewer || !(hasPermP(viewer, PERM.activityViewOps) || hasPermP(viewer, PERM.activityViewFinancial))) redirect("/admin/dashboard");
   const supabase = createClient();
   const { page, pageSize, from: rangeFrom, to: rangeTo } = parsePaging(searchParams);
 
@@ -38,7 +39,7 @@ export default async function LogsPage({
   if (searchParams.to) q = q.lte("created_at", new Date(`${searchParams.to}T23:59:59+05:00`).toISOString());
   const { data: logs, count } = await q;
 
-  const superAdmin = isSuperAdmin(viewer.role);
+  const superAdmin = hasPermP(viewer, PERM.activityViewFinancial);
   const { data: logins } = superAdmin
     ? await supabase.from("login_events").select("*").order("created_at", { ascending: false }).limit(15)
     : { data: [] };

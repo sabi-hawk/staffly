@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 // Living product documentation for the owner (super-admin): what the product is, the roles & why they
@@ -18,7 +19,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default async function ProductDocPage() {
   const profile = await getCurrentProfile();
-  if (!profile || !isSuperAdmin(profile.role)) redirect("/admin/dashboard");
+  if (!profile || !hasPermP(profile, PERM.productDocView)) redirect("/admin/dashboard");
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

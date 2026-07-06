@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isAdminRole, isBdLead } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CrmProfileDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
-  const isAdmin = isAdminRole(me?.role);
+  const isAdmin = hasPermP(me, PERM.crmProfilesPassword);
   const supabase = createClient();
 
   // RLS returns null if this viewer may not see the profile (e.g. a BD who doesn't own it).

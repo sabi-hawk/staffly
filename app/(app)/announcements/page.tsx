@@ -1,4 +1,5 @@
-import { getCurrentProfile, isAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { AnnouncementForm } from "@/components/admin/announcement-form";
@@ -15,7 +16,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="space-y-6">
-      {isAdmin(profile.role) && (
+      {hasPermP(profile, PERM.announcementsManage) && (
         <Card>
           <CardHeader>
             <CardTitle>Post an announcement</CardTitle>

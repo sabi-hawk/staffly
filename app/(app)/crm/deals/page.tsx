@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronRight, Plus, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isSuperAdminRole } from "@/lib/crm/access";
+import { PERM } from "@/lib/access/permissions";
+import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import { formatPKR } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string } }) {
   const me = await getCurrentProfile();
-  if (!me || !isSuperAdminRole(me.role)) redirect("/dashboard");
+  if (!me || !hasPermP(me, PERM.dealsView)) redirect("/dashboard");
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
 

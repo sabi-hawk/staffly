@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { roleOf } from "@/lib/auth";
+import { sessionHasPerm } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 
 // Admin/super-admin: set an employee's username and/or reset their portal password.
 export async function POST(request: Request) {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!["admin", "super_admin"].includes((await roleOf(supabase, user.id)) ?? ""))
+  if (!(await sessionHasPerm(supabase, PERM.employeesCredentials)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));

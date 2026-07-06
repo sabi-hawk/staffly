@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isAdminRole } from "@/lib/crm/access";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -23,7 +24,7 @@ export default async function CrmAnalyticsPage({
 }) {
   const me = await getCurrentProfile();
   if (!me) redirect("/");
-  const canSeeDeals = isAdminRole(me.role);
+  const canSeeDeals = hasPermP(me, PERM.dealsView);
   const supabase = createClient();
 
   const from = asDate(searchParams?.from);

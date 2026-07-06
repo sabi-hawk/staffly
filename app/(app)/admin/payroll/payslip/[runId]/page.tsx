@@ -3,7 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PrintButton } from "@/components/admin/print-button";
@@ -13,7 +14,7 @@ const money = (n: number) => Number(n || 0).toLocaleString("en-PK");
 
 export default async function PayslipPage({ params }: { params: { runId: string } }) {
   const viewer = (await getCurrentProfile())!;
-  if (!isSuperAdmin(viewer.role)) redirect("/admin/dashboard");
+  if (!hasPermP(viewer, PERM.payrollView)) redirect("/admin/dashboard");
   const supabase = createClient();
 
   const { data: run } = await supabase.from("payroll_runs").select("*").eq("id", params.runId).single();

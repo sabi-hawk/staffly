@@ -1,13 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { SettingsEditor } from "@/components/admin/settings-editor";
 import { HolidaysEditor } from "@/components/admin/holidays-editor";
 
 export default async function SettingsPage() {
   const profile = (await getCurrentProfile())!;
-  if (!isSuperAdmin(profile.role)) redirect("/admin/dashboard");
+  if (!hasPermP(profile, PERM.settingsManage)) redirect("/admin/dashboard");
 
   const supabase = createClient();
   const { data: settings } = await supabase.from("company_settings").select("*").eq("id", 1).maybeSingle();

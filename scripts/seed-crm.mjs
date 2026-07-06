@@ -163,6 +163,21 @@ async function main() {
     }
     console.log("seeded demo deal (DemoCorp) + developer assignment");
   }
+  // ── RBAC (FRD-08): keep app_role_id in sync with the legacy enum/flags for seeded users ──────────
+  const { data: roles } = await admin.from("app_roles").select("id, key");
+  const roleId = (k) => roles?.find((r) => r.key === k)?.id ?? null;
+  const { data: allP } = await admin.from("profiles").select("id, role, department, is_bd_lead, is_deal_developer");
+  for (const p of allP ?? []) {
+    const key =
+      p.role === "super_admin" ? "super_admin" :
+      p.role === "admin" ? "admin" :
+      p.is_bd_lead ? "bd_lead" :
+      p.department === "Business Development" ? "bd" :
+      p.is_deal_developer ? "deal_developer" : "employee";
+    await admin.from("profiles").update({ app_role_id: roleId(key) }).eq("id", p.id);
+  }
+  console.log("synced app_role_id for", (allP ?? []).length, "profiles");
+
   console.log("CRM demo seed done ✅");
 }
 

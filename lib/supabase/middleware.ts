@@ -1,9 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { BD_DEPARTMENT, CRM_PREFIX, CRM_DEALS_PREFIX } from "@/lib/crm/access";
+import { CRM_PREFIX } from "@/lib/crm/access";
+import { PERM } from "@/lib/access/permissions";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 const ADMIN_PREFIX = "/admin";
+
+// Route-prefix → required permission (FRD-08). Longest prefix wins. /admin and /crm fall back to a
+// coarse area gate below; unlisted paths are self-service (every role's baseline).
+const ROUTE_PERMS: [string, string][] = [
+  ["/admin/payroll", PERM.payrollView],
+  ["/admin/settings", PERM.settingsManage],
+  ["/admin/product", PERM.productDocView],
+  ["/admin/employees", PERM.employeesView],
+  ["/admin/leaves", PERM.leavesApprove],
+  ["/admin/attendance", PERM.attendanceViewAll],
+  ["/admin/reports", PERM.reportsView],
+  ["/admin/deal-assignments", PERM.dealsDirectory],
+  ["/crm/deals", PERM.dealsView],
+  ["/crm/calendar", PERM.crmCalendarView],
+];
 
 /** Refreshes the Supabase session cookie and enforces auth + role gating. */
 export async function updateSession(request: NextRequest) {
@@ -50,9 +66,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && !isPublic) {
+    // One query: status + the caller's permission grants (via app_role → role_permissions).
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, status, department")
+      .select("role, status, app_roles!profiles_app_role_id_fkey(role_permissions(permission_key))")
       .eq("id", user.id)
       .single();
 
@@ -65,30 +82,30 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const isAdmin = profile.role === "admin" || profile.role === "super_admin";
-
-    // Role gating for /admin/* — employees are redirected away.
-    if (path.startsWith(ADMIN_PREFIX) && profile.role === "employee") {
+    const perms = new Set<string>(
+      ((profile as any).app_roles?.role_permissions ?? []).map((r: any) => r.permission_key as string)
+    );
+    const deny = () => {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
-    }
+    };
 
-    // CRM gating for /crm/* — only Business-Development employees + admins/super-admins.
-    if (path.startsWith(CRM_PREFIX)) {
-      const isBD = isAdmin || profile.department === BD_DEPARTMENT;
-      if (!isBD) {
-        const url = request.nextUrl.clone();
-        url.pathname = profile.role === "employee" ? "/dashboard" : "/admin/dashboard";
-        return NextResponse.redirect(url);
-      }
-      // Deals (name, financials, assignments) are SUPER-ADMIN only (0030). HR/admin can't see them.
-      if (path.startsWith(CRM_DEALS_PREFIX) && profile.role !== "super_admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/crm/profiles";
-        return NextResponse.redirect(url);
-      }
+    // Specific route → permission mapping (longest prefix first).
+    const rule = ROUTE_PERMS.find(([prefix]) => path.startsWith(prefix));
+    if (rule && !perms.has(rule[1])) return deny();
+
+    // Coarse area gates for the rest of /admin/* and /crm/*.
+    if (!rule && path.startsWith(ADMIN_PREFIX)) {
+      // the admin dashboard + activity log: any ops-ish grant qualifies
+      const anyOps = [
+        PERM.employeesView, PERM.attendanceViewAll, PERM.leavesApprove, PERM.reportsView,
+        PERM.payrollView, PERM.activityViewOps, PERM.activityViewFinancial, PERM.settingsManage,
+      ].some((p) => perms.has(p));
+      if (!anyOps) return deny();
+      if (path.startsWith("/admin/logs") && !perms.has(PERM.activityViewOps) && !perms.has(PERM.activityViewFinancial)) return deny();
     }
+    if (!rule && path.startsWith(CRM_PREFIX) && !perms.has(PERM.crmAccess)) return deny();
   }
 
   return response;

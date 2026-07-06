@@ -14,7 +14,7 @@ export function isUuid(s: string | null | undefined): s is string {
   return !!s && UUID_RE.test(s);
 }
 
-type RoleLike = { role: UserRole | string | null | undefined };
+type RoleLike = { role: UserRole | string | null | undefined; perms?: string[] };
 type CrmProfile = RoleLike & { department?: string | null; is_bd_lead?: boolean | null };
 
 export function isAdminRole(role?: UserRole | string | null): boolean {
@@ -24,19 +24,26 @@ export function isSuperAdminRole(role?: UserRole | string | null): boolean {
   return role === "super_admin";
 }
 
-/** Can this person reach the CRM at all? BD-department employees + admins/super-admins. */
+// FRD-08: when the profile carries its permission grants (getCurrentProfile attaches `perms`), these
+// helpers are PERMISSION-driven — matching the DB (auth_is_bd/auth_is_bd_lead now key on the same
+// grants). The legacy role/department/flag checks remain only as a fallback for profile objects loaded
+// without grants (e.g. lists of other users).
+
+/** Can this person reach the CRM at all? */
 export function canSeeCrm(p: CrmProfile): boolean {
+  if (p.perms) return p.perms.includes("crm.access");
   return isAdminRole(p.role) || p.department === BD_DEPARTMENT;
 }
 
-/** Elevated CRM tier: sees/manages ALL BDs' data. Admin/super-admin or a flagged BD Lead. */
+/** Elevated CRM tier: sees/manages ALL BDs' data. */
 export function isBdLead(p: CrmProfile): boolean {
+  if (p.perms) return p.perms.includes("crm.leads.all") || p.perms.includes("crm.profiles.all");
   return isAdminRole(p.role) || !!p.is_bd_lead;
 }
 
-/** Deals (name, financials, assignments) are SUPER-ADMIN only — HR/admin can't see deal details
- *  (0030). Developers see only their own deal NAME via my_deals(). */
+/** Deal details (name, financials, assignments). Super-admin-only by default grants (0030/FRD-08). */
 export function canSeeDeals(p: RoleLike): boolean {
+  if (p.perms) return p.perms.includes("deals.view");
   return isSuperAdminRole(p.role);
 }
 

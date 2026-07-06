@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { roleOf } from "@/lib/auth";
+import { sessionHasPerm } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { updatePayrollRun } from "@/lib/services/payroll";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -9,7 +10,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if ((await roleOf(supabase, user.id)) !== "super_admin")
+  if (!(await sessionHasPerm(supabase, PERM.payrollManage)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));

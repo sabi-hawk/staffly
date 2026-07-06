@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 
 export const dynamic = "force-dynamic";
 
-const isAdmin = (role?: string) => role === "admin" || role === "super_admin";
 
 // GET — admin/super only: CRM alerts from the last 30 days + unread count (RLS also enforces).
 export async function GET() {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isAdmin(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!hasPermP(me, PERM.notificationsView)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const supabase = createClient();
   const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
@@ -36,7 +36,7 @@ export async function GET() {
 export async function POST() {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isAdmin(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!hasPermP(me, PERM.notificationsView)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const supabase = createClient();
   const since = new Date(Date.now() - 30 * 86_400_000).toISOString();

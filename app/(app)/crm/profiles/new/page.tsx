@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { ProfileForm } from "@/components/crm/profile-form";
 
 export default async function NewCrmProfilePage() {
   const me = await getCurrentProfile();
-  if (!isAdminRole(me?.role)) redirect("/crm/profiles");
+  if (!hasPermP(me, PERM.crmProfilesPassword)) redirect("/crm/profiles");
 
   const supabase = createClient();
   const [{ data: stacks }, { data: bds }] = await Promise.all([

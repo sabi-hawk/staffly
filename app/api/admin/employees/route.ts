@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { roleOf } from "@/lib/auth";
+import { sessionHasPerm } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 
 function slug(s: string) {
   return s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "");
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!["admin", "super_admin"].includes((await roleOf(supabase, user.id)) ?? ""))
+  if (!(await sessionHasPerm(supabase, PERM.employeesManage)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const b = await request.json().catch(() => ({}));

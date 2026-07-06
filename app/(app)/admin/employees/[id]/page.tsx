@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, Clock, TrendingDown, CalendarCheck, CalendarX, Plane, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isSuperAdmin, isAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { resolveRange, type RangeKey } from "@/lib/time";
 import { buildEmployeeReport } from "@/lib/services/reports";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -27,8 +28,8 @@ export default async function EmployeeDetail({
   searchParams: { range?: string; from?: string; to?: string };
 }) {
   const viewer = (await getCurrentProfile())!;
-  const superAdmin = isSuperAdmin(viewer.role);
-  const adminViewer = isAdmin(viewer.role);
+  const superAdmin = hasPermP(viewer, PERM.compensationManage); // comp + commission + PII sections
+  const adminViewer = hasPermP(viewer, PERM.employeesCredentials); // credentials + flags cards
   const supabase = createClient();
 
   const { data: p } = await supabase.from("profiles").select("*").eq("id", params.id).single();

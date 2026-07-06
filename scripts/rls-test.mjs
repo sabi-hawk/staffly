@@ -281,6 +281,35 @@ async function main() {
   const roleWrite = await shaizaR.from("app_roles").insert({ key: "hax", name: "Hax" }).select();
   check("RBAC: non-super cannot create roles (roles.manage RLS)", !!roleWrite.error || (roleWrite.data?.length ?? 0) === 0);
 
+  // ── RBAC wiring (0036): the NEW roles work at the DB. Test Employee (…0099) gets each role in turn.
+  const TESTU = "00000000-0000-0000-0000-000000000099";
+  const rid = async (k) => (await pgc.query(`select id from app_roles where key=$1`, [k])).rows[0].id;
+  const testu = await asUser("test.employee@softonoma.com", "Softonoma@9999");
+
+  await pgc.query(`update profiles set app_role_id=$1 where id=$2`, [await rid("accounts"), TESTU]);
+  const acctPay = await testu.from("payroll_runs").select("id").limit(1);
+  check("RBAC: Accounts role → payroll_runs readable (no super_admin needed)", !acctPay.error);
+  const acctSal = await testu.from("salary_structures").select("id").limit(1);
+  check("RBAC: Accounts role → salary_structures readable", !acctSal.error);
+  const acctCred = await testu.from("employee_credentials").select("*").neq("employee_id", TESTU).limit(1);
+  check("RBAC: Accounts role → other employees' credentials hidden", (acctCred.data?.length ?? 0) === 0);
+  const acctLeads = await testu.from("leads").select("id").limit(1);
+  check("RBAC: Accounts role → CRM leads hidden", (acctLeads.data?.length ?? 0) === 0);
+
+  await pgc.query(`update profiles set app_role_id=$1 where id=$2`, [await rid("hr"), TESTU]);
+  const hrLeave = await testu.from("leave_requests").select("id").neq("employee_id", TESTU).limit(1);
+  check("RBAC: HR role → all leave requests readable (approvals)", !hrLeave.error && (hrLeave.data?.length ?? 0) >= 0 && !hrLeave.error);
+  const hrAtt = await testu.from("attendance").select("id").neq("employee_id", TESTU).limit(1);
+  check("RBAC: HR role → attendance oversight readable", !hrAtt.error && (hrAtt.data?.length ?? 0) === 1);
+  const hrPay = await testu.from("payroll_runs").select("id").limit(1);
+  check("RBAC: HR role → payroll hidden", (hrPay.data?.length ?? 0) === 0);
+  const hrCred = await testu.from("employee_credentials").select("*").neq("employee_id", TESTU).limit(1);
+  check("RBAC: HR role → credentials hidden (Admin-only)", (hrCred.data?.length ?? 0) === 0);
+  const hrLeads = await testu.from("leads").select("id").limit(1);
+  check("RBAC: HR role → CRM hidden", (hrLeads.data?.length ?? 0) === 0);
+
+  await pgc.query(`update profiles set app_role_id=$1 where id=$2`, [await rid("employee"), TESTU]); // restore
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);

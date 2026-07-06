@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isSuperAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { PayrollClient } from "@/components/admin/payroll-client";
 
 export default async function PayrollPage() {
   const profile = (await getCurrentProfile())!;
-  if (!isSuperAdmin(profile.role)) redirect("/admin/dashboard");
+  if (!hasPermP(profile, PERM.payrollView)) redirect("/admin/dashboard");
 
   const supabase = createClient();
   const now = new Date();
@@ -37,7 +38,7 @@ export default async function PayrollPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-h1 text-text-primary">Payroll</h2>
-        <p className="text-caption text-text-secondary">Super Admin only · salary, payslips &amp; payments</p>
+        <p className="text-caption text-text-secondary">Salary, payslips &amp; payments</p>
       </div>
       <PayrollClient
         initialRuns={runs ?? []}

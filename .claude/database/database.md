@@ -267,3 +267,18 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   user; writes need `roles.manage`. `handle_new_user` assigns the Employee role; the privileged-cols
   guard treats `app_role_id` like `role` (super-admin only). No behaviour change yet — enforcement
   wiring is FRD-08 slice 2.
+
+- `0036_rbac_wiring.sql` — **RBAC enforcement at the DB (FRD-08 slice 2)**. `auth_is_bd()`/
+  `auth_is_bd_lead()` now key on the ROLE's grants (`crm.*.own` / `crm.*.all`) instead of department/
+  flag — every CRM policy inherits automatically. Rewritten to `auth_has_perm()`: payroll_runs
+  (payroll.view/manage), salary_structures + compensation_components (compensation.manage),
+  payslip_components (payslips.view_all / payroll.manage), employee_private (employees.private_pii),
+  employee_credentials (employees.credentials), profiles insert/delete/update (employees.manage),
+  leave_requests (leaves.approve), attendance + sessions (attendance.view_all / edit_all),
+  announcements (announcements.manage), holidays (holidays.manage), company_settings (settings.manage),
+  admin_notifications + crm_alerts (notifications.view), alerts_log (attendance.view_all), audit_log
+  (activity.view_financial / view_ops + BD own-CRM), dev_profile_secrets (crm.profiles.password),
+  deals/deal_documents/receiving_accounts (deals.view / deals.manage), payment_methods write +
+  deal_developers manage (deals.manage). `crm_calendar()` → crm.calendar.view (+ crm.leads.all for
+  detail reveal); `deal_directory()` → deals.directory. Unrewritten tables still key on the legacy
+  enum, bounded by each role's `base_role` ceiling.

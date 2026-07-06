@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { navForRole } from "@/lib/nav";
+import { navForPerms } from "@/lib/nav";
+import { PERM } from "@/lib/access/permissions";
 import type { Profile } from "@/lib/types";
 
 const TITLE_OVERRIDES: Record<string, string> = { logs: "Activity Log", crm: "CRM" };
@@ -12,9 +13,9 @@ function titleFromPath(path: string): string {
   return TITLE_OVERRIDES[seg] ?? seg.charAt(0).toUpperCase() + seg.slice(1);
 }
 
-export function AppShell({ profile, children }: { profile: Profile; children: React.ReactNode }) {
+export function AppShell({ profile, perms, children }: { profile: Profile; perms: string[]; children: React.ReactNode }) {
   const pathname = usePathname();
-  const items = navForRole(profile);
+  const items = navForPerms(perms);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close the mobile drawer whenever the route changes (navigating dismisses it).
@@ -28,7 +29,7 @@ export function AppShell({ profile, children }: { profile: Profile; children: Re
           title={titleFromPath(pathname)}
           fullName={profile.full_name}
           onMenuClick={() => setMobileOpen(true)}
-          showAlerts={profile.role === "admin" || profile.role === "super_admin"}
+          showAlerts={perms.includes(PERM.notificationsView)}
         />
         <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6">{children}</main>
       </div>

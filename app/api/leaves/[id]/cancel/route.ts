@@ -13,9 +13,8 @@ export async function POST(_request: Request, { params }: { params: { id: string
   const { data: req } = await supabase.from("leave_requests").select("employee_id, status").eq("id", params.id).single();
   if (!req) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const isAdmin = me?.role === "admin" || me?.role === "super_admin";
-  if (req.employee_id !== user.id && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const canApprove = (await supabase.rpc("auth_has_perm", { p_perm: "leaves.approve" })).data === true;
+  if (req.employee_id !== user.id && !canApprove) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (req.status !== "pending") return NextResponse.json({ error: "Only pending requests can be cancelled" }, { status: 400 });
 
   // RLS restricts leave_requests updates to admins, so apply the cancel with the service role

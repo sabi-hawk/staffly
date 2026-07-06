@@ -15,7 +15,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ error: "check_in_time or check_out_time required" }, { status: 400 });
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const isAdmin = (await supabase.rpc("auth_has_perm", { p_perm: "attendance.edit_all" })).data === true;
 
   // Employees may only edit their OWN CURRENT-DAY checkout (not check-in, not past days).
   if (!isAdmin) {

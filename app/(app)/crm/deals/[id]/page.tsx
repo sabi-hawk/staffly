@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { redirect, notFound } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { isSuperAdminRole } from "@/lib/crm/access";
+import { PERM } from "@/lib/access/permissions";
+import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { leadOptions, crmProfileOptions, developerOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { RecordHistory } from "@/components/audit/record-history";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DealDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
-  if (!me || !isSuperAdminRole(me.role)) redirect("/dashboard");
+  if (!me || !hasPermP(me, PERM.dealsView)) redirect("/dashboard");
   const supabase = createClient();
 
   const { data: deal } = await supabase

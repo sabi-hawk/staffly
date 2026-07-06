@@ -1,6 +1,7 @@
 import { Clock, TrendingDown, CalendarCheck, CalendarX, Plane } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile, isAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { companyToday, resolveRange, RANGE_LABELS, type RangeKey } from "@/lib/time";
 import { todayAttendance } from "@/lib/services/attendance";
 import { buildEmployeeReport } from "@/lib/services/reports";
@@ -26,7 +27,7 @@ export default async function AttendancePage({
   const supabase = createClient();
   const today = companyToday();
   const todayData = await todayAttendance(supabase, profile.id);
-  const admin = isAdmin(profile.role);
+  const admin = hasPermP(profile, PERM.attendanceViewAll);
 
   // The attendance summary + the deficit/extra column are shown to employees only when the admin flag
   // is on (default true); admins always see them.

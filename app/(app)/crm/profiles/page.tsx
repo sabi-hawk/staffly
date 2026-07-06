@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isAdminRole, isBdLead } from "@/lib/crm/access";
 import { bdOptions } from "@/lib/crm/options";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ export default async function CrmProfilesPage({
   searchParams: { page?: string; pageSize?: string; owner?: string; stack?: string; status?: string; q?: string };
 }) {
   const me = await getCurrentProfile();
-  const canManage = isAdminRole(me?.role);
+  const canManage = hasPermP(me, PERM.crmProfilesPassword);
   // Only BD-Lead / admin / super may filter or assign by owner; a plain BD sees only their own (RLS).
   const canFilterOwner = canManage || (me ? isBdLead(me) : false);
   const supabase = createClient();

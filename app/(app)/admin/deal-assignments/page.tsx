@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentProfile, isAdmin } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -11,7 +12,7 @@ import { labelize, statusTone } from "@/lib/crm/constants";
 // via the deal_directory() definer function. Full deal details stay super-admin only (0030).
 export default async function DealAssignmentsPage() {
   const me = await getCurrentProfile();
-  if (!me || !isAdmin(me.role)) redirect("/dashboard");
+  if (!me || !hasPermP(me, PERM.dealsDirectory)) redirect("/dashboard");
   const supabase = createClient();
   const { data } = await supabase.rpc("deal_directory");
   const rows = (data ?? []) as any[];

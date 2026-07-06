@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isSuperAdminRole, isUuid } from "@/lib/crm/access";
 import { setDealDevelopers } from "@/lib/services/crm-deals";
 
@@ -8,7 +9,7 @@ import { setDealDevelopers } from "@/lib/services/crm-deals";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!isSuperAdminRole(me.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!hasPermP(me, PERM.dealsManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   try {
     const body = await req.json();
