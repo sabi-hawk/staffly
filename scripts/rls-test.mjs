@@ -264,6 +264,23 @@ async function main() {
     await pgc.query(`delete from interviews where id = any($1)`, [[i1, i2]]);
   }
 
+  // ── RBAC foundation (0035): backfilled roles, auth_has_perm, guarded assignment, locked catalog.
+  const shaizaR = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+  const permBd = await shaizaR.rpc("auth_has_perm", { p_perm: "crm.access" });
+  check("RBAC: BD role → auth_has_perm('crm.access') = true", permBd.data === true, permBd.error?.message ?? "");
+  const permPay = await shaizaR.rpc("auth_has_perm", { p_perm: "payroll.manage" });
+  check("RBAC: BD role → auth_has_perm('payroll.manage') = false", permPay.data === false);
+  const founderPay = await founder.rpc("auth_has_perm", { p_perm: "payroll.manage" });
+  check("RBAC: super_admin → auth_has_perm('payroll.manage') = true", founderPay.data === true);
+  const catalog = await emp.from("permissions").select("key").limit(1);
+  check("RBAC: catalog readable by any signed-in user", !catalog.error && (catalog.data?.length ?? 0) === 1);
+  const superRoleId = (await pgc.query(`select id from app_roles where key='super_admin'`)).rows[0].id;
+  await emp.from("profiles").update({ app_role_id: superRoleId }).eq("id", EMP);
+  const empRole = (await pgc.query(`select ar.key from profiles p join app_roles ar on ar.id=p.app_role_id where p.id=$1`, [EMP])).rows[0]?.key;
+  check("RBAC: employee cannot self-assign a role (guard trigger)", empRole === "employee", `role=${empRole}`);
+  const roleWrite = await shaizaR.from("app_roles").insert({ key: "hax", name: "Hax" }).select();
+  check("RBAC: non-super cannot create roles (roles.manage RLS)", !!roleWrite.error || (roleWrite.data?.length ?? 0) === 0);
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);

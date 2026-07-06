@@ -176,3 +176,10 @@ build instruction to keep going rather than ask.
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 70 | **In-app interview reminders** — a global `InterviewReminders` client (mounted in the app shell for CRM users) polls the caller's OWN upcoming interviews every 60s and, ~30 min before, fires a toast + a soft Web-Audio beep (once per interview, deduped via localStorage). Audio is best-effort (armed on the first user gesture, per browser autoplay rules). | Owner: a BD should be nudged ~30 min before their interview while the tab is open. Own-interviews only (RLS + owner filter); no server push needed — a light client poll. |
+
+## RBAC foundation (FRD-08 slice 1, 2026-07-06)
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 71 | **RBAC model: one role per user + capability flags** (owner-confirmed). 43-key permission catalog; 8 system roles (Employee, Deal-assigned Developer, BD, BD Lead, HR, Accounts, Admin, Super Admin) each stored with a written `reason`; `role_permissions` matrix seeded to reproduce today's behaviour; custom roles later creatable by super-admin (`roles.manage`). `base_role` on every role = its legacy RLS ceiling until policies migrate — so no role can ever exceed its legacy equivalent at the data layer (no UI-only security). | FRD-08 approved by owner. Foundation ships additively (zero behaviour change) so the risky wiring (nav/middleware/pages/RLS) can land as its own reviewed slice. Backfill verified: all 12 users mapped correctly; grant counts employee 8 → super_admin 43/43. |
+| 72 | **Annual-leave notice is DATE-based (Asia/Karachi)** — starting exactly 21 days from today is acceptable. | The instant-based check made "exactly 21 days ahead" fail depending on time of day (surfaced as a date-dependent test flake when today+21 landed on a Monday). "At least N days in advance" is naturally a date rule. |

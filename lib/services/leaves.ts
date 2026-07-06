@@ -220,9 +220,10 @@ export async function requestLeave(
     return { requests: [data], overflowOffered: false, lateNotice: false };
   }
 
-  const today = new Date();
-  const noticeCutoff = new Date(today.getTime() + ANNUAL_NOTICE_DAYS * 86400000);
-  const lateNotice = input.type === "annual" && new Date(input.start_date) < noticeCutoff;
+  // Notice is DATE-based (Asia/Karachi): starting exactly NOTICE_DAYS from today is acceptable.
+  // (Instant-based comparison made "exactly 21 days ahead" fail depending on the time of day.)
+  const noticeCutoffDate = companyToday(new Date(new Date(`${companyToday()}T00:00:00+05:00`).getTime() + ANNUAL_NOTICE_DAYS * 86400000));
+  const lateNotice = input.type === "annual" && input.start_date < noticeCutoffDate;
   if (lateNotice && !opts.allowShortNotice) {
     throw new Error(`Annual leave must be requested at least ${ANNUAL_NOTICE_DAYS} days in advance (admin override required).`);
   }

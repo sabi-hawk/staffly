@@ -257,3 +257,13 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   calendar. Returns scheduled interviews (interview_at) in a range with time + stack + owner (for colour);
   **company / job_title / developer only for the caller's OWN interviews** (or admin/super). Non-BD,
   non-admin callers get 0 rows. Powers `/crm/calendar` (cross-BD privacy: others see time+stack only).
+
+- `0035_rbac_foundation.sql` — **RBAC foundation (FRD-08, slice 1, additive)**: `permissions` catalog
+  (43 seeded keys, `module.action`), **`app_roles`** (8 seeded system roles, each with `description` +
+  `reason` + `is_system` + `base_role` = its legacy RLS ceiling), `role_permissions` (seeded matrix),
+  `profiles.app_role_id` (backfilled: super_admin→Super Admin, admin→Admin, is_bd_lead→BD Lead, BD
+  dept→BD, is_deal_developer→Deal-assigned Developer, else Employee). **`auth_has_perm(perm)`**
+  security-definer fn (user→role→grants) for server + RLS use. Catalog/roles readable by any signed-in
+  user; writes need `roles.manage`. `handle_new_user` assigns the Employee role; the privileged-cols
+  guard treats `app_role_id` like `role` (super-admin only). No behaviour change yet — enforcement
+  wiring is FRD-08 slice 2.
