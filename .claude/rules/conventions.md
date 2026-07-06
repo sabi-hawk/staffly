@@ -27,3 +27,22 @@ pagination + empty state. Mutations: toast feedback. Inner pages: a back link.
 SQL in `supabase/migrations/NNNN_name.sql`, applied to the **cloud** DB via `npm run db:migrate`
 (idempotent runner; uses `SUPABASE_DB_URL` session pooler). Update `.claude/database/database.md`
 in the same change. Seed = `supabase/seed.sql` + `scripts/seed.mjs`.
+
+## UI conventions (owner-mandated, 2026-07-07) — apply to ALL new and touched UI
+- **Form fields = floating-label components** from `components/ui/field.tsx`: `FloatInput`,
+  `FloatTextarea`, `FloatSelect`, or `FloatShell` around custom controls (DatePicker, FileInput,
+  comboboxes). The label rests inside the control and floats onto the top border on focus/fill.
+  Field explanations go on the `hint` prop (an InfoHint that rides the label). Do NOT write new
+  `<Label>` + `<Input>` stacks.
+- **Never use browser-native `confirm()` / `prompt()` / `alert()`** — use `ConfirmDialog` /
+  `ReasonDialog` from `components/ui/dialog.tsx`.
+- **Never use native `<input type="date|datetime-local">`** — use `DatePicker` / `DateTimePicker`
+  from `components/ui/date-picker.tsx` (string values, drop-in).
+- **Never use native `<input type="file">`** — use `FileInput` from `components/ui/file-input.tsx`.
+- **Badges**: shared `Badge` (rounded-md, coloured border + translucent fill, auto-Capitalised).
+  **Buttons** for approve/reject-style row actions: `variant="success" | "danger"` (soft coloured
+  border + tint, not solid).
+- **Selects** always `appearance-none` with our own chevron and a real gap from the right border
+  (see `FloatSelect`).
+- **No em dashes (—) in user-visible copy** — write plain sentences (owner: reads as AI-generated).
+- Every field that needs explaining gets an InfoHint `hint` (2 words to 3 lines, say WHY it exists).

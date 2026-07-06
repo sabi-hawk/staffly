@@ -412,3 +412,24 @@ Missed-checkout grace and the still-checked-in alert fired on the same condition
 after (h)" — at which the employee gets the reminder email and admins get one feed alert (0042 drops
 `overtime_warning_hours`; the alert_type enum keeps the legacy value for history). Under the Settings
 nav group, "Company settings" is renamed **Configuration**. **Shipped same day.**
+
+## 2026-07-07 — UI modernisation batch (owner)
+1. Configuration page: drop the description line entirely; restyle the info icon (reads like a plain
+   letter "i" — wants a proper filled info glyph). 2. NO native JS prompt/confirm/alert anywhere —
+   replace with modern modals (found on leave reject reason prompt). 3. Remove em-dash-heavy AI-style
+   copy in user-visible descriptions. 4. Approve/Reject buttons + status badges: sleek modern style
+   (colored border, translucent fill, less rounding, Capitalized labels) portal-wide. 5. Replace
+   native date/datetime pickers with a modern date picker everywhere. 6. Two bells in the admin
+   topbar (notifications + CRM alerts) — merge into one. 7. CRM profile page: capitalize/sleeken
+   Active + Primary badges, hide the note from the banner, revamp the document upload row + native
+   file inputs platform-wide, move profile editing onto the banner (like interviews), explain the
+   account-password field. 8. Easy profile numbers (#11, #12…) as memorable identifiers shown with
+   name+stack everywhere incl. calendar. 9. Leads Owner filter: plain BD must not see it (BD Lead
+   defaults to self, can switch; admin/super full).
+
+   **Shipped 2026-07-07** (whole batch): floating-label field system platform-wide (owner's
+   reference screenshots; conventions.md updated so all future fields follow it), ConfirmDialog/
+   ReasonDialog everywhere, DatePicker/DateTimePicker + FileInput everywhere, badge/button restyle,
+   em-dash copy sweep, single tabbed bell, filled info glyph, profile numbers 0043/0044 (list,
+   banner, pickers, calendar), profiles banner edit-in-place + upload card, leads Owner filter
+   gated (BD hidden, BD Lead defaults to self w/ All BDs), select chevron gap fixed.

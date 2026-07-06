@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { FloatInput } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -88,8 +90,8 @@ export function PayrollClient({
         <CardHeader><CardTitle>Generate payroll</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5"><Label htmlFor="payroll-from">From</Label><Input id="payroll-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label htmlFor="payroll-to">To</Label><Input id="payroll-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <DatePicker id="payroll-from" label="From" hint="Start of the payroll period." value={from} onChange={setFrom} className="w-40" />
+            <DatePicker id="payroll-to" label="To" hint="End of the payroll period." value={to} onChange={setTo} className="w-40" />
             <Button onClick={generate} disabled={busy}>{busy ? "Generating…" : "Generate / refresh drafts"}</Button>
           </div>
         </CardContent>
@@ -128,7 +130,7 @@ export function PayrollClient({
                   />
                 );
               })}
-              {runs.length === 0 && <TR><TD className="py-6 text-center text-text-secondary">No runs — pick a period and Generate.</TD></TR>}
+              {runs.length === 0 && <TR><TD className="py-6 text-center text-text-secondary">No runs. Pick a period and Generate.</TD></TR>}
             </TBody>
           </Table>
         </CardContent>
@@ -176,8 +178,8 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
         <TR>
           <TD colSpan={9} className="bg-surface">
             <div className="flex flex-wrap items-end gap-2">
-              <label className="text-caption text-text-secondary">Paid date<Input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className="h-8" /></label>
-              <label className="text-caption text-text-secondary">Credited account<Input value={account} onChange={(e) => setAccount(e.target.value)} className="h-8 w-64" /></label>
+              <DatePicker label="Paid date" hint="When the salary was credited to the employee." value={paidAt} onChange={setPaidAt} className="w-36" />
+              <FloatInput label="Credited account" hint="The bank account or channel the salary was sent to." value={account} onChange={(e) => setAccount(e.target.value)} wrapClassName="w-64" />
               <Button size="sm" variant="success" onClick={() => { onMarkPaid(run.id, paidAt, account, "paid"); setShowPay(false); }}>Save paid</Button>
               {run.payment_status === "paid" && <Button size="sm" variant="ghost" onClick={() => { onMarkPaid(run.id, "", "", "pending"); setShowPay(false); }}>Mark pending</Button>}
             </div>
@@ -192,7 +194,7 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
               {additions.length === 0 && <p className="text-caption text-text-secondary">No additions.</p>}
               {additions.map((l: Line) => (
                 <div key={l.id} className="flex items-center justify-between rounded border border-border bg-white px-3 py-1.5 text-sm">
-                  <span>{l.label}{l.description ? <span className="text-caption text-text-secondary"> — {l.description}</span> : ""}</span>
+                  <span>{l.label}{l.description ? <span className="text-caption text-text-secondary"> · {l.description}</span> : ""}</span>
                   <span className="flex items-center gap-3"><span className="tabular">{formatPKR(l.amount)}</span>
                     {run.status === "draft" && <button onClick={() => onRemoveLine(run.id, l.id)} className="text-text-secondary hover:text-danger"><Trash2 className="size-3.5" /></button>}
                   </span>
@@ -200,7 +202,7 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
               ))}
               {deductions.map((l: Line) => (
                 <div key={l.id} className="flex items-center justify-between rounded border border-border bg-white px-3 py-1.5 text-sm text-danger">
-                  <span>{l.label}{l.description ? <span className="text-caption"> — {l.description}</span> : ""}</span>
+                  <span>{l.label}{l.description ? <span className="text-caption"> · {l.description}</span> : ""}</span>
                   <span className="flex items-center gap-3"><span className="tabular">− {formatPKR(l.amount)}</span>
                     {run.status === "draft" && <button onClick={() => onRemoveLine(run.id, l.id)} className="hover:text-danger"><Trash2 className="size-3.5" /></button>}
                   </span>

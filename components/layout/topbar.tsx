@@ -2,7 +2,6 @@
 import { LogOut, Menu, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AlertsBell } from "@/components/crm/alerts-bell";
 import { MyNotificationsBell } from "./my-notifications-bell";
 
 export function Topbar({
@@ -50,8 +49,7 @@ export function Topbar({
           <span>Search</span>
           <kbd className="rounded bg-white px-1.5 text-[10px]">⌘K</kbd>
         </button>
-        <MyNotificationsBell />
-        {showAlerts && <AlertsBell />}
+        <MyNotificationsBell showAlerts={showAlerts} />
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-light text-caption font-semibold text-brand-primary">
           {initials}
         </div>

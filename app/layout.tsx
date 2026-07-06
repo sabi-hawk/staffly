@@ -7,7 +7,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Softonoma — Employee Portal",
+  title: "Softonoma | Employee Portal",
   description: "Softonoma HR & workforce management portal",
 };
 

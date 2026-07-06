@@ -53,12 +53,13 @@ async function main() {
   const owner = (name) => bds.find((b) => b.full_name === name)?.id ?? null;
 
   // (name, stack, owner-BD) — Shaiza owns three (for BD-view testing), one for Areeba, one unassigned.
+  // fixed profile_no so re-seeding never inflates the numbers (0043; sequence continues after 15)
   const rows = [
-    { name: "Sabahat Atique", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.sabahat@example.com", mobile: "0300-0000001" },
-    { name: "Bilal Khan", stack: "Backend", ownerName: "Shaiza Maheen", email: "demo.bilal@example.com", mobile: "0300-0000004" },
-    { name: "Hina Raza", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.hina@example.com", mobile: "0300-0000005" },
-    { name: "Ali Ahmad", stack: "Backend", ownerName: "Areeba Zaidi", email: "demo.ali@example.com", mobile: "0300-0000002", notes: "LinkedIn banned" },
-    { name: "Atique Latif", stack: "Data Engineer", ownerName: null, email: "demo.atique@example.com", mobile: "0300-0000003" },
+    { no: 11, name: "Sabahat Atique", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.sabahat@example.com", mobile: "0300-0000001" },
+    { no: 12, name: "Bilal Khan", stack: "Backend", ownerName: "Shaiza Maheen", email: "demo.bilal@example.com", mobile: "0300-0000004" },
+    { no: 13, name: "Hina Raza", stack: "Full Stack", ownerName: "Shaiza Maheen", email: "demo.hina@example.com", mobile: "0300-0000005" },
+    { no: 14, name: "Ali Ahmad", stack: "Backend", ownerName: "Areeba Zaidi", email: "demo.ali@example.com", mobile: "0300-0000002", notes: "LinkedIn banned" },
+    { no: 15, name: "Atique Latif", stack: "Data Engineer", ownerName: null, email: "demo.atique@example.com", mobile: "0300-0000003" },
   ];
 
   for (const r of rows) {
@@ -67,6 +68,7 @@ async function main() {
     const { data, error } = await admin
       .from("dev_profiles")
       .insert({
+        profile_no: r.no,
         name: r.name,
         stack_id: stackId(r.stack),
         owner_bd_id: r.ownerName ? owner(r.ownerName) : null,

@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
+import { INTERVIEW_HINTS, ASSESSMENT_HINTS } from "@/lib/crm/field-hints";
 import { INTERVIEW_ROUND, PRIORITIES } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
 type LeadOpt = { id: string; company: string };
-const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
 const seg = (on: boolean) =>
   `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${on ? "bg-brand-primary text-white" : "bg-surface text-text-secondary hover:text-text-primary"}`;
 
@@ -113,15 +114,19 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
           </div>
 
           {mode === "new" ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="add-company">Company</Label>
-              <Input id="add-company" value={newCompany} onChange={(e) => setNewCompany(e.target.value)} placeholder="e.g. Acme Corp" />
-            </div>
+            <FloatInput
+              id="add-company"
+              label="Company"
+              hint="The client company this came from, e.g. Acme Corp. A new lead is created with this name."
+              value={newCompany}
+              onChange={(e) => setNewCompany(e.target.value)}
+            />
           ) : (
             <div className="space-y-1.5">
-              <Label htmlFor="add-search">Existing company</Label>
-              <Input
+              <FloatInput
                 id="add-search"
+                label="Existing company"
+                hint="Type to search your existing leads, then pick the company from the list below. The activity attaches to that lead."
                 value={search}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -129,7 +134,6 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
                   // editing the text away from the picked company clears the selection (avoids a stale pick)
                   if (leadId && v !== leads.find((l) => l.id === leadId)?.company) setLeadId("");
                 }}
-                placeholder="Search companies…"
               />
               <div className="max-h-40 overflow-y-auto rounded-md border border-border">
                 {filtered.length === 0 && <div className="px-3 py-2 text-caption text-text-secondary">No matches.</div>}
@@ -148,50 +152,65 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="add-profile">Profile (optional)</Label>
-              <select id="add-profile" className={selectCls} value={profileId} onChange={(e) => setProfileId(e.target.value)}>
-                <option value="">—</option>
-                {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="add-received">Received (email date)</Label>
-              <Input id="add-received" type="date" value={received} onChange={(e) => setReceived(e.target.value)} />
-            </div>
+            <FloatSelect
+              id="add-profile"
+              label="Profile (optional)"
+              hint="Which of our dev profiles this activity is under. Leave unset if not decided yet."
+              value={profileId}
+              onChange={(e) => setProfileId(e.target.value)}
+            >
+              <option value="">Not set</option>
+              {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </FloatSelect>
+            <DatePicker
+              id="add-received"
+              label="Received (email date)"
+              hint="The date the request email arrived. Defaults to today."
+              value={received}
+              onChange={setReceived}
+            />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="add-job">Job title (optional)</Label>
-            <Input id="add-job" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Senior Full-Stack Engineer" />
-          </div>
+          <FloatInput
+            id="add-job"
+            label="Job title (optional)"
+            hint="The role this is for, e.g. Senior Full Stack Engineer."
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+          />
 
           {type === "interview" ? (
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="add-round">Round</Label>
-                <select id="add-round" className={selectCls} value={round} onChange={(e) => setRound(e.target.value)}>
-                  {INTERVIEW_ROUND.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="add-when">Interview at (optional)</Label>
-                <Input id="add-when" type="datetime-local" value={interviewAt} onChange={(e) => setInterviewAt(e.target.value)} />
-              </div>
+              <FloatSelect
+                id="add-round"
+                label="Round"
+                hint={INTERVIEW_HINTS.round}
+                value={round}
+                onChange={(e) => setRound(e.target.value)}
+              >
+                {INTERVIEW_ROUND.map((r) => <option key={r} value={r}>{r}</option>)}
+              </FloatSelect>
+              <DateTimePicker id="add-when" label="Interview at (optional)" hint={INTERVIEW_HINTS.interview_at} value={interviewAt} onChange={setInterviewAt} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="add-deadline">Deadline (optional)</Label>
-                <Input id="add-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="add-priority">Priority (optional)</Label>
-                <select id="add-priority" className={selectCls} value={priority} onChange={(e) => setPriority(e.target.value)}>
-                  <option value="">—</option>
-                  {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
+              <DatePicker
+                id="add-deadline"
+                label="Deadline (optional)"
+                hint={ASSESSMENT_HINTS.deadline}
+                value={deadline}
+                onChange={setDeadline}
+              />
+              <FloatSelect
+                id="add-priority"
+                label="Priority (optional)"
+                hint={ASSESSMENT_HINTS.priority}
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
+                <option value="">Not set</option>
+                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </FloatSelect>
             </div>
           )}
         </div>

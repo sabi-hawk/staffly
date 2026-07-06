@@ -121,7 +121,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
         leadId={lead.id}
         field="notes"
         title="BD notes"
-        description="Your private notepad for this lead — call notes, next steps, reminders, anything useful for the deal."
+        description="Your private notepad for this lead: call notes, next steps, reminders, anything useful for the deal."
         hint={LEAD_HINTS.notes}
         valueHtml={lead.notes}
         placeholder="e.g. Spoke to HR on Mon, awaiting test link…"

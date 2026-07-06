@@ -41,7 +41,7 @@ export default async function ProfilePage() {
         <CardHeader>
           <CardTitle>My details</CardTitle>
           <p className="text-caption text-text-secondary">
-            Your details are managed by HR. To update them or your photo, contact an administrator —
+            Your details are managed by HR. To update them or your photo, contact an administrator:
             you can change your profile photo here.
           </p>
         </CardHeader>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const FLAGS: { key: string; label: string; hint: string }[] = [
   { key: "is_developer", label: "Developer", hint: "Assignable as the interview/assessment/deal developer." },
   { key: "is_bd_lead", label: "BD Lead", hint: "Sees & manages all BDs' CRM data." },
-  { key: "is_deal_developer", label: "Deal-assigned developer", hint: "Works a client deal — leave balances are hidden and leave requests are record-only (client company governs their leave)." },
+  { key: "is_deal_developer", label: "Deal-assigned developer", hint: "Works a client deal. Leave balances are hidden and leave requests are record-only; the client company governs their leave." },
 ];
 
 export function ProfileFlags({ employeeId, initial }: { employeeId: string; initial: Record<string, boolean> }) {

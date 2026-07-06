@@ -31,11 +31,15 @@ export default async function CrmProfilesPage({
   // RLS scopes the rows: admins/BD-Leads see all; a plain BD sees only profiles they own.
   let query = supabase
     .from("dev_profiles")
-    .select("id, name, email, mobile, status, stack:dev_stacks(name), owner:profiles(full_name)", { count: "exact" });
+    .select("id, profile_no, name, email, mobile, status, stack:dev_stacks(name), owner:profiles(full_name)", { count: "exact" });
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.stack) query = query.eq("stack_id", searchParams.stack);
   if (searchParams.status) query = query.eq("status", searchParams.status);
-  if (searchParams.q) query = query.or(`name.ilike.%${searchParams.q}%,email.ilike.%${searchParams.q}%`);
+  if (searchParams.q) {
+    // a purely numeric search finds the profile by its number (#14), otherwise name/email
+    if (/^\d+$/.test(searchParams.q.trim())) query = query.eq("profile_no", Number(searchParams.q.trim()));
+    else query = query.or(`name.ilike.%${searchParams.q}%,email.ilike.%${searchParams.q}%`);
+  }
   const { data: rows, count } = await query.order("name", { ascending: true }).range(from, to);
 
   const [bds, { data: stacks }] = await Promise.all([
@@ -62,18 +66,19 @@ export default async function CrmProfilesPage({
                   { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
                   { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
                 ]}
-                search={{ key: "q", placeholder: "Search name or email" }}
+                search={{ key: "q", placeholder: "Search name, email or #number" }}
               />
             </div>
           }
         >
         <Table>
           <THead>
-            <TR><TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
+            <TR><TH>#</TH><TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
           </THead>
           <TBody>
             {list.map((p) => (
               <RowLink key={p.id} href={`/crm/profiles/${p.id}`}>
+                <TD><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
                 <TD><span className="font-medium text-text-primary">{p.name}</span></TD>
                 <TD>{p.stack?.name ?? "—"}</TD>
                 <TD>{p.owner?.full_name ?? <span className="text-text-secondary">Unassigned</span>}</TD>
@@ -83,7 +88,7 @@ export default async function CrmProfilesPage({
                 <TD className="text-right"><ChevronRight className="ml-auto size-4 text-text-secondary" /></TD>
               </RowLink>
             ))}
-            {list.length === 0 && <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
+            {list.length === 0 && <TR><TD colSpan={8} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

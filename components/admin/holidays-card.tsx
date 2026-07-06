@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { Trash2, Plus, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Label } from "@/components/ui/input";
+import { FloatInput } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { InfoHint } from "@/components/crm/info-hint";
 
@@ -44,6 +47,7 @@ export function HolidaysCard({
   const [includeDealDevs, setIncludeDealDevs] = useState(true);
   const [announce, setAnnounce] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [removeId, setRemoveId] = useState<string | null>(null);
 
   function setScopeAndDefaults(s: "company" | "teams") {
     setScope(s);
@@ -71,9 +75,9 @@ export function HolidaysCard({
       const who =
         scope === "company"
           ? includeDealDevs ? "the whole company" : "the whole company (except deal-assigned developers)"
-          : `the ${departments.filter((d) => deptIds.has(d.id)).map((d) => d.name).join(", ")} team(s)${includeDealDevs ? "" : " — deal-assigned developers excluded"}`;
+          : `the ${departments.filter((d) => deptIds.has(d.id)).map((d) => d.name).join(", ")} team(s)${includeDealDevs ? "" : " (deal-assigned developers excluded)"}`;
       const { error: annErr } = await supabase.from("announcements").insert({
-        title: `Holiday: ${name.trim()} — ${date}`,
+        title: `Holiday: ${name.trim()} on ${date}`,
         body_text: `${name.trim()} on ${date} is a holiday for ${who}.`,
         author_id: authorId,
       });
@@ -87,7 +91,6 @@ export function HolidaysCard({
   }
 
   async function remove(id: string) {
-    if (!confirm("Remove this holiday? It becomes a working day again for its audience.")) return;
     const { error } = await createClient().from("holidays").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Holiday removed");
@@ -111,7 +114,7 @@ export function HolidaysCard({
             )}
           </div>
           {canManage && (
-            <button onClick={() => remove(h.id)} className="shrink-0 text-text-secondary hover:text-danger" aria-label={`Remove ${h.name}`}>
+            <button onClick={() => setRemoveId(h.id)} className="shrink-0 text-text-secondary hover:text-danger" aria-label={`Remove ${h.name}`}>
               <Trash2 className="size-4" />
             </button>
           )}
@@ -121,20 +124,26 @@ export function HolidaysCard({
       {canManage && (
         <form onSubmit={add} className="space-y-3 border-t border-border pt-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="hol-name">Holiday name</Label>
-              <Input id="hol-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Eid" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="hol-date">Date</Label>
-              <Input id="hol-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
+            <FloatInput
+              id="hol-name"
+              label="Holiday name"
+              hint="What the day off is called, e.g. Eid. Shown in the list and in the optional announcement."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <DatePicker
+              id="hol-date"
+              label="Date"
+              hint="The day that is off for the chosen audience. Attendance, leave counts and payroll treat it as a non-working day."
+              value={date}
+              onChange={setDate}
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
               Who is off?
-              <InfoHint label="Who is off" text="Applicability is real, not cosmetic: for anyone outside the audience the date stays a normal working day — attendance, leave counting and payroll all follow it." />
+              <InfoHint label="Who is off" text="Applicability is real, not cosmetic: for anyone outside the audience the date stays a normal working day. Attendance, leave counting and payroll all follow it." />
             </Label>
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-1.5 text-sm">
@@ -164,7 +173,7 @@ export function HolidaysCard({
             <input type="checkbox" className="mt-0.5" checked={includeDealDevs} onChange={(e) => setIncludeDealDevs(e.target.checked)} />
             <span className="flex items-center gap-1.5">
               Also applies to deal-assigned developers
-              <InfoHint label="Deal-assigned developers" text="Their working calendar is governed by the client company. Untick and they won't see this holiday — the date stays a working day for them (attendance and payroll expect them to work)." />
+              <InfoHint label="Deal-assigned developers" text="Their working calendar is governed by the client company. Untick and they won't see this holiday. The date stays a working day for them (attendance and payroll expect them to work)." />
             </span>
           </label>
 
@@ -179,6 +188,16 @@ export function HolidaysCard({
           <Button type="submit" disabled={busy}><Plus className="size-4" /> {busy ? "Adding…" : "Add holiday"}</Button>
         </form>
       )}
+
+      <ConfirmDialog
+        open={removeId !== null}
+        onOpenChange={(o) => { if (!o) setRemoveId(null); }}
+        title="Remove this holiday?"
+        description="It becomes a working day again for its audience."
+        confirmLabel="Remove"
+        tone="danger"
+        onConfirm={async () => { if (removeId) await remove(removeId); }}
+      />
     </div>
   );
 }

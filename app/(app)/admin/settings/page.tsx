@@ -18,7 +18,6 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Configuration</CardTitle>
-          <CardDescription>Leave quotas and attendance alert thresholds — hover the ⓘ icons for what each does. Quotas drive the leave rules.</CardDescription>
         </CardHeader>
         <CardContent><SettingsEditor settings={settings ?? {}} /></CardContent>
       </Card>

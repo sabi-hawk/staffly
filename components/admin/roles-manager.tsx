@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Lock, X, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { RoleEditor, type PermRow } from "./role-editor";
 
 export type RoleRow = {
@@ -24,7 +25,7 @@ const ROLE_FLAGS: Record<string, { flag: string; tip: string; className: string 
   },
   deal_developer: {
     flag: "is_deal_developer",
-    tip: "Assigning this role also sets the deal-developer flag: leave balances hidden and leave requests record-only — the client company governs their leave.",
+    tip: "Assigning this role also sets the deal-developer flag: leave balances hidden and leave requests record-only; the client company governs their leave.",
     className: "border-brand-primary/40 bg-brand-light text-brand-primary",
   },
 };
@@ -44,9 +45,9 @@ function FlagChip({ flag, tip, className }: { flag: string; tip: string; classNa
 export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: PermRow[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null); // role id or "new"
+  const [pendingDelete, setPendingDelete] = useState<RoleRow | null>(null);
 
   async function del(r: RoleRow) {
-    if (!confirm(`Delete the "${r.name}" role?`)) return;
     const res = await fetch(`/api/admin/roles/${r.id}`, { method: "DELETE" });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return toast.error(j.error ?? "Failed");
@@ -91,7 +92,7 @@ export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: Pe
                 {editing === r.id ? <X className="size-4" /> : <Pencil className="size-4" />}
               </Button>
               {!r.is_system && (
-                <Button size="sm" variant="outline" onClick={() => del(r)} aria-label={`Delete ${r.name}`}><Trash2 className="size-4" /></Button>
+                <Button size="sm" variant="outline" onClick={() => setPendingDelete(r)} aria-label={`Delete ${r.name}`}><Trash2 className="size-4" /></Button>
               )}
             </div>
           </div>
@@ -108,6 +109,16 @@ export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: Pe
           )}
         </div>
       ))}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        title={pendingDelete ? `Delete the "${pendingDelete.name}" role?` : "Delete this role?"}
+        description="The role and its permission grants are removed."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={async () => { await del(pendingDelete!); }}
+      />
     </div>
   );
 }

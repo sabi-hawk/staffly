@@ -75,7 +75,7 @@ export default async function AnnouncementsPage({ searchParams }: { searchParams
           <CardTitle>Holidays</CardTitle>
           <CardDescription>
             {canManageHolidays
-              ? "Company or team-scoped days off — excluded from working-day math (attendance, leave, payroll) for their audience."
+              ? "Company or team-scoped days off, excluded from working-day math (attendance, leave, payroll) for their audience."
               : "Your upcoming days off."}
           </CardDescription>
         </CardHeader>

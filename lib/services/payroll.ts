@@ -160,7 +160,7 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
           label: "Missing attendance deduction",
           amount: deductionsMissing,
           kind: "deduction",
-          description: `Missing record — no attendance and no approved leave on ${missingDays} day(s): ${shown}${more}. Verify/fix the day (attendance or leave) and regenerate to clear.`,
+          description: `Missing record: no attendance and no approved leave on ${missingDays} day(s): ${shown}${more}. Verify/fix the day (attendance or leave) and regenerate to clear.`,
         });
       }
       await supabase.from("payslip_components").insert(lines);

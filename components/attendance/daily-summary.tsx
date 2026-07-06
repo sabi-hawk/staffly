@@ -79,13 +79,13 @@ export function DailySummary({
             </div>
             {locked ? (
               <>
-                <p className="mb-3 inline-flex items-center gap-1 text-caption text-text-secondary"><Lock className="size-3.5" /> This day has passed — the summary is locked.{late && " (added late)"}</p>
+                <p className="mb-3 inline-flex items-center gap-1 text-caption text-text-secondary"><Lock className="size-3.5" /> This day has passed, so the summary is locked.{late && " (added late)"}</p>
                 <div className={`rounded-md border border-border p-3 text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: html as string }} />
               </>
             ) : (
               <>
                 <p className="mb-3 text-caption text-text-secondary">
-                  A couple of lines on what you did today — you can format text and paste links.
+                  A couple of lines on what you did today. You can format text and paste links.
                   {lateAdd && <span className="text-warning"> This is a late entry (the day has passed) and will be flagged.</span>}
                 </p>
                 <RichText value={draft} onChange={setDraft} placeholder="e.g. Closed 2 BD leads, prepped the DemoCorp assessment…" />

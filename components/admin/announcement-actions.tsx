@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { FloatInput, FloatTextarea } from "@/components/ui/field";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 
 export function AnnouncementActions({ id, title, body }: { id: string; title: string; body: string | null }) {
@@ -14,6 +15,7 @@ export function AnnouncementActions({ id, title, body }: { id: string; title: st
   const [t, setT] = useState(title);
   const [b, setB] = useState(body ?? "");
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function save() {
     if (!t.trim()) return toast.error("Title is required");
@@ -28,7 +30,7 @@ export function AnnouncementActions({ id, title, body }: { id: string; title: st
   }
 
   async function del() {
-    if (busy || !confirm("Delete this announcement? Everyone loses it.")) return;
+    if (busy) return;
     setBusy(true);
     const { error } = await createClient().from("announcements").delete().eq("id", id);
     setBusy(false);
@@ -40,14 +42,21 @@ export function AnnouncementActions({ id, title, body }: { id: string; title: st
   if (editing) {
     return (
       <div className="mt-3 space-y-2 rounded-md border border-border bg-surface/40 p-3">
-        <div className="space-y-1.5">
-          <Label htmlFor={`ann-t-${id}`}>Title</Label>
-          <Input id={`ann-t-${id}`} value={t} onChange={(e) => setT(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`ann-b-${id}`}>Body</Label>
-          <Textarea id={`ann-b-${id}`} value={b} onChange={(e) => setB(e.target.value)} rows={3} />
-        </div>
+        <FloatInput
+          id={`ann-t-${id}`}
+          label="Title"
+          hint="The headline shown in the announcements feed."
+          value={t}
+          onChange={(e) => setT(e.target.value)}
+        />
+        <FloatTextarea
+          id={`ann-b-${id}`}
+          label="Body"
+          hint="The announcement text shown under the title."
+          value={b}
+          onChange={(e) => setB(e.target.value)}
+          rows={3}
+        />
         <div className="flex gap-2">
           <Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
           <Button size="sm" variant="outline" onClick={() => setEditing(false)} disabled={busy}><X className="size-4" /> Cancel</Button>
@@ -59,7 +68,16 @@ export function AnnouncementActions({ id, title, body }: { id: string; title: st
   return (
     <span className="flex shrink-0 gap-1">
       <Button size="sm" variant="outline" onClick={() => setEditing(true)} aria-label="Edit announcement"><Pencil className="size-3.5" /></Button>
-      <Button size="sm" variant="outline" onClick={del} aria-label="Delete announcement"><Trash2 className="size-3.5" /></Button>
+      <Button size="sm" variant="outline" onClick={() => setConfirmingDelete(true)} aria-label="Delete announcement"><Trash2 className="size-3.5" /></Button>
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title="Delete this announcement?"
+        description="Everyone loses it."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={async () => { await del(); }}
+      />
     </span>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Camera } from "lucide-react";
 import { avatarUrl } from "@/lib/utils";
+import { FileInput } from "@/components/ui/file-input";
 
-/** Avatar with hover-to-upload. employeeId omitted = self. */
+/** Avatar with a styled photo picker; uploads as soon as a file is chosen. employeeId omitted = self. */
 export function AvatarUpload({
   current,
   gender,
@@ -18,20 +18,21 @@ export function AvatarUpload({
   size?: number;
 }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0); // remount FileInput after each upload attempt
   const [src, setSrc] = useState(avatarUrl(current, gender));
 
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function upload(f: File) {
     setBusy(true);
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", f);
     if (employeeId) fd.append("employeeId", employeeId);
     const res = await fetch("/api/upload/avatar", { method: "POST", body: fd });
     const json = await res.json();
     setBusy(false);
+    setFile(null);
+    setFileKey((k) => k + 1);
     if (!res.ok) return toast.error(json.error ?? "Upload failed");
     setSrc(json.avatar_url);
     toast.success("Photo updated");
@@ -39,19 +40,23 @@ export function AvatarUpload({
   }
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="flex flex-col items-start gap-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" className="h-full w-full rounded-full border border-border object-cover" />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
+      <img
+        src={src}
+        alt=""
+        style={{ width: size, height: size }}
+        className="rounded-full border border-border object-cover"
+      />
+      <FileInput
+        key={fileKey}
+        file={file}
         disabled={busy}
-        className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white text-text-secondary shadow-card hover:text-brand-primary"
-        aria-label="Upload photo"
-      >
-        <Camera className="size-3.5" />
-      </button>
-      <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPick} />
+        accept="image/png,image/jpeg,image/webp"
+        placeholder={busy ? "Uploading…" : "Update photo"}
+        className="w-56"
+        onChange={(f) => { setFile(f); if (f) upload(f); }}
+      />
     </div>
   );
 }

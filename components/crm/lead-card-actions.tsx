@@ -42,7 +42,7 @@ export function LeadCardActions({
       toast.error(error ?? "Could not update the lead");
       return;
     }
-    toast.success(next === "closed" ? `Closed — ${company}` : "Lead updated");
+    toast.success(next === "closed" ? `Closed: ${company}` : "Lead updated");
     setPending(null);
     router.refresh();
   }

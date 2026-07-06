@@ -324,3 +324,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0042_merge_checkout_alerts.sql` — drops `company_settings.overtime_warning_hours`: the two-stage
   missed-checkout/overtime alerts merged into one threshold (`missed_checkout_grace_hours`) — one
   employee reminder + one admin feed alert. `alert_type` keeps 'overtime_warning' for legacy rows.
+
+- `0043_profile_numbers.sql` — **`dev_profiles.profile_no`** (int, unique, not null, default
+  `nextval('dev_profile_no_seq')` starting at 11; existing rows backfilled in creation order).
+  The memorable identity is "#14 Ali Ahmad · Backend" (number + name + stack); shown on the
+  profiles list/detail, pickers (`crmProfileOptions`) and the CRM calendar.
+
+- `0044_calendar_profile_label.sql` — `crm_calendar()` returns `profile_label` ("#no Name") for
+  viewers who can already expand the event (owner or crm.leads.all); the cross-BD masked view is
+  unchanged (time + stack + colour).

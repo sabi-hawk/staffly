@@ -53,7 +53,12 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
-  if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
+  // Owner scoping: BD Lead defaults to their OWN leads (can switch to any BD or "all");
+  // admins default to all. "all" is the explicit no-filter sentinel.
+  const viewer = await getCurrentProfile();
+  const isBdLeadRole = (viewer as any)?.app_role_key === "bd_lead";
+  const ownerParam = searchParams.owner ?? (isBdLeadRole ? viewer!.id : undefined);
+  if (ownerParam && ownerParam !== "all") query = query.eq("owner_bd_id", ownerParam);
   if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
   if (searchParams.q) query = query.ilike("company", `%${searchParams.q}%`);
   // Last-activity date range (by updated_at) — default last 30 days, like interviews/assessments.
@@ -61,12 +66,15 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   query = query.gte("updated_at", `${rFrom}T00:00:00`).lte("updated_at", `${rTo}T23:59:59`);
   const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(from, to);
 
-  const bds = await bdOptions(supabase);
   const list = (rows ?? []) as any[];
 
   // BDs can't see CLOSED (won) leads (0038 — details are admin-only), but their track record stays:
   // show the count of their own closed deals. Admins see closed leads in the grid, so no chip.
-  const me = await getCurrentProfile();
+  const me = viewer;
+  // The Owner filter only makes sense when you can see more than your own leads (owner ask,
+  // 2026-07-07): BD Lead + admin/super get it; a plain BD's grid is already scoped to self.
+  const canFilterOwner = hasPermP(me, PERM.crmLeadsAll);
+  const bds = canFilterOwner ? await bdOptions(supabase) : [];
   let closedCount = 0;
   if (!hasPermP(me, PERM.crmLeadsClosed)) {
     const { data: cc } = await supabase.rpc("my_closed_deals_count");
@@ -79,7 +87,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
         <span className="flex flex-wrap items-center gap-2 text-caption text-text-secondary">
           Updated {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)
           {closedCount > 0 && (
-            <Badge tone="success">🏆 {closedCount} deal{closedCount === 1 ? "" : "s"} closed — details with admin</Badge>
+            <Badge tone="success">🏆 {closedCount} deal{closedCount === 1 ? "" : "s"} closed. Details with admin</Badge>
           )}
         </span>
         <CrmDateFilter range={range} from={rFrom} to={rTo} />
@@ -88,7 +96,13 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
         <CrmFilterBar
           filters={[
             { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-            { key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) },
+            ...(canFilterOwner
+              ? [{
+                  key: "owner", label: "Owner",
+                  options: [...(isBdLeadRole ? [{ value: "all", label: "All BDs" }] : []), ...bds.map((b) => ({ value: b.id, label: b.label }))],
+                  ...(isBdLeadRole ? { defaultValue: viewer!.id } : {}),
+                }]
+              : []),
             { key: "profile", label: "Profile", options: profiles.map((p) => ({ value: p.id, label: p.label })) },
           ]}
           search={{ key: "q", placeholder: "Search company" }}

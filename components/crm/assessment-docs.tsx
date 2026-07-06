@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { FileInput } from "@/components/ui/file-input";
+import { FloatSelect } from "@/components/ui/field";
 
 export type AssessmentDoc = {
   id: string;
@@ -12,13 +15,13 @@ export type AssessmentDoc = {
   file_name: string | null;
 };
 
-const selectCls = "h-8 rounded-md border border-border bg-white px-2 text-xs";
-
 export function AssessmentDocs({ assessmentId, docs }: { assessmentId: string; docs: AssessmentDoc[] }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0); // remount FileInput after a successful upload
   const [docType, setDocType] = useState<"resume_cv" | "extra">("resume_cv");
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
@@ -33,12 +36,10 @@ export function AssessmentDocs({ assessmentId, docs }: { assessmentId: string; d
     if (!res.ok) return toast.error(json.error ?? "Upload failed");
     toast.success("Uploaded");
     setFile(null);
-    const el = document.getElementById(`adoc-${assessmentId}`) as HTMLInputElement | null;
-    if (el) el.value = "";
+    setFileKey((k) => k + 1);
     router.refresh();
   }
   async function del(id: string) {
-    if (!confirm("Delete this file?")) return;
     const res = await fetch(`/api/crm/assessment-documents/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("Deleted"); router.refresh(); } else toast.error("Failed");
   }
@@ -51,18 +52,41 @@ export function AssessmentDocs({ assessmentId, docs }: { assessmentId: string; d
           <span className="truncate">{d.label || d.file_name} <span className="text-caption text-text-secondary">({d.doc_type})</span></span>
           <span className="flex shrink-0 gap-1">
             <Button asChild variant="outline" size="sm"><a href={`/api/crm/assessment-documents/${d.id}`}><Download className="size-4" /></a></Button>
-            <Button variant="outline" size="sm" onClick={() => del(d.id)} aria-label="Delete"><Trash2 className="size-4" /></Button>
+            <Button variant="outline" size="sm" onClick={() => setPendingDelete(d.id)} aria-label="Delete"><Trash2 className="size-4" /></Button>
           </span>
         </div>
       ))}
       <form onSubmit={upload} className="flex items-center gap-2">
-        <input id={`adoc-${assessmentId}`} aria-label="Upload file" type="file" accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-xs" />
-        <select aria-label="Document type" className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume_cv" | "extra")}>
+        <FileInput
+          key={fileKey}
+          id={`adoc-${assessmentId}`}
+          file={file}
+          onChange={setFile}
+          accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp"
+          className="min-w-0 flex-1"
+        />
+        <FloatSelect
+          id={`adoc-type-${assessmentId}`}
+          label="Type"
+          hint="Resume/CV is the resume sent with this assessment; Extra is any other supporting file."
+          wrapClassName="w-40 shrink-0"
+          value={docType}
+          onChange={(e) => setDocType(e.target.value as "resume_cv" | "extra")}
+        >
           <option value="resume_cv">Resume/CV</option>
           <option value="extra">Extra</option>
-        </select>
+        </FloatSelect>
         <Button type="submit" size="sm" disabled={busy}>{busy ? "…" : "Upload"}</Button>
       </form>
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        title="Delete this file?"
+        description="The file will be removed from this assessment."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => del(pendingDelete!)}
+      />
     </div>
   );
 }

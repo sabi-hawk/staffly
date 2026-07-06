@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
-import { InfoHint } from "@/components/crm/info-hint";
+import { FloatInput } from "@/components/ui/field";
 
 // Company name is intentionally NOT editable — branding is fixed (owner, 2026-07-06); the stored
 // value still feeds the payslip letterhead.
@@ -57,12 +56,14 @@ export function SettingsEditor({ settings }: { settings: Record<string, any> }) 
   return (
     <form onSubmit={save} className="grid gap-4 sm:grid-cols-3">
       {FIELDS.map((f) => (
-        <div key={f.key} className="space-y-1.5">
-          <Label className="flex items-center gap-1.5">
-            {f.label} <InfoHint text={f.hint} label={f.label} />
-          </Label>
-          <Input type="number" value={form[f.key]} onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))} />
-        </div>
+        <FloatInput
+          key={f.key}
+          label={f.label}
+          hint={f.hint}
+          type="number"
+          value={form[f.key]}
+          onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+        />
       ))}
       <label className="flex items-start gap-2 rounded-md border border-border p-3 sm:col-span-3">
         <input type="checkbox" className="mt-0.5" checked={showSummary} onChange={(e) => setShowSummary(e.target.checked)} />

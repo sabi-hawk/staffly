@@ -79,7 +79,7 @@ export function CompensationEditor({
         <div className="space-y-1.5">
           <Label htmlFor="comp-base">Base salary (PKR)</Label>
           <Input id="comp-base" type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
-          <p className="text-caption text-text-secondary">Set 0 for commission-only staff — net pay is then just their compensation categories.</p>
+          <p className="text-caption text-text-secondary">Set 0 for commission-only staff; net pay is then just their compensation categories.</p>
         </div>
         <Button onClick={saveBase} disabled={savingBase}>{savingBase ? "Saving…" : "Update base salary"}</Button>
       </div>

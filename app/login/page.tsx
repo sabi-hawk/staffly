@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput } from "@/components/ui/field";
 import { Card } from "@/components/ui/card";
 
 const DEMOS = [
@@ -79,28 +79,24 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={signIn} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="identifier">Username or email</Label>
-              <Input
-                id="identifier"
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="first.last  or  you@softonoma.com"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <FloatInput
+              id="identifier"
+              label="Username or email"
+              hint="Your portal username (first.last) or your work email address. Either one signs you in."
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
+            <FloatInput
+              id="password"
+              label="Password"
+              hint="Your account password. Contact an administrator if you have lost it."
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && activeDemo === null ? <><Loader2 className="size-4 animate-spin" /> Signing in…</> : "Sign in"}
             </Button>

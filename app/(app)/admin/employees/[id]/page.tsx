@@ -225,7 +225,7 @@ export default async function EmployeeDetail({
         <Card>
           <CardHeader>
             <CardTitle>Private details</CardTitle>
-            <CardDescription>CNIC & bank/account details — visible to the employee and super admin only.</CardDescription>
+            <CardDescription>CNIC and bank/account details. Visible to the employee and super admin only.</CardDescription>
           </CardHeader>
           <CardContent><PrivateEditor employeeId={p.id} data={priv} /></CardContent>
         </Card>

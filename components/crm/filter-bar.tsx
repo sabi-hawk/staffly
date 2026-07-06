@@ -1,9 +1,11 @@
 "use client";
 import { usePathname, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { useFilterTransition } from "./filter-shell";
 
-export type FilterDef = { key: string; label: string; options: { value: string; label: string }[] };
+// defaultValue: shown when the param is absent (e.g. a BD Lead's Owner filter defaults to self);
+// when set, the caller must provide its own "all" style option and the param is always written.
+export type FilterDef = { key: string; label: string; options: { value: string; label: string }[]; defaultValue?: string };
 
 // URL-driven filter bar for CRM list pages: labelled selects + an optional text search. Each select
 // keeps its filter NAME visible ("Outcome" ▸ value) so a chosen value is never ambiguous. Navigation
@@ -13,9 +15,9 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
   const params = useSearchParams();
   const { nav } = useFilterTransition();
 
-  function setParam(k: string, v: string) {
+  function setParam(k: string, v: string, always = false) {
     const sp = new URLSearchParams(params.toString());
-    if (v) sp.set(k, v);
+    if (v || always) sp.set(k, v);
     else sp.delete(k);
     sp.delete("page");
     nav(`${pathname}?${sp.toString()}`);
@@ -41,15 +43,18 @@ export function CrmFilterBar({ filters, search }: { filters: FilterDef[]; search
             className={`inline-flex h-9 items-center gap-1.5 rounded-md border bg-white pl-2.5 pr-1 text-sm ${active ? "border-brand-primary/60" : "border-border"}`}
           >
             <span className="text-caption font-medium text-text-secondary">{f.label}</span>
-            <select
-              aria-label={f.label}
-              value={params.get(f.key) ?? ""}
-              onChange={(e) => setParam(f.key, e.target.value)}
-              className="h-full cursor-pointer border-0 bg-transparent pr-1 text-sm font-medium text-text-primary focus:outline-none"
-            >
-              <option value="">All</option>
-              {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            <span className="relative inline-flex h-full items-center">
+              <select
+                aria-label={f.label}
+                value={params.get(f.key) ?? f.defaultValue ?? ""}
+                onChange={(e) => setParam(f.key, e.target.value, !!f.defaultValue)}
+                className="h-full cursor-pointer appearance-none border-0 bg-transparent pr-6 text-sm font-medium text-text-primary focus:outline-none"
+              >
+                {!f.defaultValue && <option value="">All</option>}
+                {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-1.5 size-3.5 text-text-secondary" />
+            </span>
           </label>
         );
       })}

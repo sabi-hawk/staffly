@@ -31,7 +31,7 @@ export default async function LeavesPage() {
       {isDealDev ? (
         <div className="rounded-lg border border-border bg-surface/50 px-4 py-3 text-sm text-text-secondary">
           <span className="font-medium text-text-primary">You&apos;re assigned to a client deal.</span> Your leave is
-          governed by the company you work for — so we don&apos;t track annual/casual balances for you here. Still log
+          governed by the company you work for, so we don&apos;t track annual/casual balances for you here. Still log
           your leave below (with the dates and reason) so we have it on record; it goes to admin for confirmation.
         </div>
       ) : (

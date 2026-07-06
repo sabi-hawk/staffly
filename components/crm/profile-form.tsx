@@ -1,25 +1,28 @@
 "use client";
+// Dev-profile create/edit form — the reference implementation of the platform's
+// floating-label field convention (components/ui/field.tsx).
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { Opt } from "@/lib/crm/options";
 
 export type { Opt }; // re-export for existing importers
-
-const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
 
 export function ProfileForm({
   id,
   stacks,
   owners,
   initial,
+  onSaved,
 }: {
   id?: string;
   stacks: Opt[];
   owners: Opt[];
   initial?: Partial<Record<string, string | null>>;
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
@@ -47,60 +50,90 @@ export function ProfileForm({
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed to save");
     toast.success(id ? "Profile saved" : "Profile created");
+    if (onSaved) {
+      onSaved();
+      router.refresh();
+      return;
+    }
     router.push(id ? `/crm/profiles/${id}` : `/crm/profiles/${json.id}`);
     router.refresh();
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-name">Name *</Label>
-        <Input id="profile-name" required value={form.name} onChange={(e) => set("name", e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-stack">Stack</Label>
+    <form onSubmit={submit} className="grid gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+      <FloatInput
+        id="profile-name"
+        label="Name *"
+        hint="The persona's display name. Duplicates are fine: the profile number keeps them apart."
+        required
+        value={form.name}
+        onChange={(e) => set("name", e.target.value)}
+      />
+      <div>
         {/* pick an existing stack or type a new one (created on save) */}
-        <Input
+        <FloatInput
           id="profile-stack"
+          label="Stack"
+          hint="Pick an existing stack or type a new one; new stacks are created on save."
           list="profile-stack-options"
           value={form.stack}
           onChange={(e) => set("stack", e.target.value)}
-          placeholder="Pick or type a stack…"
         />
         <datalist id="profile-stack-options">
           {stacks.map((s) => <option key={s.id} value={s.label} />)}
         </datalist>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-owner">Owner (BD)</Label>
-        <select id="profile-owner" className={selectCls} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
-          <option value="">Unassigned</option>
-          {owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-        </select>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-email">Email</Label>
-        <Input id="profile-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-mobile">Mobile</Label>
-        <Input id="profile-mobile" value={form.mobile} onChange={(e) => set("mobile", e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-dob">Date of birth</Label>
-        <Input id="profile-dob" type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="profile-status">Status</Label>
-        <select id="profile-status" className={`${selectCls} capitalize`} value={form.status} onChange={(e) => set("status", e.target.value)}>
-          <option value="active">active</option>
-          <option value="inactive">inactive</option>
-        </select>
-      </div>
-      <div className="space-y-1.5 sm:col-span-2">
-        <Label htmlFor="profile-notes">Notes (e.g. &quot;LinkedIn banned&quot;)</Label>
-        <Input id="profile-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-      </div>
+      <FloatSelect
+        id="profile-owner"
+        label="Owner (BD)"
+        hint="The BD who runs this profile's pipeline. Only they (and BD Leads or admins) see its leads."
+        value={form.owner_bd_id}
+        onChange={(e) => set("owner_bd_id", e.target.value)}
+      >
+        <option value="">Unassigned</option>
+        {owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </FloatSelect>
+      <FloatInput
+        id="profile-email"
+        label="Email"
+        hint="The email address used when applying as this profile."
+        type="email"
+        value={form.email}
+        onChange={(e) => set("email", e.target.value)}
+      />
+      <FloatInput
+        id="profile-mobile"
+        label="Mobile"
+        hint="The phone number clients or recruiters may be given for this profile."
+        value={form.mobile}
+        onChange={(e) => set("mobile", e.target.value)}
+      />
+      <DatePicker
+        id="profile-dob"
+        label="Date of birth"
+        hint="Used when a client form asks for the persona's age or DOB."
+        value={form.dob}
+        onChange={(v) => set("dob", v)}
+      />
+      <FloatSelect
+        id="profile-status"
+        label="Status"
+        hint="Inactive profiles stay in the archive but are hidden from day-to-day pickers."
+        value={form.status}
+        onChange={(e) => set("status", e.target.value)}
+        className="capitalize"
+      >
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </FloatSelect>
+      <FloatInput
+        id="profile-notes"
+        label="Notes"
+        hint="Internal warnings or context for BDs, e.g. LinkedIn banned. Shown only here, never on the profile banner."
+        value={form.notes}
+        onChange={(e) => set("notes", e.target.value)}
+        wrapClassName="sm:col-span-2"
+      />
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save profile" : "Create profile"}</Button>
       </div>

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput } from "@/components/ui/field";
 
 export type PermRow = { key: string; module: string; label: string; description: string | null };
 
@@ -58,18 +58,28 @@ export function RoleEditor({
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="role-name">Name *</Label>
-          <Input id="role-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Recruiter" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="role-desc">Description</Label>
-          <Input id="role-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="One line on what this role is" />
-        </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="role-reason">Reason it exists</Label>
-          <Input id="role-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why this role was created — kept as its permanent note" />
-        </div>
+        <FloatInput
+          id="role-name"
+          label="Name *"
+          hint="The role's display name, e.g. Recruiter."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <FloatInput
+          id="role-desc"
+          label="Description"
+          hint="One line on what this role is for, shown in the roles list."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <FloatInput
+          id="role-reason"
+          label="Reason it exists"
+          hint="Why this role was created. Kept as the role's permanent note."
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          wrapClassName="sm:col-span-2"
+        />
       </div>
 
       <div className="space-y-3">
@@ -103,7 +113,7 @@ export function RoleEditor({
       <div className="flex items-center gap-2">
         <Button onClick={save} disabled={busy}>{busy ? "Saving…" : roleId ? "Save role" : "Create role"}</Button>
         {onDone && <Button variant="outline" onClick={onDone} disabled={busy}>Cancel</Button>}
-        {isSystem && <span className="text-caption text-text-secondary">System role — grants and text are editable; it can't be deleted.</span>}
+        {isSystem && <span className="text-caption text-text-secondary">System role. Grants and text are editable; it can't be deleted.</span>}
       </div>
     </div>
   );

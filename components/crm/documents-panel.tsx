@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Eye, Star, Trash2, Pencil, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
+import { FileInput } from "@/components/ui/file-input";
+import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { formatCrmDate } from "@/lib/utils";
 
 export type Doc = {
@@ -19,8 +21,6 @@ export type Doc = {
   deleted_at?: string | null;
   deleted_by_name?: string | null;
 };
-
-const selectCls = "h-9 rounded-md border border-border bg-white px-3 text-sm";
 
 /** Only PDFs and images render in the browser iframe; DOC/DOCX must be downloaded. */
 const canPreview = (d: Doc) => /\.(pdf|png|jpe?g|webp)$/i.test(d.file_name ?? "");
@@ -127,6 +127,10 @@ export function DocumentsPanel({
   const [note, setNote] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
   const [viewing, setViewing] = useState<Doc | null>(null);
+  const [fileKey, setFileKey] = useState(0); // remount FileInput after a successful upload
+  const [pendingSoftDelete, setPendingSoftDelete] = useState<string | null>(null);
+  const [pendingHardDelete, setPendingHardDelete] = useState<string | null>(null);
+  const [noteDoc, setNoteDoc] = useState<Doc | null>(null);
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
@@ -147,8 +151,7 @@ export function DocumentsPanel({
     setLabel("");
     setNote("");
     setIsPrimary(false);
-    const input = document.getElementById("crm-doc-file") as HTMLInputElement | null;
-    if (input) input.value = "";
+    setFileKey((k) => k + 1);
     router.refresh();
   }
 
@@ -162,16 +165,11 @@ export function DocumentsPanel({
     else { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Failed"); }
   }
   const setPrimary = (id: string) => act(id, { action: "primary" }, "Primary resume set");
-  const softDelete = (id: string) => { if (confirm("Delete this document? An admin can still recover it from history.")) act(id, { action: "delete" }, "Deleted"); };
-  function editNote(d: Doc) {
-    const next = prompt("Note (what this document is for)", d.note ?? "");
-    if (next === null) return; // cancelled
-    act(d.id, { action: "note", note: next.trim() || null }, "Note saved");
-  }
+  const softDelete = (id: string) => act(id, { action: "delete" }, "Deleted");
+  const saveNote = (id: string, next: string) => act(id, { action: "note", note: next || null }, "Note saved");
 
   // Admin-only HARD delete from history (removes the storage object too).
   async function hardDelete(id: string) {
-    if (!confirm("Permanently delete this document? This removes the file and cannot be undone.")) return;
     const res = await fetch(`/api/crm/documents/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("Permanently deleted"); router.refresh(); }
     else { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Failed"); }
@@ -185,47 +183,61 @@ export function DocumentsPanel({
       <div className="space-y-2">
         <div className="text-caption font-medium text-text-secondary">Resumes</div>
         {resumes.length === 0 && <div className="text-caption text-text-secondary">No resumes yet.</div>}
-        {resumes.map((d) => <DocRow key={d.id} d={d} canEdit={canEdit} onView={setViewing} onPrimary={setPrimary} onNote={editNote} onDelete={softDelete} />)}
+        {resumes.map((d) => <DocRow key={d.id} d={d} canEdit={canEdit} onView={setViewing} onPrimary={setPrimary} onNote={setNoteDoc} onDelete={setPendingSoftDelete} />)}
       </div>
       <div className="space-y-2">
         <div className="text-caption font-medium text-text-secondary">Cover letters</div>
         {covers.length === 0 && <div className="text-caption text-text-secondary">No cover letters.</div>}
-        {covers.map((d) => <DocRow key={d.id} d={d} canEdit={canEdit} onView={setViewing} onPrimary={setPrimary} onNote={editNote} onDelete={softDelete} />)}
+        {covers.map((d) => <DocRow key={d.id} d={d} canEdit={canEdit} onView={setViewing} onPrimary={setPrimary} onNote={setNoteDoc} onDelete={setPendingSoftDelete} />)}
       </div>
 
       {canEdit && (
-        <form onSubmit={upload} className="flex flex-wrap items-end gap-2 border-t border-border pt-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="crm-doc-file">File</Label>
-            <input
-              id="crm-doc-file"
-              type="file"
-              accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="crm-doc-type">Type</Label>
-            <select id="crm-doc-type" className={selectCls} value={docType} onChange={(e) => setDocType(e.target.value as "resume" | "cover_letter")}>
+        <form onSubmit={upload} className="space-y-3 rounded-lg border border-border bg-surface/40 p-4">
+          <div className="text-sm font-semibold text-text-primary">Add a document</div>
+          <FileInput
+            key={fileKey}
+            id="crm-doc-file"
+            file={file}
+            onChange={setFile}
+            accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp"
+            className="h-11"
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <FloatSelect
+              id="crm-doc-type"
+              label="Type"
+              hint="Resumes can be marked primary; the primary one is what gets attached by default."
+              value={docType}
+              onChange={(e) => setDocType(e.target.value as "resume" | "cover_letter")}
+            >
               <option value="resume">Resume</option>
               <option value="cover_letter">Cover letter</option>
-            </select>
+            </FloatSelect>
+            <FloatInput
+              id="crm-doc-label"
+              label="Label"
+              hint="A short name BDs recognise at a glance, e.g. Full Stack."
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+            <FloatInput
+              id="crm-doc-note"
+              label="Note (optional)"
+              hint="What this version is for, e.g. concise one-pager for quick applications."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="crm-doc-label">Label</Label>
-            <Input id="crm-doc-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Full Stack" className="w-40" />
+          <div className="flex items-center justify-between gap-3">
+            {docType === "resume" ? (
+              <label className="flex items-center gap-1.5 text-sm text-text-primary">
+                <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} /> Make this the primary resume
+              </label>
+            ) : <span />}
+            <Button type="submit" size="sm" disabled={busy || !file}>
+              {busy ? <><Loader2 className="size-4 animate-spin" /> Uploading…</> : "Upload"}
+            </Button>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="crm-doc-note">Note</Label>
-            <Input id="crm-doc-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What it's for (optional)" className="w-48" />
-          </div>
-          {docType === "resume" && (
-            <label className="flex h-9 items-center gap-1.5 text-sm">
-              <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} /> Primary
-            </label>
-          )}
-          <Button type="submit" size="sm" disabled={busy}>{busy ? <><Loader2 className="size-4 animate-spin" /> Uploading…</> : "Upload"}</Button>
         </form>
       )}
 
@@ -247,7 +259,7 @@ export function DocumentsPanel({
                 <Button asChild variant="outline" size="sm">
                   <a href={`/api/crm/documents/${d.id}/download`} aria-label="Download"><Download className="size-4" /></a>
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => hardDelete(d.id)} aria-label="Permanently delete"><Trash2 className="size-4 text-danger" /></Button>
+                <Button variant="outline" size="sm" onClick={() => setPendingHardDelete(d.id)} aria-label="Permanently delete"><Trash2 className="size-4 text-danger" /></Button>
               </div>
             </div>
           ))}
@@ -255,6 +267,35 @@ export function DocumentsPanel({
       )}
 
       {viewing && <ViewerModal doc={viewing} onClose={() => setViewing(null)} />}
+
+      <ConfirmDialog
+        open={!!pendingSoftDelete}
+        onOpenChange={(o) => { if (!o) setPendingSoftDelete(null); }}
+        title="Delete this document?"
+        description="An admin can still recover it from history."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => softDelete(pendingSoftDelete!)}
+      />
+      <ConfirmDialog
+        open={!!pendingHardDelete}
+        onOpenChange={(o) => { if (!o) setPendingHardDelete(null); }}
+        title="Permanently delete this document?"
+        description="This removes the file and cannot be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => hardDelete(pendingHardDelete!)}
+      />
+      <ReasonDialog
+        open={!!noteDoc}
+        onOpenChange={(o) => { if (!o) setNoteDoc(null); }}
+        title="Document note"
+        description="What this document is for."
+        label="Note"
+        initialValue={noteDoc?.note ?? ""}
+        submitLabel="Save note"
+        onSubmit={(v) => saveNote(noteDoc!.id, v)}
+      />
     </div>
   );
 }

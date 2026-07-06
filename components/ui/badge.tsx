@@ -5,12 +5,12 @@ import { formatHours } from "@/lib/utils";
 type Tone = "success" | "warning" | "danger" | "neutral" | "info" | "brand";
 
 const tones: Record<Tone, string> = {
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
-  neutral: "bg-gray-100 text-text-secondary",
-  info: "bg-blue-50 text-blue-600",
-  brand: "bg-brand-light text-brand-primary",
+  success: "border-success/40 bg-success/10 text-success",
+  warning: "border-warning/40 bg-warning/10 text-warning",
+  danger: "border-danger/40 bg-danger/10 text-danger",
+  neutral: "border-border bg-gray-50 text-text-secondary",
+  info: "border-blue-200 bg-blue-50 text-blue-600",
+  brand: "border-brand-primary/30 bg-brand-light text-brand-primary",
 };
 
 export function Badge({
@@ -25,7 +25,9 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-caption font-medium",
+        // sleek convention (owner, 2026-07-07): subtle rounding, coloured border + translucent fill,
+        // Capitalised label (CSS capitalize fixes lowercase statuses like "approved" everywhere)
+        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-caption font-medium capitalize",
         tones[tone],
         className
       )}
@@ -56,7 +58,7 @@ export function StatusBadge({
       return <Badge tone="warning">Late</Badge>;
     case "awaiting":
       return (
-        <Badge tone="neutral" className="ring-1 ring-border bg-transparent">
+        <Badge tone="neutral" className="bg-transparent">
           Awaiting
         </Badge>
       );

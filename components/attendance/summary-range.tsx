@@ -2,6 +2,7 @@
 // Date-range picker for the employee attendance summary. Presets: This month (default) / Last 3 months.
 // Admins additionally get a Custom range (any from–to). Writes ?range&from&to for the server page.
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import type { RangeKey } from "@/lib/time";
 
@@ -40,11 +41,11 @@ export function SummaryRange({ range, from, to, allowCustom, minFrom }: { range:
       </div>
       {allowCustom && range === "custom" && (
         <div className="flex items-center gap-1.5">
-          <input type="date" value={from} min={minFrom} max={to || todayStr} onChange={(e) => nav({ range: "custom", from: e.target.value, to })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
+          <DatePicker value={from} min={minFrom} max={to || todayStr} onChange={(v) => nav({ range: "custom", from: v, to })}
+            placeholder="From" className="h-8 w-36 px-2 text-caption" />
           <span className="text-caption text-text-secondary">–</span>
-          <input type="date" value={to} min={from || minFrom} max={todayStr} onChange={(e) => nav({ range: "custom", from, to: e.target.value })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
+          <DatePicker value={to} min={from || minFrom} max={todayStr} onChange={(v) => nav({ range: "custom", from, to: v })}
+            placeholder="To" className="h-8 w-36 px-2 text-caption" />
         </div>
       )}
     </div>

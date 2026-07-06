@@ -39,7 +39,7 @@ export default async function AdminLeavesPage({
       <Card>
         <CardHeader>
           <CardTitle>Add / convert leave</CardTitle>
-          <CardDescription>Record a leave for an employee — also used to convert a missing day into casual / unpaid / paid.</CardDescription>
+          <CardDescription>Record a leave for an employee. Also converts a missing day into casual, unpaid or paid.</CardDescription>
         </CardHeader>
         <CardContent><AddLeave employees={employees ?? []} /></CardContent>
       </Card>

@@ -4,6 +4,7 @@
 // renders the resolved "from → to (inclusive)" range to the LEFT of this. Writes ?range (+ from/to for
 // custom) and navigates via the shared FilterShell transition (spinner over the grid).
 import { usePathname, useSearchParams } from "next/navigation";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import type { RangeKey } from "@/lib/time";
 import { useFilterTransition } from "./filter-shell";
@@ -36,11 +37,11 @@ export function CrmDateFilter({ range, from, to }: { range: RangeKey; from: stri
     <div className="flex flex-wrap items-center gap-3">
       {range === "custom" && (
         <div className="flex items-center gap-1.5">
-          <input type="date" value={from} max={to || undefined} onChange={(e) => go({ range: "custom", from: e.target.value, to })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
+          <DatePicker value={from} max={to || undefined} onChange={(v) => go({ range: "custom", from: v, to })}
+            placeholder="From" className="h-8 w-36 px-2 text-caption" />
           <span className="text-caption text-text-secondary">–</span>
-          <input type="date" value={to} min={from || undefined} onChange={(e) => go({ range: "custom", from, to: e.target.value })}
-            className="h-8 rounded-md border border-border bg-white px-2 text-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" />
+          <DatePicker value={to} min={from || undefined} onChange={(v) => go({ range: "custom", from, to: v })}
+            placeholder="To" className="h-8 w-36 px-2 text-caption" />
         </div>
       )}
       <div className="inline-flex rounded-lg border border-border bg-surface p-0.5">

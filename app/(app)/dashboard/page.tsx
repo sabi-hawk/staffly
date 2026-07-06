@@ -98,7 +98,7 @@ export default async function EmployeeDashboard() {
               ))}
               {(recent ?? []).length === 0 && (
                 <TR>
-                  <TD colSpan={5} className="py-6 text-center text-text-secondary">No attendance yet — check in to start.</TD>
+                  <TD colSpan={5} className="py-6 text-center text-text-secondary">No attendance yet. Check in to start.</TD>
                 </TR>
               )}
             </TBody>

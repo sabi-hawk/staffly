@@ -6,8 +6,12 @@ export type Opt = { id: string; label: string };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function crmProfileOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  const { data } = await supabase.from("dev_profiles").select("id, name, stack:dev_stacks(name)").order("name");
-  return (data ?? []).map((p: any) => ({ id: p.id, label: p.stack?.name ? `${p.name} — ${p.stack.name}` : p.name }));
+  // "#14 Ali Ahmad · Backend" — the number + name + stack is the full memorable identity (0043)
+  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, stack:dev_stacks(name)").order("profile_no");
+  return (data ?? []).map((p: any) => ({
+    id: p.id,
+    label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}`,
+  }));
 }
 
 export async function developerOptions(supabase: SupabaseClient): Promise<Opt[]> {

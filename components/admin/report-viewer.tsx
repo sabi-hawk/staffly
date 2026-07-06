@@ -3,7 +3,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Label } from "@/components/ui/input";
+import { FloatSelect } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatCard } from "@/components/ui/stat-card";
@@ -63,14 +65,18 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
         <CardHeader><CardTitle>Date-range report</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="report-employee">Employee</Label>
-              <select id="report-employee" value={id} onChange={(e) => setId(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
-                {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}{e.employee_code ? ` (#${e.employee_code})` : ""}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="report-from">From</Label><Input id="report-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label htmlFor="report-to">To</Label><Input id="report-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            <FloatSelect
+              id="report-employee"
+              label="Employee"
+              hint="The employee the report is generated for."
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              wrapClassName="w-64"
+            >
+              {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}{e.employee_code ? ` (#${e.employee_code})` : ""}</option>)}
+            </FloatSelect>
+            <DatePicker id="report-from" label="From" hint="Start of the report range." value={from} onChange={setFrom} className="w-40" />
+            <DatePicker id="report-to" label="To" hint="End of the report range." value={to} onChange={setTo} className="w-40" />
             <Button onClick={run} disabled={busy}>{busy ? "Running…" : "Run report"}</Button>
             {report && <Button variant="secondary" onClick={exportCsv}>Export CSV</Button>}
           </div>

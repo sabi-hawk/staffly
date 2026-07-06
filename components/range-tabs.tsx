@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import { RANGE_LABELS, type RangeKey } from "@/lib/time";
 
@@ -37,9 +37,9 @@ export function RangeTabs({ range, from, to }: { range: RangeKey; from: string; 
       </div>
       {range === "custom" && (
         <div className="flex items-end gap-2">
-          <Input type="date" defaultValue={from} onChange={(e) => set({ from: e.target.value })} className="w-40" />
+          <DatePicker value={from} onChange={(v) => set({ from: v })} className="w-40" />
           <span className="pb-2 text-text-secondary">→</span>
-          <Input type="date" defaultValue={to} onChange={(e) => set({ to: e.target.value })} className="w-40" />
+          <DatePicker value={to} onChange={(v) => set({ to: v })} className="w-40" />
         </div>
       )}
     </div>

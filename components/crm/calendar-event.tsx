@@ -8,7 +8,7 @@ import { bdColor } from "@/lib/crm/bd-color";
 
 export type CalEvent = {
   id: string; interview_at: string; round: string | null; status: string | null; outcome: string | null;
-  owner_bd_id: string | null; owner_name: string | null; stack: string | null;
+  owner_bd_id: string | null; owner_name: string | null; stack: string | null; profile_label: string | null;
   company: string | null; job_title: string | null; developer: string | null; can_expand: boolean; is_mine: boolean;
 };
 
@@ -41,6 +41,7 @@ export function CalendarEvent({ ev }: { ev: CalEvent }) {
               <div className="flex justify-between gap-3"><dt className="text-text-secondary">When</dt><dd>{new Date(ev.interview_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi", dateStyle: "medium", timeStyle: "short" })}</dd></div>
               {ev.company && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Company</dt><dd>{ev.company}</dd></div>}
               {ev.job_title && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Role</dt><dd className="text-right">{ev.job_title}</dd></div>}
+              {ev.profile_label && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Profile</dt><dd>{ev.profile_label}</dd></div>}
               {ev.stack && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Stack</dt><dd>{ev.stack}</dd></div>}
               {ev.round && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Round</dt><dd>{ev.round}</dd></div>}
               {ev.developer && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Developer</dt><dd>{ev.developer}</dd></div>}

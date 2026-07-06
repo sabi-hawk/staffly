@@ -72,7 +72,7 @@ export function LeadRichSection({
         ) : hasContent ? (
           <div className={`text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: valueHtml as string }} />
         ) : (
-          <p className="text-sm text-text-secondary">Nothing yet — click <span className="font-medium">Add</span> to fill this in.</p>
+          <p className="text-sm text-text-secondary">Nothing yet. Click <span className="font-medium">Add</span> to fill this in.</p>
         )}
       </CardContent>
     </Card>

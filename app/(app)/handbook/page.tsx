@@ -16,12 +16,12 @@ export default function HandbookPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h2 className="text-h1 text-text-primary">Employee Handbook</h2>
-        <p className="text-caption text-text-secondary">Softonoma — current company policies. This is a living document and may be updated.</p>
+        <p className="text-caption text-text-secondary">Softonoma company policies. This is a living document and may be updated.</p>
       </div>
 
       <Section title="Working hours & attendance">
         <ul>
-          <li>Check in when you start and check out when you leave. You may check out and back in for <strong>breaks</strong> during the day — your timer pauses on checkout and resumes on the next check-in.</li>
+          <li>Check in when you start and check out when you leave. You may check out and back in for <strong>breaks</strong> during the day. Your timer pauses on checkout and resumes on the next check-in.</li>
           <li>Your day's total is the <strong>sum of your worked sessions</strong> (breaks are not counted).</li>
           <li><strong>Deficit</strong> (short of your shift) and <strong>extra</strong> hours are tracked per day. Extra hours on one day never cancel a shortfall on another day (non-netting).</li>
           <li>Forgot to check out? An admin can correct your time, and you can edit your own checkout for the current day.</li>
@@ -39,8 +39,8 @@ export default function HandbookPage() {
 
       <Section title="Casual leave">
         <ul>
-          <li><strong>1 day per month</strong> — submitted for admin approval like all leave.</li>
-          <li>Casual leave is <strong>use-it-or-lose-it</strong> — if you don't use it in a month, it does <strong>not</strong> carry over.</li>
+          <li><strong>1 day per month</strong>, submitted for admin approval like all leave.</li>
+          <li>Casual leave is <strong>use-it-or-lose-it</strong>: if you don't use it in a month, it does <strong>not</strong> carry over.</li>
         </ul>
       </Section>
 
@@ -61,10 +61,10 @@ export default function HandbookPage() {
 
       <Section title="Developers assigned to a client deal">
         <ul>
-          <li>Some engineering-department developers are <strong>assigned to a specific client deal</strong> and work as part of that company&apos;s team. Not every engineer is deal-assigned — some assist a lead developer internally and follow the company leave policy above.</li>
-          <li>For a deal-assigned developer, <strong>leave is governed by the client company</strong> you work for — so our standard annual/casual balances do <strong>not</strong> apply to you and are not shown in your portal.</li>
+          <li>Some engineering-department developers are <strong>assigned to a specific client deal</strong> and work as part of that company&apos;s team. Not every engineer is deal-assigned; some assist a lead developer internally and follow the company leave policy above.</li>
+          <li>For a deal-assigned developer, <strong>leave is governed by the client company</strong> you work for, so our standard annual/casual balances do <strong>not</strong> apply to you and are not shown in your portal.</li>
           <li>When you take leave, <strong>first get it approved by the client company</strong> you&apos;re working with. Then log it here (dates + type + reason) purely so we have it on record; the request is confirmed by an admin.</li>
-          <li>Annual leave in particular depends on the deal — if you&apos;re the only developer on a deal, time off has to be cleared with that company before it can be recorded.</li>
+          <li>Annual leave in particular depends on the deal: if you&apos;re the only developer on a deal, time off has to be cleared with that company before it can be recorded.</li>
         </ul>
       </Section>
 

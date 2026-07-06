@@ -86,11 +86,11 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
         </div>
         <div className="flex gap-2">
           {working ? (
-            <Button onClick={() => act("/api/attendance/check-out", "Checked out")} disabled={busy} size="lg" variant="danger">
+            <Button onClick={() => act("/api/attendance/check-out", "Checked out")} disabled={busy} size="lg" variant="danger" className="border-0 bg-danger text-white hover:bg-danger/90">
               {busy ? <><Loader2 className="size-4 animate-spin" /> Checking out…</> : "Check out"}
             </Button>
           ) : (
-            <Button onClick={() => act("/api/attendance/check-in", "Checked in")} disabled={busy} size="lg" variant="success">
+            <Button onClick={() => act("/api/attendance/check-in", "Checked in")} disabled={busy} size="lg" variant="success" className="border-0 bg-success text-white hover:bg-success/90">
               {busy ? <><Loader2 className="size-4 animate-spin" /> Checking in…</> : today.sessions.length ? "Resume (check in)" : "Check in"}
             </Button>
           )}

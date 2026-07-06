@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Input, Label } from "@/components/ui/input";
+import { Label } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import { RANGE_LABELS, type RangeKey } from "@/lib/time";
 
@@ -71,11 +72,11 @@ export function AttendanceControls({
         <div className="flex items-end gap-2">
           <div className="space-y-1.5">
             <Label htmlFor="att-from" className="block text-caption font-medium text-text-primary">From</Label>
-            <Input id="att-from" type="date" defaultValue={from} onChange={(e) => set({ from: e.target.value })} />
+            <DatePicker id="att-from" value={from} onChange={(v) => set({ from: v })} className="w-40" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="att-to" className="block text-caption font-medium text-text-primary">To</Label>
-            <Input id="att-to" type="date" defaultValue={to} onChange={(e) => set({ to: e.target.value })} />
+            <DatePicker id="att-to" value={to} onChange={(v) => set({ to: v })} className="w-40" />
           </div>
         </div>
       )}

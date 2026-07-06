@@ -11,8 +11,8 @@ const buttonVariants = cva(
         default: "bg-brand-primary text-white hover:bg-brand-primary/90",
         secondary: "bg-white border border-border text-text-primary hover:bg-surface",
         ghost: "hover:bg-surface text-text-primary",
-        danger: "bg-danger text-white hover:bg-danger/90",
-        success: "bg-success text-white hover:bg-success/90",
+        danger: "border border-danger/50 bg-danger/10 text-danger hover:bg-danger/20",
+        success: "border border-success/50 bg-success/10 text-success hover:bg-success/20",
         outline: "border border-border bg-transparent hover:bg-surface",
       },
       size: {

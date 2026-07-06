@@ -26,7 +26,7 @@ export default async function ProductDocPage() {
       <div>
         <h2 className="text-h1 text-text-primary">Product documentation</h2>
         <p className="text-caption text-text-secondary">
-          Softonoma Employee Portal — what it is, the roles, and the business rules applied today. A living
+          Softonoma Employee Portal: what it is, the roles, and the business rules applied today. A living
           document (super-admin only). Updated as the product evolves.
         </p>
       </div>
@@ -40,7 +40,7 @@ export default async function ProductDocPage() {
       </Section>
 
       <Section title="Roles & access">
-        <p>Access is layered — middleware (route gating) + database RLS + UI. Roles:</p>
+        <p>Access is layered: middleware (route gating) + database RLS + UI. Roles:</p>
         <h3>Employee</h3>
         <ul>
           <li>Own dashboard, attendance (check-in/out, multi-session, daily task summary), leaves, calendar, handbook, profile.</li>
@@ -53,7 +53,7 @@ export default async function ProductDocPage() {
         </ul>
         <h3>BD Lead</h3>
         <ul>
-          <li>An elevated BD (`is_bd_lead`): sees & manages <strong>all</strong> BDs&apos; CRM data — a senior reviewing juniors&apos; work.</li>
+          <li>An elevated BD (`is_bd_lead`): sees & manages <strong>all</strong> BDs&apos; CRM data, like a senior reviewing juniors&apos; work.</li>
         </ul>
         <h3>Developer</h3>
         <ul>
@@ -63,7 +63,7 @@ export default async function ProductDocPage() {
         <ul>
           <li>A developer flagged `is_deal_developer` who works a <strong>client deal</strong> as part of that company&apos;s team.</li>
           <li>Their <strong>leave is governed by the client company</strong>, so we hide our annual/casual balances from them; leave requests are <strong>record-only</strong> (logged, confirmed by admin), bypassing our quotas/caps.</li>
-          <li>Sees the <strong>name</strong> of the deal(s) they&apos;re on — never the financials.</li>
+          <li>Sees the <strong>name</strong> of the deal(s) they&apos;re on, never the financials.</li>
           <li>Not every engineer is deal-assigned; some just assist a lead developer and follow the normal company policy.</li>
         </ul>
         <h3>Admin / HR</h3>
@@ -92,7 +92,7 @@ export default async function ProductDocPage() {
           <li><strong>Casual:</strong> 1 per month (no carry), auto-approved; only one casual request per month.</li>
           <li><strong>Unpaid:</strong> unlimited, recorded, deducted.</li>
           <li><strong>Probation</strong> (3 months): no annual; 1 casual for the whole probation; the rest unpaid.</li>
-          <li><strong>Deal-assigned developers:</strong> our balances/caps don&apos;t apply — requests are recorded as pending for admin confirmation (client company governs their leave).</li>
+          <li><strong>Deal-assigned developers:</strong> our balances/caps don&apos;t apply; requests are recorded as pending for admin confirmation (client company governs their leave).</li>
         </ul>
       </Section>
 
@@ -100,7 +100,7 @@ export default async function ProductDocPage() {
         <ul>
           <li>CRM Leads is one hub keyed by company (Leads cards / Interviews / Assessments), with per-lead documents, job description, BD notes, and company contacts.</li>
           <li>Dev-profile documents (resumes/cover letters): the owning BD manages them; admins keep a recoverable history.</li>
-          <li><strong>Deals are super-admin only</strong> — name, financials (salary, payment), documents, and developer assignments. Admin/HR can&apos;t see deal details; assigned developers see only the deal name.</li>
+          <li><strong>Deals are super-admin only</strong>: name, financials (salary, payment), documents, and developer assignments. Admin/HR can&apos;t see deal details; assigned developers see only the deal name.</li>
         </ul>
       </Section>
 

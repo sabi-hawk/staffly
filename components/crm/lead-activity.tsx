@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatCrmDatetime as fmt } from "@/lib/utils";
 import type { Interview, Assessment } from "@/lib/types";
@@ -44,8 +45,9 @@ export function LeadActivity({
   const firstDeveloper =
     interviews.find((i) => i.round === "1st")?.given_by ?? interviews[0]?.given_by ?? null;
 
+  const [pendingDelete, setPendingDelete] = useState<{ kind: "interviews" | "assessments"; id: string } | null>(null);
+
   async function del(kind: "interviews" | "assessments", id: string) {
-    if (!confirm("Delete this record?")) return;
     const res = await fetch(`/api/crm/${kind}/${id}`, { method: "DELETE" });
     if (res.ok) { toast.success("Deleted"); router.refresh(); } else toast.error("Failed");
   }
@@ -78,7 +80,7 @@ export function LeadActivity({
                 </div>
                 <span className="flex shrink-0 gap-1">
                   <Button variant="outline" size="sm" onClick={() => setIEdit(iEdit === iv.id ? null : iv.id)}><Pencil className="size-4" /></Button>
-                  <Button variant="outline" size="sm" onClick={() => del("interviews", iv.id)}><Trash2 className="size-4" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => setPendingDelete({ kind: "interviews", id: iv.id })}><Trash2 className="size-4" /></Button>
                 </span>
               </div>
               {iEdit === iv.id && (
@@ -118,7 +120,7 @@ export function LeadActivity({
                 </div>
                 <span className="flex shrink-0 gap-1">
                   <Button variant="outline" size="sm" onClick={() => setAEdit(aEdit === as.id ? null : as.id)}><Pencil className="size-4" /></Button>
-                  <Button variant="outline" size="sm" onClick={() => del("assessments", as.id)}><Trash2 className="size-4" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => setPendingDelete({ kind: "assessments", id: as.id })}><Trash2 className="size-4" /></Button>
                 </span>
               </div>
               {aEdit === as.id && (
@@ -131,6 +133,16 @@ export function LeadActivity({
           {assessments.length === 0 && <p className="text-caption text-text-secondary">No assessments yet.</p>}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        title="Delete this record?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={() => del(pendingDelete!.kind, pendingDelete!.id)}
+      />
     </div>
   );
 }

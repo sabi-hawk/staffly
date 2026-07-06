@@ -2,6 +2,7 @@
 // Date-range filter for BD analytics. Pushes ?from&to into the URL; the server page re-reads them.
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Label } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export function DateRangeFilter() {
   const router = useRouter();
@@ -23,24 +24,22 @@ export function DateRangeFilter() {
     <div className="flex flex-wrap items-end gap-3">
       <div className="space-y-1.5">
         <Label htmlFor="analytics-from">From</Label>
-        <input
+        <DatePicker
           id="analytics-from"
-          type="date"
           value={from}
           max={to || undefined}
-          onChange={(e) => apply({ from: e.target.value })}
-          className="h-9 rounded-md border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          onChange={(v) => apply({ from: v })}
+          className="w-40 shadow-sm"
         />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="analytics-to">To</Label>
-        <input
+        <DatePicker
           id="analytics-to"
-          type="date"
           value={to}
           min={from || undefined}
-          onChange={(e) => apply({ to: e.target.value })}
-          className="h-9 rounded-md border border-border bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          onChange={(v) => apply({ to: v })}
+          className="w-40 shadow-sm"
         />
       </div>
       {(from || to) && (

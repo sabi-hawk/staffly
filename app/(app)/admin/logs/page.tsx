@@ -9,6 +9,7 @@ import { parsePaging } from "@/lib/pagination";
 import { karachiMidnightISO } from "@/lib/time";
 import type { AuditLog } from "@/lib/types";
 import { LogsTable } from "@/components/admin/logs-table";
+import { LogDateFilter } from "@/components/admin/log-date-filter";
 import { entityLabel } from "@/lib/audit/labels";
 
 const ENTITIES = ["profiles", "attendance", "leave_requests", "salary_structures",
@@ -62,8 +63,8 @@ export default async function LogsPage({
               {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
             <input name="actor" defaultValue={searchParams.actor ?? ""} placeholder="Actor email" className={`${selectCls} w-48`} />
-            <input type="date" name="from" defaultValue={searchParams.from ?? ""} className={selectCls} aria-label="From date" />
-            <input type="date" name="to" defaultValue={searchParams.to ?? ""} className={selectCls} aria-label="To date" />
+            <LogDateFilter name="from" defaultValue={searchParams.from ?? ""} placeholder="From date" className="w-40" />
+            <LogDateFilter name="to" defaultValue={searchParams.to ?? ""} placeholder="To date" className="w-40" />
             <button type="submit" className="h-9 rounded-md bg-brand-primary px-4 text-sm font-medium text-white">Apply</button>
           </form>
         </CardHeader>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { CopyButton } from "@/components/crm/copy-button";
+import { ConfirmDialog } from "@/components/ui/dialog";
 
 export function ActivityRowActions({
   kind,
@@ -20,10 +21,10 @@ export function ActivityRowActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const noun = kind === "interviews" ? "interview" : "assessment";
 
   async function del() {
-    if (!confirm(`Delete this ${noun}? This cannot be undone.`)) return;
     setBusy(true);
     const res = await fetch(`/api/crm/${kind}/${id}`, { method: "DELETE" });
     setBusy(false);
@@ -49,9 +50,18 @@ export function ActivityRowActions({
           </Link>
         </>
       )}
-      <button onClick={del} disabled={busy} className={`${btn} hover:text-danger`} title={`Delete ${noun}`} aria-label={`Delete ${noun}`}>
+      <button onClick={() => setConfirming(true)} disabled={busy} className={`${btn} hover:text-danger`} title={`Delete ${noun}`} aria-label={`Delete ${noun}`}>
         <Trash2 className="size-3.5" />
       </button>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={`Delete this ${noun}?`}
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        tone="danger"
+        onConfirm={async () => { await del(); }}
+      />
     </div>
   );
 }
