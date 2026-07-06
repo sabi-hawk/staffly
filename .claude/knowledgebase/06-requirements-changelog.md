@@ -388,3 +388,9 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
    management; handbook+product doc = documents; profile+settings somewhere common; announcements,
    payroll, CRM stay separate. Target ≤10 top-level items; final grouping is my call ("it's up to
    you… analyze and decide"), tabs-on-one-screen also acceptable where a parent menu is overkill.
+
+## 2026-07-06 — Roles page polish (owner)
+Deal-assigned Developer's edit button wrapped below the card text (long reason + flex-wrap) — pin
+actions top-right on all cards. And the roles that auto-set a capability flag on assignment
+(BD Lead → is_bd_lead, Deal-assigned Developer → is_deal_developer) must show a coloured flag chip
+on the card with a hover tooltip explaining the flag. **Shipped same day.**

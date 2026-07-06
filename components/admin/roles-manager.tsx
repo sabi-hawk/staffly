@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Lock, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Lock, X, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RoleEditor, type PermRow } from "./role-editor";
@@ -13,6 +13,33 @@ export type RoleRow = {
   id: string; key: string; name: string; description: string | null; reason: string | null;
   is_system: boolean; grants: string[]; users: number;
 };
+
+// Roles whose assignment auto-sets a capability flag on the employee's profile
+// (see /api/admin/employees/[id]/role). Surfaced on the card so it's never a surprise.
+const ROLE_FLAGS: Record<string, { flag: string; tip: string; className: string }> = {
+  bd_lead: {
+    flag: "is_bd_lead",
+    tip: "Assigning this role also sets the employee's BD-Lead flag: all-BD scope in CRM (sees and can fix every BD's records).",
+    className: "border-warning/40 bg-warning/10 text-warning",
+  },
+  deal_developer: {
+    flag: "is_deal_developer",
+    tip: "Assigning this role also sets the deal-developer flag: leave balances hidden and leave requests record-only — the client company governs their leave.",
+    className: "border-brand-primary/40 bg-brand-light text-brand-primary",
+  },
+};
+
+/** Coloured flag chip with an instant CSS tooltip (native title has a long hover delay). */
+function FlagChip({ flag, tip, className }: { flag: string; tip: string; className: string }) {
+  return (
+    <span className={`group relative inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${className}`}>
+      <Flag className="size-3" /> {flag}
+      <span className="pointer-events-none absolute left-0 top-full z-30 mt-1.5 hidden w-72 rounded-md bg-text-primary px-2.5 py-1.5 text-left text-xs font-normal text-white shadow-card group-hover:block">
+        {tip}
+      </span>
+    </span>
+  );
+}
 
 export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: PermRow[] }) {
   const router = useRouter();
@@ -46,13 +73,15 @@ export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: Pe
 
       {roles.map((r) => (
         <div key={r.id} className="rounded-lg border border-border p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+          {/* no flex-wrap: a long reason must never push the actions below the text */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-text-primary">{r.name}</span>
                 {r.is_system && <Badge tone="neutral"><Lock className="mr-1 size-3" /> system</Badge>}
                 <Badge tone="brand">{r.grants.length} permissions</Badge>
                 <Badge tone={r.users > 0 ? "success" : "neutral"}>{r.users} user{r.users === 1 ? "" : "s"}</Badge>
+                {ROLE_FLAGS[r.key] && <FlagChip {...ROLE_FLAGS[r.key]} />}
               </div>
               {r.description && <p className="mt-1 text-sm text-text-secondary">{r.description}</p>}
               {r.reason && <p className="mt-1 text-caption text-text-secondary"><span className="font-medium text-text-primary">Why it exists:</span> {r.reason}</p>}
