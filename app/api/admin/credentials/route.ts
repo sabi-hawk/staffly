@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const { employeeId, username, password } = body;
-  if (!employeeId) return NextResponse.json({ error: "employeeId required" }, { status: 400 });
+  if (!employeeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId)) return NextResponse.json({ error: "valid employeeId required" }, { status: 400 });
 
   const admin = createAdminClient();
 

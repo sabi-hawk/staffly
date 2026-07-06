@@ -22,7 +22,7 @@ export default async function CrmProfilesPage({
   searchParams: { page?: string; pageSize?: string; owner?: string; stack?: string; status?: string; q?: string };
 }) {
   const me = await getCurrentProfile();
-  const canManage = hasPermP(me, PERM.crmProfilesPassword);
+  const canManage = hasPermP(me, PERM.crmProfilesManage);
   // Only BD-Lead / admin / super may filter or assign by owner; a plain BD sees only their own (RLS).
   const canFilterOwner = canManage || (me ? isBdLead(me) : false);
   const supabase = createClient();

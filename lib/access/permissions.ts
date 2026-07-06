@@ -36,6 +36,7 @@ export const PERM = {
   crmProfilesAll: "crm.profiles.all",
   crmProfilesDocs: "crm.profiles.docs",
   crmProfilesPassword: "crm.profiles.password",
+  crmProfilesManage: "crm.profiles.manage",
   crmLeadsOwn: "crm.leads.own",
   crmLeadsAll: "crm.leads.all",
   crmContacts: "crm.contacts",

@@ -19,7 +19,7 @@ export default async function EmployeesPage({
 
   const { data: people, count } = await supabase
     .from("profiles")
-    .select("*", { count: "exact" })
+    .select("*, app_roles!profiles_app_role_id_fkey(name)", { count: "exact" })
     .eq("role", "employee") // admins/super-admins are not listed as employees
     .order("full_name", { ascending: true })
     .range(from, to);
@@ -51,7 +51,7 @@ export default async function EmployeesPage({
                     {p.full_name}
                   </Link>
                 </TD>
-                <TD className="capitalize">{p.role.replace("_", " ")}</TD>
+                <TD>{(p as any).app_roles?.name ?? p.role.replace("_", " ")}</TD>
                 <TD>{p.position ?? "—"}</TD>
                 <TD>{p.department ?? "—"}</TD>
                 <TD className="capitalize">{p.employment_type}</TD>

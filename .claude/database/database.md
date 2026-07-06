@@ -282,3 +282,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   deal_developers manage (deals.manage). `crm_calendar()` → crm.calendar.view (+ crm.leads.all for
   detail reveal); `deal_directory()` → deals.directory. Unrewritten tables still key on the legacy
   enum, bounded by each role's `base_role` ceiling.
+
+- `0037_rbac_fixes.sql` — security-review fixes: new **`crm.profiles.manage`** permission (create/edit
+  dev-profiles, stacks, doc hard-delete, deleted-docs history) granted to Admin + Super Admin; the last
+  admin-enum CRM policies (`dev_profiles_admin_write`, `dev_stacks_admin_write`, `dev_docs_admin_delete`,
+  `dev_docs_select` admin branch) migrated onto it — an HR/Accounts user (base admin) can no longer
+  touch CRM via direct SDK. The privileged-cols guard now gates role/app_role_id changes on
+  **`users.assign_roles`** (perm-driven; super-admin-only by default grants).

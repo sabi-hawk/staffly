@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CrmProfileDetail({ params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
-  const isAdmin = hasPermP(me, PERM.crmProfilesPassword);
+  const isAdmin = hasPermP(me, PERM.crmProfilesManage);
   const supabase = createClient();
 
   // RLS returns null if this viewer may not see the profile (e.g. a BD who doesn't own it).

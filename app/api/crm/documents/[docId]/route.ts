@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: { params: { docId: string 
 export async function DELETE(_req: Request, { params }: { params: { docId: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermP(me, PERM.crmProfilesPassword)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!hasPermP(me, PERM.crmProfilesManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.docId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   const { data: doc } = await supabase

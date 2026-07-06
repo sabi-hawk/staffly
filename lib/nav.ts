@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  ShieldCheck,
   CalendarClock,
   CalendarDays,
   CalendarRange,
@@ -67,6 +68,7 @@ const opsNav: PermNavItem[] = [
   { label: "Activity Log", href: "/admin/logs", icon: ScrollText, perm: PERM.activityViewOps },
   { label: "Payroll", href: "/admin/payroll", icon: Wallet, perm: PERM.payrollView },
   { label: "Settings", href: "/admin/settings", icon: Settings, perm: PERM.settingsManage },
+  { label: "Roles", href: "/admin/roles", icon: ShieldCheck, perm: PERM.rolesManage },
   { label: "Product doc", href: "/admin/product", icon: FileText, perm: PERM.productDocView },
   { label: "Handbook", href: "/handbook", icon: BookOpen, perm: PERM.handbookView },
 ];

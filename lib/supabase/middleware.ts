@@ -17,6 +17,7 @@ const ROUTE_PERMS: [string, string][] = [
   ["/admin/attendance", PERM.attendanceViewAll],
   ["/admin/reports", PERM.reportsView],
   ["/admin/deal-assignments", PERM.dealsDirectory],
+  ["/admin/roles", PERM.rolesManage],
   ["/crm/deals", PERM.dealsView],
   ["/crm/calendar", PERM.crmCalendarView],
 ];

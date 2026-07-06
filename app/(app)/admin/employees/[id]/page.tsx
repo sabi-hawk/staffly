@@ -16,6 +16,7 @@ import { ShiftEditor } from "@/components/admin/shift-editor";
 import { CompensationEditor } from "@/components/admin/compensation-editor";
 import { CredentialsCard } from "@/components/admin/credentials-card";
 import { ProfileFlags } from "@/components/admin/profile-flags";
+import { RoleAssign } from "@/components/admin/role-assign";
 import { CommissionEditor } from "@/components/admin/commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
 import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12, formatCrmDatetime } from "@/lib/utils";
@@ -58,6 +59,12 @@ export default async function EmployeeDetail({
     policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("created_at")).data ?? [];
   }
 
+  // RBAC role assignment (users.assign_roles — super-admin by default)
+  const canAssignRole = hasPermP(viewer, PERM.usersAssignRoles);
+  const allRoles = canAssignRole
+    ? ((await supabase.from("app_roles").select("id, key, name, description").order("is_system", { ascending: false }).order("name")).data ?? [])
+    : [];
+
   return (
     <div className="space-y-6">
       <Link href="/admin/employees" className="inline-flex items-center gap-1.5 text-caption font-medium text-text-secondary hover:text-brand-primary">
@@ -99,12 +106,25 @@ export default async function EmployeeDetail({
         </Card>
       )}
 
-      {/* Roles & flags (admin + super admin) */}
+      {/* Role (RBAC, FRD-08) — decides every permission. Assignment = users.assign_roles (super). */}
+      {canAssignRole && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Role</CardTitle>
+            <CardDescription>The role decides what this person can see and do (nav, pages, data). Manage the roles themselves under Roles &amp; permissions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RoleAssign employeeId={p.id} roles={allRoles as any} currentRoleId={p.app_role_id} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Capability flags (admin + super admin) */}
       {adminViewer && (
         <Card>
           <CardHeader>
-            <CardTitle>Roles &amp; flags</CardTitle>
-            <CardDescription>Developer / BD-Lead / deal-assigned. A deal-assigned developer has leave balances hidden and leave requests recorded (client company governs their leave).</CardDescription>
+            <CardTitle>Flags</CardTitle>
+            <CardDescription>Developer (assignable in pickers) / BD-Lead / deal-assigned. Assigning a role syncs the BD-Lead and deal-assigned flags automatically.</CardDescription>
           </CardHeader>
           <CardContent>
             <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer }} />

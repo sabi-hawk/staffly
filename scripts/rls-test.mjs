@@ -307,6 +307,15 @@ async function main() {
   check("RBAC: HR role → credentials hidden (Admin-only)", (hrCred.data?.length ?? 0) === 0);
   const hrLeads = await testu.from("leads").select("id").limit(1);
   check("RBAC: HR role → CRM hidden", (hrLeads.data?.length ?? 0) === 0);
+  // 0037: even with base_role='admin' at the enum layer, HR cannot WRITE CRM via a direct SDK call.
+  await pgc.query(`update profiles set role='admin' where id=$1`, [TESTU]); // simulate assigned base role
+  const hrDevWrite = await testu.from("dev_profiles").insert({ name: "HAX Profile" }).select();
+  check("RBAC: HR role (base admin) → dev_profiles write blocked (0037)", !!hrDevWrite.error || (hrDevWrite.data?.length ?? 0) === 0);
+  const hrStack = await testu.from("dev_stacks").insert({ name: "HaxStack", sort_order: 99 }).select();
+  check("RBAC: HR role (base admin) → dev_stacks write blocked (0037)", !!hrStack.error || (hrStack.data?.length ?? 0) === 0);
+  await pgc.query(`delete from dev_profiles where name='HAX Profile'`);
+  await pgc.query(`delete from dev_stacks where name='HaxStack'`);
+  await pgc.query(`update profiles set role='employee' where id=$1`, [TESTU]);
 
   await pgc.query(`update profiles set app_role_id=$1 where id=$2`, [await rid("employee"), TESTU]); // restore
 

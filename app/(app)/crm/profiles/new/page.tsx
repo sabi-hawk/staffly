@@ -10,7 +10,7 @@ import { ProfileForm } from "@/components/crm/profile-form";
 
 export default async function NewCrmProfilePage() {
   const me = await getCurrentProfile();
-  if (!hasPermP(me, PERM.crmProfilesPassword)) redirect("/crm/profiles");
+  if (!hasPermP(me, PERM.crmProfilesManage)) redirect("/crm/profiles");
 
   const supabase = createClient();
   const [{ data: stacks }, { data: bds }] = await Promise.all([

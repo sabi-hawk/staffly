@@ -9,7 +9,7 @@ import { updateDevProfile } from "@/lib/services/dev-profiles";
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermP(me, PERM.crmProfilesPassword)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!hasPermP(me, PERM.crmProfilesManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   try {
     await updateDevProfile(createClient(), params.id, await req.json());
