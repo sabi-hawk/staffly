@@ -39,6 +39,7 @@ export const PERM = {
   crmProfilesManage: "crm.profiles.manage",
   crmLeadsOwn: "crm.leads.own",
   crmLeadsAll: "crm.leads.all",
+  crmLeadsClosed: "crm.leads.closed",
   crmContacts: "crm.contacts",
   crmCalendarView: "crm.calendar.view",
   crmAnalyticsView: "crm.analytics.view",

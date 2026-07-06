@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { bdOptions, type Opt } from "@/lib/crm/options";
 import { CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,10 +64,24 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   const bds = await bdOptions(supabase);
   const list = (rows ?? []) as any[];
 
+  // BDs can't see CLOSED (won) leads (0038 — details are admin-only), but their track record stays:
+  // show the count of their own closed deals. Admins see closed leads in the grid, so no chip.
+  const me = await getCurrentProfile();
+  let closedCount = 0;
+  if (!hasPermP(me, PERM.crmLeadsClosed)) {
+    const { data: cc } = await supabase.rpc("my_closed_deals_count");
+    closedCount = (cc as number) ?? 0;
+  }
+
   const toolbar = (
     <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-caption text-text-secondary">Updated {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)</span>
+        <span className="flex flex-wrap items-center gap-2 text-caption text-text-secondary">
+          Updated {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)
+          {closedCount > 0 && (
+            <Badge tone="success">🏆 {closedCount} deal{closedCount === 1 ? "" : "s"} closed — details with admin</Badge>
+          )}
+        </span>
         <CrmDateFilter range={range} from={rFrom} to={rTo} />
       </div>
       <div className="border-t border-border pt-3">

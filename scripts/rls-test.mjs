@@ -319,6 +319,27 @@ async function main() {
 
   await pgc.query(`update profiles set app_role_id=$1 where id=$2`, [await rid("employee"), TESTU]); // restore
 
+  // ── 0038: analytics is admin/super-only; CLOSED leads are masked from BD/BD Lead (count remains).
+  const shaiza38 = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+  const bdAn = await shaiza38.rpc("auth_has_perm", { p_perm: "crm.analytics.view" });
+  check("0038: BD → crm.analytics.view revoked", bdAn.data === false);
+  const adAn = await hira.rpc("auth_has_perm", { p_perm: "crm.analytics.view" });
+  check("0038: admin → crm.analytics.view kept", adAn.data === true);
+  const closedLead = (await pgc.query(
+    `insert into leads (company, owner_bd_id, status) values ('ClosedMask Co', $1, 'closed') returning id`, [EMP2])).rows[0].id;
+  const bdSee = await shaiza38.from("leads").select("id").eq("id", closedLead);
+  check("0038: owning BD cannot read a CLOSED lead", (bdSee.data?.length ?? 0) === 0);
+  const fat = await asUser("fatimasul89@gmail.com", "Softonoma@3310");
+  const flSee = await fat.from("leads").select("id").eq("id", closedLead);
+  check("0038: BD Lead cannot read a CLOSED lead", (flSee.data?.length ?? 0) === 0);
+  const adSee = await hira.from("leads").select("id").eq("id", closedLead);
+  check("0038: admin reads the CLOSED lead", (adSee.data?.length ?? 0) === 1);
+  const cnt = await shaiza38.rpc("my_closed_deals_count");
+  check("0038: owning BD keeps the closed-deals COUNT", (cnt.data ?? 0) >= 1, `count=${cnt.data}`);
+  const bdEdit = await shaiza38.from("leads").update({ company: "Hax" }).eq("id", closedLead).select();
+  check("0038: owning BD cannot edit a CLOSED lead", (bdEdit.data?.length ?? 0) === 0);
+  await pgc.query(`delete from leads where id=$1`, [closedLead]);
+
   await pgc.end();
   const passed = results.filter((r) => r.pass).length;
   console.log(`\n§14.3 result: ${passed}/${results.length} passed`);

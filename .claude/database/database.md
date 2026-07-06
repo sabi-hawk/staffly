@@ -289,3 +289,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `dev_docs_select` admin branch) migrated onto it — an HR/Accounts user (base admin) can no longer
   touch CRM via direct SDK. The privileged-cols guard now gates role/app_role_id changes on
   **`users.assign_roles`** (perm-driven; super-admin-only by default grants).
+
+- `0038_analytics_closed_leads.sql` — (1) `crm.analytics.view` **revoked from BD/BD Lead** (BD
+  Performance = admin/super). (2) New **`crm.leads.closed`** perm (Admin+Super): the leads SELECT/
+  UPDATE/DELETE policies mask **closed** leads from everyone else (the FOR-ALL write policy was split —
+  it implicitly granted SELECT). **`my_closed_deals_count()`** definer fn keeps the owning BD's closed
+  count visible (chip on the Leads tab).

@@ -9,9 +9,8 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // RLS already restricts payroll_runs writes to super_admin; this is a friendly guard.
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "super_admin")
+  // RLS restricts payroll_runs writes to payroll.manage holders; this is the friendly guard (FRD-08).
+  if (!(await supabase.rpc("auth_has_perm", { p_perm: "payroll.manage" })).data)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));

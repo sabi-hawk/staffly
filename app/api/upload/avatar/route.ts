@@ -24,8 +24,8 @@ export async function POST(request: Request) {
 
   // employees may only upload their own avatar; admins may upload for anyone
   if (targetId !== user.id) {
-    const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-    if (!me || me.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!(await supabase.rpc("auth_has_perm", { p_perm: "employees.manage" })).data)
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";

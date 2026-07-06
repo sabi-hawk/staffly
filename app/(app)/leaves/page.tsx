@@ -62,7 +62,12 @@ export default async function LeavesPage() {
                   <TD className="tabular">{r.start_date}</TD>
                   <TD className="tabular">{r.end_date}</TD>
                   <TD className="tabular">{r.days_count}</TD>
-                  <TD><Badge tone={tone(r.status) as any}>{r.status}</Badge></TD>
+                  <TD>
+                    <Badge tone={tone(r.status) as any}>{r.status}</Badge>
+                    {r.status === "rejected" && r.decision_note && (
+                      <div className="mt-1 max-w-[220px] text-caption text-danger">{r.decision_note}</div>
+                    )}
+                  </TD>
                   <TD className="text-text-secondary">{r.reason ?? "—"}</TD>
                   <TD>{r.status === "pending" && <CancelLeaveButton id={r.id} />}</TD>
                 </TR>

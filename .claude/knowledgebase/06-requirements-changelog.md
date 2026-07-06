@@ -339,3 +339,27 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
    Super-admin can create CUSTOM roles. Everything (nav, routes, UI, data) must be access-driven: a
    module is visible/usable only if the role grants it. Includes employee account management (create
    user, credentials, role assignment) in one place.
+
+## 2026-07-06 — Analytics admin-only + performance module + closed-lead masking + full reviews
+1. **BD Performance → admin/super only.** Remove `crm.analytics.view` from the BD and BD Lead roles
+   (RBAC regrant — demonstrates per-inner-module segregation of CRM).
+2. **Rebuild the performance module** (admin/super): date range (presets + custom), bar/line charts +
+   grids — leads/interviews/assessments/closed-deals per BD, activity over time.
+3. **Closed leads masked from BD/BD Lead:** once a lead is `closed` (deal won), its details are only
+   visible to admin/super. BDs keep only the COUNT of their closed deals (for track-keeping) — enforced
+   at the DB (RLS), not just UI.
+4. **Full reviews** (owner request): senior code review + QA review + product-owner review of the whole
+   codebase; findings + suggestions planned accordingly.
+
+### Review backlog (from the 2026-07-06 senior-code + product-QA reviews; criticals already fixed)
+- Admin notifications need a dismiss/resolve button (they accumulate forever).
+- Employee-facing notifications: in-app feed + email sends (leave decisions, announcements) via the
+  existing email stub — reaches closed tabs.
+- Announcements: edit/delete + pagination (currently append-only, limit 50).
+- Reports CSV: include leaves/missing-days columns (on screen but not exported).
+- Topbar search is a dead affordance — implement (⌘K palette) or remove.
+- bdOptions() keys on the free-text department — move to RBAC truth (crm.access holders).
+- lib/services/notifications.ts uses server-local dates (birthday/payslip triggers) — move to companyToday().
+- Admin dashboard: parallelise its 7 sequential queries; narrow select("*").
+- Typing debt: EmployeeReport.daily any[], share-text any params.
+- Payroll question for owner: should MISSING days (no check-in, no leave) auto-deduct like unpaid leave?

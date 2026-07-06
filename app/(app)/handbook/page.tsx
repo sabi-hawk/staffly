@@ -39,7 +39,7 @@ export default function HandbookPage() {
 
       <Section title="Casual leave">
         <ul>
-          <li><strong>1 day per month</strong>, auto-approved.</li>
+          <li><strong>1 day per month</strong> — submitted for admin approval like all leave.</li>
           <li>Casual leave is <strong>use-it-or-lose-it</strong> — if you don't use it in a month, it does <strong>not</strong> carry over.</li>
         </ul>
       </Section>

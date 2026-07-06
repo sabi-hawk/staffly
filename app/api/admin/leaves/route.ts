@@ -10,8 +10,8 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!me || me.role === "employee") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await supabase.rpc("auth_has_perm", { p_perm: "leaves.approve" })).data)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json().catch(() => ({}));
   const { employeeId, type, start, end, reason } = body;
