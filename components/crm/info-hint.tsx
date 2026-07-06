@@ -5,7 +5,7 @@
 
 export function InfoHint({ text, label }: { text: string; label?: string }) {
   return (
-    <span className="group relative inline-flex align-middle">
+    <span className="group/hint relative inline-flex align-middle">
       <button
         type="button"
         aria-label={label ? `${label} — ${text}` : text}
@@ -19,7 +19,7 @@ export function InfoHint({ text, label }: { text: string; label?: string }) {
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden w-56 -translate-x-1/2 rounded-md bg-text-primary px-2.5 py-1.5 text-caption font-normal leading-snug text-white shadow-card group-hover:block group-focus-within:block"
+        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden w-56 -translate-x-1/2 rounded-md bg-text-primary px-2.5 py-1.5 text-caption font-normal leading-snug text-white shadow-card group-hover/hint:block group-focus-within/hint:block"
       >
         {text}
       </span>

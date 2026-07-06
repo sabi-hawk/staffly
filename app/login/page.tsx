@@ -82,7 +82,6 @@ export default function LoginPage() {
             <FloatInput
               id="identifier"
               label="Username or email"
-              hint="Your portal username (first.last) or your work email address. Either one signs you in."
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
@@ -91,7 +90,6 @@ export default function LoginPage() {
             <FloatInput
               id="password"
               label="Password"
-              hint="Your account password. Contact an administrator if you have lost it."
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
