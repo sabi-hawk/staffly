@@ -29,15 +29,24 @@ describe("§14.5 E2E-4 (data) — payroll with dynamic additions → finalise", 
     const run = runs.find((r: any) => r.employee_id === MUZAMMAL);
     expect(run).toBeTruthy();
 
-    // base 150,000; no recurring additions (his bonus is conditional/non-recurring); no unpaid
+    // base 150,000; no recurring additions (his bonus is conditional/non-recurring); no unpaid leave.
+    // Since the missing-day rule (2026-07-06), past scheduled days without attendance/leave deduct at
+    // base/working-days each with a "Missing record" justification — canonical seed covers only the
+    // last ~5 days, so deductions are usually > 0 and must reconcile exactly.
     expect(Number(run.base_salary)).toBe(150000);
     expect(Number(run.additions_total)).toBe(0);
-    expect(Number(run.deductions)).toBe(0);
-    expect(Number(run.net_pay)).toBe(150000);
+    expect(Number(run.net_pay)).toBe(Math.round((150000 - Number(run.deductions)) * 100) / 100);
 
-    // payslip base line item created
+    // payslip lines: base always; any deduction must carry its justification
     const { data: lines } = await admin.from("payslip_components").select("*").eq("payroll_run_id", run.id);
     expect((lines ?? []).some((l) => l.kind === "base")).toBe(true);
+    const dedLines = (lines ?? []).filter((l) => l.kind === "deduction");
+    const dedSum = dedLines.reduce((s, l) => s + Number(l.amount), 0);
+    expect(Math.round(dedSum * 100) / 100).toBe(Number(run.deductions));
+    if (Number(run.deductions) > 0) {
+      const missing = dedLines.find((l) => l.label === "Missing attendance deduction");
+      expect(missing?.description).toMatch(/Missing record/);
+    }
 
     const finalised = await finalisePayroll(admin, run.id);
     expect(finalised.status).toBe("finalised");

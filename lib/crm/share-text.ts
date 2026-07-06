@@ -2,15 +2,33 @@
 import { labelize } from "@/lib/crm/constants";
 import { formatCrmDate, formatCrmDatetime } from "@/lib/utils";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Structural param types — the joined shapes these formatters actually read (grids pass supersets).
+type ShareInterview = {
+  round: string | null; status: string; outcome: string | null; company?: string | null;
+  job_title?: string | null; received_date?: string | null; interview_at?: string | null;
+  created_at?: string; updated_at?: string; job_post_url?: string | null;
+};
+type ShareAssessment = {
+  status: string; company?: string | null; job_title?: string | null; priority?: string | null;
+  duration?: string | null; entry_date?: string | null; deadline?: string | null;
+  created_at?: string; updated_at?: string; budget?: string | null; job_post_url?: string | null;
+};
+type ShareLead = {
+  company: string; role?: string | null; status: string; budget?: string | null;
+  expected_budget?: string | null; shift?: string | null;
+  profile?: { name?: string | null; stack?: { name?: string | null } | null } | null;
+  owner?: { full_name?: string | null } | null;
+  interviews?: ShareInterview[]; assessments?: ShareAssessment[];
+};
+
 const line = (label: string, val: unknown) => (val ? `${label}: ${val}` : null);
 const ROUND_RANK = ["1st", "2nd", "3rd", "4th", "5th"];
 
-export function leadShareText(l: any): string {
+export function leadShareText(l: ShareLead): string {
   const interviews = [...(l.interviews ?? [])].sort(
-    (a: any, b: any) => ROUND_RANK.indexOf(a.round) - ROUND_RANK.indexOf(b.round)
+    (a, b) => ROUND_RANK.indexOf(a.round ?? "") - ROUND_RANK.indexOf(b.round ?? "")
   );
-  const ivLines = interviews.map((iv: any) => {
+  const ivLines = interviews.map((iv) => {
     const state = labelize(iv.outcome || iv.status);
     const bits = [
       iv.received_date ? `received ${formatCrmDate(iv.received_date)}` : null,
@@ -19,7 +37,7 @@ export function leadShareText(l: any): string {
     ].filter(Boolean).join(" · ");
     return `  • ${iv.round ?? "—"} — ${state}${bits ? ` · ${bits}` : ""}`;
   });
-  const asLines = (l.assessments ?? []).map((as: any) => {
+  const asLines = (l.assessments ?? []).map((as) => {
     const bits = [
       as.entry_date ? `received ${formatCrmDate(as.entry_date)}` : null,
       as.deadline ? `deadline ${formatCrmDate(as.deadline)}` : null,
@@ -43,7 +61,7 @@ export function leadShareText(l: any): string {
   ].filter(Boolean).join("\n");
 }
 
-export function interviewShareText(iv: any): string {
+export function interviewShareText(iv: ShareInterview): string {
   return [
     `Interview — ${iv.company ?? "—"}`,
     line("Job", iv.job_title),
@@ -58,7 +76,7 @@ export function interviewShareText(iv: any): string {
   ].filter(Boolean).join("\n");
 }
 
-export function assessmentShareText(as: any): string {
+export function assessmentShareText(as: ShareAssessment): string {
   return [
     `Assessment — ${as.company ?? "—"}`,
     line("Job", as.job_title),

@@ -2,6 +2,20 @@
 // Gross totals honour the non-netting rule. Shared by Reports + Attendance summary cards.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/** One attendance day inside a report — exactly the columns the report query selects. */
+export interface ReportDay {
+  work_date: string;
+  status: string;
+  total_hours: number | null;
+  deficit_hours: number;
+  extra_hours: number;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  daily_summary: string | null;
+  summary_late: boolean | null;
+  summary_at: string | null;
+}
+
 export interface EmployeeReport {
   employeeId: string;
   from: string;
@@ -16,7 +30,7 @@ export interface EmployeeReport {
   totalExtraHours: number;
   totalDeficitHours: number;
   leavesByType: Record<string, number>;
-  daily: any[];
+  daily: ReportDay[];
 }
 
 export async function buildEmployeeReport(

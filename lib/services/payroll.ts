@@ -3,6 +3,7 @@
 // plus its payslip_components (base/addition/deduction line items). Super-admin only (RLS).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { round2 } from "@/lib/hours";
+import { companyToday } from "@/lib/time";
 
 export interface GenerateOptions {
   from: string; // YYYY-MM-DD
@@ -39,12 +40,12 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
 
     const base = round2(Number(sal.base_salary) || 0);
 
-    // These four reads are independent of each other — fetch them concurrently (was a sequential N+1).
-    const [wdRes, attRes, leavesRes, compsRes] = await Promise.all([
+    // These reads are independent of each other — fetch them concurrently (was a sequential N+1).
+    const [wdRes, attRes, leavesRes, compsRes, allLeavesRes, shiftRes, holRes] = await Promise.all([
       supabase.rpc("working_days", { p_employee: employeeId, p_start: opts.from, p_end: opts.to }),
       supabase
         .from("attendance")
-        .select("total_hours, extra_hours, deficit_hours, check_out_time")
+        .select("work_date, check_in_time, total_hours, extra_hours, deficit_hours, check_out_time")
         .eq("employee_id", employeeId)
         .gte("work_date", opts.from)
         .lte("work_date", opts.to),
@@ -62,6 +63,16 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
         .eq("employee_id", employeeId)
         .eq("is_active", true)
         .eq("recurring", true),
+      // approved leave of ANY type overlapping the period — those days are covered, not "missing"
+      supabase
+        .from("leave_requests")
+        .select("start_date, end_date")
+        .eq("employee_id", employeeId)
+        .eq("status", "approved")
+        .lte("start_date", opts.to)
+        .gte("end_date", opts.from),
+      supabase.from("shifts").select("days_of_week").eq("employee_id", employeeId).eq("is_active", true).maybeSingle(),
+      supabase.from("holidays").select("holiday_date").gte("holiday_date", opts.from).lte("holiday_date", opts.to),
     ]);
 
     const workingDays = Number(wdRes.data) || 0;
@@ -74,7 +85,30 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
 
     const leaves = leavesRes.data;
     const unpaidDays = sum((leaves ?? []).map((l) => Number(l.days_count) || 0));
-    const deductions = workingDays > 0 ? round2((unpaidDays * base) / workingDays) : 0;
+
+    // MISSING days (owner rule, 2026-07-06): a PAST scheduled working day with no attendance and no
+    // approved leave deducts like unpaid leave — with a per-day justification so HR can verify the
+    // day, fix the record (attendance or leave), and regenerate to clear it. Today/future never count.
+    const attDates = new Set((att ?? []).filter((a) => a.check_in_time).map((a) => String(a.work_date).slice(0, 10)));
+    const shiftDows: number[] = shiftRes.data?.days_of_week ?? [1, 2, 3, 4, 5];
+    const holidaySet = new Set((holRes.data ?? []).map((h: any) => String(h.holiday_date).slice(0, 10)));
+    const leaveRanges = (allLeavesRes.data ?? []).map((l: any) => ({ s: String(l.start_date).slice(0, 10), e: String(l.end_date).slice(0, 10) }));
+    const onLeave = (d: string) => leaveRanges.some((r) => d >= r.s && d <= r.e);
+    const todayStr = companyToday();
+    const missingDates: string[] = [];
+    for (const d = new Date(`${opts.from}T00:00:00Z`); ; d.setUTCDate(d.getUTCDate() + 1)) {
+      const ds = d.toISOString().slice(0, 10);
+      if (ds > opts.to || ds >= todayStr) break;
+      if (!shiftDows.includes(d.getUTCDay())) continue;
+      if (holidaySet.has(ds) || attDates.has(ds) || onLeave(ds)) continue;
+      missingDates.push(ds);
+    }
+    const missingDays = missingDates.length;
+
+    const dailyRate = workingDays > 0 ? base / workingDays : 0;
+    const deductionsUnpaid = round2(unpaidDays * dailyRate);
+    const deductionsMissing = round2(missingDays * dailyRate);
+    const deductions = round2(deductionsUnpaid + deductionsMissing);
 
     // dynamic additions = recurring compensation components
     const comps = compsRes.data;
@@ -115,8 +149,19 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
         { payroll_run_id: run.id, label: "Base salary", amount: base, kind: "base", description: null },
         ...additions.map((a) => ({ payroll_run_id: run.id, label: a.label, amount: a.amount, kind: "addition", description: a.description })),
       ];
-      if (deductions > 0)
-        lines.push({ payroll_run_id: run.id, label: "Unpaid leave deduction", amount: deductions, kind: "deduction", description: `${unpaidDays} unpaid day(s)` });
+      if (deductionsUnpaid > 0)
+        lines.push({ payroll_run_id: run.id, label: "Unpaid leave deduction", amount: deductionsUnpaid, kind: "deduction", description: `${unpaidDays} unpaid day(s)` });
+      if (deductionsMissing > 0) {
+        const shown = missingDates.slice(0, 10).map((d) => d.slice(5)).join(", ");
+        const more = missingDates.length > 10 ? ` +${missingDates.length - 10} more` : "";
+        lines.push({
+          payroll_run_id: run.id,
+          label: "Missing attendance deduction",
+          amount: deductionsMissing,
+          kind: "deduction",
+          description: `Missing record — no attendance and no approved leave on ${missingDays} day(s): ${shown}${more}. Verify/fix the day (attendance or leave) and regenerate to clear.`,
+        });
+      }
       await supabase.from("payslip_components").insert(lines);
     }
 

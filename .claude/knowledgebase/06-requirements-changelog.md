@@ -363,3 +363,18 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
 - Admin dashboard: parallelise its 7 sequential queries; narrow select("*").
 - Typing debt: EmployeeReport.daily any[], share-text any params.
 - Payroll question for owner: should MISSING days (no check-in, no leave) auto-deduct like unpaid leave?
+
+## 2026-07-06 — Backlog approved (owner): payroll missing-day deductions + notifications + polish
+1. **Missing-day payroll deduction:** days with NO attendance and NO approved leave auto-deduct (like
+   unpaid leave, base/working-days per day) with a per-day justification "Missing record (date)". HR
+   sees it on the payroll line, fixes the attendance/leave if wrong, regenerates → deduction clears.
+2. **Employee notifications:** in-app feed (topbar bell) + emails for leave decisions; announcement
+   notifications in-app.
+3. Admin notifications get a dismiss; announcements get edit/delete + pagination; reports CSV gains
+   leave/missing columns; topbar ⌘K search implemented; bdOptions keys on RBAC roles; notifications
+   timezone + typing debt fixed.
+
+   **Shipped 2026-07-06** (all 3 items): migrations 0039 (`employee_notifications` + definer triggers)
+   + 0040 (enum-cast hotfix — leave approve/reject was failing in the trigger); payslip deductions
+   column now renders the per-day justification; browser-verified end-to-end (bell badge → announcement
+   fan-out, dismiss, edit/delete + pagination, ⌘K palette incl. employee search, payslip missing line).

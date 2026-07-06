@@ -166,6 +166,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - **login_events** — user_id, email, ip_address, user_agent, created_at (captured at sign-in by
   `/api/audit/login`). **Super-admin read only.**
 - **announcements, holidays, documents, alerts_log, company_settings** — supporting.
+- **employee_notifications** (0039) — employee_id, type (`leave_decision`|`announcement`), message,
+  link, read_at. Self read/mark-read only; inserted by definer triggers (leave decision, announcement
+  fan-out). Surfaced by the topbar bell for every user.
 
 ### CRM tables (0010–0011)
 - **departments** — id, name (unique), sort_order, is_active. Lookup; `profiles.department_id` FK.
@@ -295,3 +298,15 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   UPDATE/DELETE policies mask **closed** leads from everyone else (the FOR-ALL write policy was split —
   it implicitly granted SELECT). **`my_closed_deals_count()`** definer fn keeps the owning BD's closed
   count visible (chip on the Leads tab).
+
+- `0039_employee_notifications.sql` — **`employee_notifications`** (id, employee_id→profiles cascade,
+  type, message, link, created_at, read_at) + index on (employee_id, created_at desc). RLS: **self
+  SELECT + self UPDATE (mark-read) only — no client INSERT/DELETE**; rows come from two
+  SECURITY-DEFINER triggers: `notify_leave_decision` (leave_requests UPDATE pending→approved/rejected →
+  one row for the requester, decision note included on rejection, link `/leaves`) and
+  `notify_announcement` (announcements INSERT → fan-out to all active profiles except the author,
+  link `/announcements`). Topbar bell (`MyNotificationsBell`) reads/marks these for every user.
+
+- `0040_fix_leave_notify_enum_cast.sql` — hotfix: `notify_leave_decision` used `initcap(NEW.type)` but
+  `type` is the `leave_type` **enum** → every approve/reject failed with "function initcap(leave_type)
+  does not exist". Recast to `initcap(NEW.type::text)` (0039's inline copy also fixed for fresh DBs).

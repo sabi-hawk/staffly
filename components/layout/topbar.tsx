@@ -3,6 +3,7 @@ import { LogOut, Menu, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AlertsBell } from "@/components/crm/alerts-bell";
+import { MyNotificationsBell } from "./my-notifications-bell";
 
 export function Topbar({
   title,
@@ -40,11 +41,16 @@ export function Topbar({
       </button>
       <h1 className="text-h2 text-text-primary">{title}</h1>
       <div className="ml-auto flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-caption text-text-secondary md:flex">
+        <button
+          onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
+          className="hidden items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-caption text-text-secondary transition-colors hover:border-brand-primary/50 hover:text-text-primary md:flex"
+          aria-label="Search (Cmd+K)"
+        >
           <Search className="size-3.5" />
           <span>Search</span>
           <kbd className="rounded bg-white px-1.5 text-[10px]">⌘K</kbd>
-        </div>
+        </button>
+        <MyNotificationsBell />
         {showAlerts && <AlertsBell />}
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-light text-caption font-semibold text-brand-primary">
           {initials}

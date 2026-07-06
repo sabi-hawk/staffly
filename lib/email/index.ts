@@ -16,17 +16,20 @@ export interface EmailProvider {
 
 const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Softonoma <noreply@softonoma.test>";
 
+// Keep PII out of server logs: mask the mailbox and never log the body.
+const maskEmail = (e: string) => e.replace(/^(.).*(@.*)$/, "$1***$2");
+
 class ConsoleEmailProvider implements EmailProvider {
   readonly name = "console";
   async send(msg: EmailMessage): Promise<{ id: string }> {
     const id = `console-${Date.now()}`;
+    const to = Array.isArray(msg.to) ? msg.to : [msg.to];
     // eslint-disable-next-line no-console
     console.log(
       `\n📧 [email:console] (RESEND_API_KEY blank — not actually sent)\n` +
         `   from:    ${msg.from || DEFAULT_FROM}\n` +
-        `   to:      ${Array.isArray(msg.to) ? msg.to.join(", ") : msg.to}\n` +
-        `   subject: ${msg.subject}\n` +
-        `   body:    ${msg.html.replace(/<[^>]+>/g, " ").trim().slice(0, 200)}\n`
+        `   to:      ${to.map(maskEmail).join(", ")}\n` +
+        `   subject: ${msg.subject}\n`
     );
     return { id };
   }

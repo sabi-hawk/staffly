@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { companyToday, karachiMidnightISO } from "@/lib/time";
 import { refreshAdminNotifications, getAdminNotifications } from "@/lib/services/notifications";
 import { StatCard } from "@/components/ui/stat-card";
+import { DismissNotification } from "@/components/admin/dismiss-notification";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge, Badge } from "@/components/ui/badge";
@@ -15,36 +16,42 @@ export default async function AdminDashboard() {
   const supabase = createClient();
   const today = companyToday();
 
-  const { data: employees } = await supabase
-    .from("profiles").select("id, full_name, employment_type, status, role")
-    .eq("status", "active").eq("role", "employee"); // admins are not counted as staff
-  const emps = employees ?? [];
-
-  const { data: todayAtt } = await supabase.from("attendance").select("*").eq("work_date", today);
-  const attByEmp = new Map((todayAtt ?? []).map((a) => [a.employee_id, a]));
-
-  const { data: leavesToday } = await supabase
-    .from("leave_requests").select("employee_id").eq("status", "approved")
-    .lte("start_date", today).gte("end_date", today);
-  const onLeave = new Set((leavesToday ?? []).map((l) => l.employee_id));
-
-  const checkedIn = (todayAtt ?? []).filter((a) => a.check_in_time && !a.check_out_time).length;
-  const remote = emps.filter((e) => e.employment_type === "remote").length;
-
-  const { data: alerts } = await supabase
-    .from("alerts_log").select("*, profiles(full_name)")
-    .order("triggered_at", { ascending: false }).limit(8);
-
-  await refreshAdminNotifications(supabase);
-  const notifications = await getAdminNotifications(supabase);
-
-  // "Needs your attention" — pending leave approvals + interviews scheduled today.
-  const { count: pendingLeaves } = await supabase
-    .from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending");
   const dayStart = karachiMidnightISO(today);
   const dayEnd = new Date(new Date(dayStart).getTime() + 86400000).toISOString();
-  const { count: interviewsToday } = await supabase
-    .from("interviews").select("id", { count: "exact", head: true }).gte("interview_at", dayStart).lt("interview_at", dayEnd);
+
+  // Independent reads run in parallel (was ~7 sequential round-trips).
+  const [empRes, attRes, leavesRes, alertsRes, pendingRes, interviewsRes, notifications] =
+    await Promise.all([
+      supabase
+        .from("profiles").select("id, full_name, employment_type, status, role")
+        .eq("status", "active").eq("role", "employee"), // admins are not counted as staff
+      supabase
+        .from("attendance").select("employee_id, check_in_time, check_out_time, status")
+        .eq("work_date", today),
+      supabase
+        .from("leave_requests").select("employee_id").eq("status", "approved")
+        .lte("start_date", today).gte("end_date", today),
+      supabase
+        .from("alerts_log").select("*, profiles(full_name)")
+        .order("triggered_at", { ascending: false }).limit(8),
+      supabase
+        .from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase
+        .from("interviews").select("id", { count: "exact", head: true })
+        .gte("interview_at", dayStart).lt("interview_at", dayEnd),
+      // refresh must precede the read, so chain just these two
+      refreshAdminNotifications(supabase).then(() => getAdminNotifications(supabase)),
+    ]);
+  const emps = empRes.data ?? [];
+  const todayAtt = attRes.data ?? [];
+  const attByEmp = new Map(todayAtt.map((a) => [a.employee_id, a]));
+  const onLeave = new Set((leavesRes.data ?? []).map((l) => l.employee_id));
+  const alerts = alertsRes.data;
+  const pendingLeaves = pendingRes.count;
+  const interviewsToday = interviewsRes.count;
+
+  const checkedIn = todayAtt.filter((a) => a.check_in_time && !a.check_out_time).length;
+  const remote = emps.filter((e) => e.employment_type === "remote").length;
   const attention = [
     (pendingLeaves ?? 0) > 0 && { href: "/admin/leaves", label: `${pendingLeaves} leave request${pendingLeaves === 1 ? "" : "s"} awaiting approval`, icon: Plane },
     (interviewsToday ?? 0) > 0 && { href: "/crm/calendar", label: `${interviewsToday} interview${interviewsToday === 1 ? "" : "s"} scheduled today`, icon: CalendarClock },
@@ -87,13 +94,14 @@ export default async function AdminDashboard() {
           <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="size-4" /> Notifications ({notifications.length})</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {notifications.map((n: any) => (
-              <Link key={n.id} href={n.link ?? "#"} className="flex items-start gap-3 rounded-md p-2 hover:bg-surface">
+              <div key={n.id} className="flex items-start gap-3 rounded-md p-2 hover:bg-surface">
                 <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.severity === "warning" ? "bg-warning" : "bg-brand-primary"}`} />
-                <div>
+                <Link href={n.link ?? "#"} className="min-w-0 flex-1">
                   <div className="text-sm text-text-primary">{n.message}</div>
                   <div className="text-[11px] text-text-secondary capitalize">{n.type.replace(/_/g, " ")}</div>
-                </div>
-              </Link>
+                </Link>
+                <DismissNotification id={n.id} />
+              </div>
             ))}
           </CardContent>
         </Card>

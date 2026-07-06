@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { navForPerms } from "@/lib/nav";
+import { CommandPalette, type PaletteItem } from "./command-palette";
+import { navForPerms, isNavGroup } from "@/lib/nav";
 import { PERM } from "@/lib/access/permissions";
 import type { Profile } from "@/lib/types";
 
@@ -16,6 +17,17 @@ function titleFromPath(path: string): string {
 export function AppShell({ profile, perms, children }: { profile: Profile; perms: string[]; children: React.ReactNode }) {
   const pathname = usePathname();
   const items = navForPerms(perms);
+  // flattened, deduped destinations for the ⌘K palette
+  const paletteItems: PaletteItem[] = [];
+  const seen = new Set<string>();
+  for (const e of items) {
+    const list = isNavGroup(e) ? e.children.map((c) => ({ ...c, group: e.label })) : [{ ...e, group: "Pages" }];
+    for (const i of list) {
+      if (seen.has(i.href + i.label)) continue;
+      seen.add(i.href + i.label);
+      paletteItems.push({ label: i.label, href: i.href, group: i.group });
+    }
+  }
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close the mobile drawer whenever the route changes (navigating dismisses it).
@@ -32,6 +44,7 @@ export function AppShell({ profile, perms, children }: { profile: Profile; perms
           showAlerts={perms.includes(PERM.notificationsView)}
         />
         <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 sm:p-6">{children}</main>
+        <CommandPalette items={paletteItems} canSearchEmployees={perms.includes(PERM.employeesView)} />
       </div>
     </div>
   );

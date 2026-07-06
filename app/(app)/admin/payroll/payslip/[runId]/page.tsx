@@ -89,7 +89,7 @@ export default async function PayslipPage({ params }: { params: { runId: string 
                 <tr key={i}>
                   <Cell>{particulars[i]?.label ?? ""}{particulars[i]?.description ? <span className="text-caption text-text-secondary"> ({particulars[i].description})</span> : ""}</Cell>
                   <Cell right>{particulars[i] ? money(particulars[i].amount) : ""}</Cell>
-                  <Cell>{deductions[i]?.label ?? ""}</Cell>
+                  <Cell>{deductions[i]?.label ?? ""}{deductions[i]?.description ? <span className="text-caption text-text-secondary"> ({deductions[i].description})</span> : ""}</Cell>
                   <Cell right>{deductions[i] ? money(deductions[i].amount) : ""}</Cell>
                 </tr>
               ))}

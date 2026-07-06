@@ -10,13 +10,14 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { PAGE_SIZES } from "@/components/ui/pagination";
 import { formatHours } from "@/lib/utils";
+import type { EmployeeReport, ReportDay } from "@/lib/services/reports";
 
 export function ReportViewer({ employees }: { employees: { id: string; full_name: string; employee_code: string | null }[] }) {
   const [id, setId] = useState(employees[0]?.id ?? "");
   const now = new Date();
   const [from, setFrom] = useState(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10));
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<EmployeeReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -33,8 +34,16 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
 
   function exportCsv() {
     if (!report) return;
-    const rows = [["date", "hours", "deficit", "extra"]].concat(
-      report.daily.map((d: any) => [d.work_date, d.total_hours ?? "", d.deficit_hours, d.extra_hours])
+    // summary header rows (leaves/missing were on screen but not exported — QA fix), then the daily rows
+    const byType = Object.entries(report.leavesByType ?? {}).map(([t, n]) => `${t}:${n}`).join(" ");
+    const rows = [
+      ["summary", "working_days", String(report.workingDays), "days_worked", String(report.daysWorked)],
+      ["summary", "leave_days", String(report.leaveDays), "leaves_by_type", byType || "-"],
+      ["summary", "missing_days", String(report.missingDays), "total_hours", String(report.totalHours)],
+      [],
+      ["date", "status", "hours", "deficit", "extra"],
+    ].concat(
+      report.daily.map((d) => [d.work_date, d.status ?? "", String(d.total_hours ?? ""), String(d.deficit_hours), String(d.extra_hours)])
     );
     const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -44,7 +53,7 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
     a.click();
   }
 
-  const daily: any[] = report?.daily ?? [];
+  const daily: ReportDay[] = report?.daily ?? [];
   const pages = Math.max(1, Math.ceil(daily.length / pageSize));
   const slice = daily.slice((page - 1) * pageSize, page * pageSize);
 
@@ -96,7 +105,7 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
               <Table>
                 <THead><TR><TH>Date</TH><TH>In</TH><TH>Out</TH><TH>Hours</TH><TH>Deficit/Extra</TH></TR></THead>
                 <TBody>
-                  {slice.map((d: any) => (
+                  {slice.map((d) => (
                     <TR key={d.work_date}>
                       <TD className="tabular">{d.work_date}</TD>
                       <TD className="tabular">{d.check_in_time ? new Date(d.check_in_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—"}</TD>
