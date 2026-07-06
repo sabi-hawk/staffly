@@ -118,7 +118,7 @@ export function navForPerms(perms: ReadonlySet<string> | string[]): NavEntry[] {
       ...pick(has, { label: "Product doc", href: "/admin/product", icon: FileText, perm: PERM.productDocView }),
     ]),
     ...group("Settings", Settings, [
-      ...pick(has, { label: "Company settings", href: "/admin/settings", icon: Settings, perm: PERM.settingsManage }),
+      ...pick(has, { label: "Configuration", href: "/admin/settings", icon: Settings, perm: PERM.settingsManage }),
       ...pick(has, { label: "My profile", href: "/profile", icon: User, perm: PERM.profileSelf }),
     ]),
   ];

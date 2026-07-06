@@ -27,13 +27,8 @@ const FIELDS: { key: string; label: string; hint: string }[] = [
   },
   {
     key: "missed_checkout_grace_hours",
-    label: "Missed-checkout grace (h)",
-    hint: "How many hours past expected checkout before the system treats it as a FORGOTTEN checkout and raises an admin alert so HR can fix the record.",
-  },
-  {
-    key: "overtime_warning_hours",
-    label: "Still checked-in alert (h)",
-    hint: "Alerts ADMINS when someone is still checked in this many hours past their expected checkout — it catches forgotten checkouts / unusually long sessions. It is an admin heads-up, never a warning shown to the employee.",
+    label: "Missed checkout: alert after (h)",
+    hint: "When someone is still checked in this many hours past their expected checkout, the system emails them a reminder to check out and posts one alert in the admin feed (forgot to check out, or working unusually late). Nothing is ever held against the employee.",
   },
 ];
 

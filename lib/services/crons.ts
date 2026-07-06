@@ -9,7 +9,6 @@ async function settings(supabase: SupabaseClient) {
   const { data } = await supabase.from("company_settings").select("*").eq("id", 1).maybeSingle();
   return {
     missedCheckoutGraceHours: data?.missed_checkout_grace_hours ?? 1,
-    overtimeWarningHours: data?.overtime_warning_hours ?? 2,
   };
 }
 
@@ -97,11 +96,11 @@ export async function scanMissedCheckin(supabase: SupabaseClient, now = new Date
   return { fired };
 }
 
-/** §9.4 Missed check-out + §9.5 overtime warning over open attendance rows. */
+/** §9.4 Missed check-out: one threshold, one alert — employee reminder + admin feed entry.
+ * (Merged with the old two-stage "overtime warning" — same condition, it just double-posted.) */
 export async function scanMissedCheckout(supabase: SupabaseClient, now = new Date()) {
-  const { missedCheckoutGraceHours, overtimeWarningHours } = await settings(supabase);
+  const { missedCheckoutGraceHours } = await settings(supabase);
   const fired: string[] = [];
-  const overtime: string[] = [];
 
   const { data: open } = await supabase
     .from("attendance")
@@ -118,14 +117,13 @@ export async function scanMissedCheckout(supabase: SupabaseClient, now = new Dat
     const checkIn = new Date(row.check_in_time).getTime();
     const expectedOut = checkIn + expected * 3_600_000;
     const missedThreshold = expectedOut + missedCheckoutGraceHours * 3_600_000;
-    const overtimeThreshold = expectedOut + overtimeWarningHours * 3_600_000;
 
     if (now.getTime() > missedThreshold) {
       if (!(await alreadyAlerted(supabase, emp.id, "missed_checkout", karachiMidnightISO(row.work_date)))) {
         await supabase.from("alerts_log").insert({
           employee_id: emp.id,
           type: "missed_checkout",
-          message: `${emp.full_name} did not check out (${row.work_date}).`,
+          message: `${emp.full_name} is still checked in past expected checkout (${row.work_date}) — forgot to check out, or working late.`,
           email_sent: true,
         });
         await sendEmail({
@@ -141,25 +139,8 @@ export async function scanMissedCheckout(supabase: SupabaseClient, now = new Dat
         fired.push(emp.id);
       }
     }
-
-    if (now.getTime() > overtimeThreshold) {
-      if (!(await alreadyAlerted(supabase, emp.id, "overtime_warning", karachiMidnightISO(row.work_date)))) {
-        await supabase.from("alerts_log").insert({
-          employee_id: emp.id,
-          type: "overtime_warning",
-          message: `${emp.full_name} is ${overtimeWarningHours}h+ past expected checkout.`,
-          email_sent: true,
-        });
-        await sendEmail({
-          to: ADMIN_EMAIL,
-          subject: `Overtime warning: ${emp.full_name}`,
-          html: `${emp.full_name} is still checked in well past expected checkout (${row.work_date}).`,
-        });
-        overtime.push(emp.id);
-      }
-    }
   }
-  return { fired, overtime };
+  return { fired };
 }
 
 async function deriveExpected(supabase: SupabaseClient, employeeId: string) {

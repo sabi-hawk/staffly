@@ -320,3 +320,7 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   profiles are readable) used by dashboard/calendar/announcements/payroll, and `working_days()` now
   applies the same audience predicate — a holiday outside an employee's audience leaves that date a
   working day for them (attendance, leave counting, payroll missing-day checks).
+
+- `0042_merge_checkout_alerts.sql` — drops `company_settings.overtime_warning_hours`: the two-stage
+  missed-checkout/overtime alerts merged into one threshold (`missed_checkout_grace_hours`) — one
+  employee reminder + one admin feed alert. `alert_type` keeps 'overtime_warning' for legacy rows.

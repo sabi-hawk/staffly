@@ -17,8 +17,8 @@ export default async function SettingsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Company settings</CardTitle>
-          <CardDescription>Leave quotas and attendance alert thresholds. Quotas drive the leave rules.</CardDescription>
+          <CardTitle>Configuration</CardTitle>
+          <CardDescription>Leave quotas and attendance alert thresholds — hover the ⓘ icons for what each does. Quotas drive the leave rules.</CardDescription>
         </CardHeader>
         <CardContent><SettingsEditor settings={settings ?? {}} /></CardContent>
       </Card>

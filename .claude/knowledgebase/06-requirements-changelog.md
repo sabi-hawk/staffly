@@ -405,3 +405,10 @@ audiences**: a holiday targets Everyone or specific teams (multi-select covers "
 plus an explicit "also applies to deal-assigned developers" control — outside the audience the date
 stays a normal working day (attendance, leave counts, payroll missing-day checks all follow).
 **Shipped same day** (migration 0041).
+
+## 2026-07-06 — Merge the two open-checkout alerts + rename nav "Company settings" → "Configuration" (owner)
+Missed-checkout grace and the still-checked-in alert fired on the same condition an hour apart
+(duplicate admin-feed noise, two confusing knobs). Merged into ONE setting — "Missed checkout: alert
+after (h)" — at which the employee gets the reminder email and admins get one feed alert (0042 drops
+`overtime_warning_hours`; the alert_type enum keeps the legacy value for history). Under the Settings
+nav group, "Company settings" is renamed **Configuration**. **Shipped same day.**
