@@ -326,3 +326,16 @@ Owner reshaped the CRM leads experience (voice brief). Consolidated into **[FRD-
 7. **Product documentation page (super-admin):** a growing "product overview + roles & access" page —
    what the product is today, the roles, why they exist, the applied business rules. Update the (emptied)
    role/access doc for the new role too.
+
+## 2026-07-06 — Richer copy-to-clipboard + User Management / RBAC (major)
+1. **Copy-to-clipboard enrichment:** lead copy should include per-interview details (round, status/
+   outcome, dates — done vs scheduled with its date/time) and per-assessment details, not just counts;
+   interview copy should add interview date/time + entry + modified dates; same for assessments.
+2. **User Management / RBAC (Tier-2, FRD):** a full user-management module. Create PERMISSIONS for every
+   module built to date (dashboard, attendance, leaves, calendar, announcements, handbook, CRM areas,
+   deals, payroll, reports, activity log, settings, product doc, …). Create DEFAULT ROLES (each with
+   notes + the reason it exists): Employee, Deal-assigned Developer, BD, BD Lead, HR (limited admin),
+   Accounts (payroll-focused), Admin, Super Admin — assign permissions to roles; assign roles to users.
+   Super-admin can create CUSTOM roles. Everything (nav, routes, UI, data) must be access-driven: a
+   module is visible/usable only if the role grants it. Includes employee account management (create
+   user, credentials, role assignment) in one place.

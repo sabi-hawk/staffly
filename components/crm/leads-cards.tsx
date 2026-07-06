@@ -43,7 +43,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   let query = supabase
     .from("leads")
     .select(
-      `id, company, role, status, feedback, updated_at,
+      `id, company, role, status, feedback, budget, expected_budget, shift, updated_at,
        profile:dev_profiles(name, stack:dev_stacks(name)),
        owner:profiles!leads_owner_bd_id_fkey(full_name),
        interviews(id, round, status, outcome, interview_at, received_date),
