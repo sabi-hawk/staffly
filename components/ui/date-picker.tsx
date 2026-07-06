@@ -16,7 +16,7 @@ function PickerLabel({ label, hint, htmlFor }: { label: string; hint?: string; h
     <label
       htmlFor={htmlFor}
       className={cn(
-        "pointer-events-none absolute z-[1] flex max-w-[80%] items-center gap-1 truncate bg-white px-1 transition-all duration-150",
+        "pointer-events-none absolute z-[1] flex max-w-[80%] items-center gap-1 bg-white px-1 transition-all duration-150",
         "left-8 top-1/2 -translate-y-1/2 text-sm text-text-secondary/80",
         "group-focus-within:left-2 group-focus-within:top-0 group-focus-within:text-[11px] group-focus-within:font-medium group-focus-within:text-brand-primary",
         "group-data-[filled=true]:left-2 group-data-[filled=true]:top-0 group-data-[filled=true]:text-[11px] group-data-[filled=true]:font-medium"

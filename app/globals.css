@@ -61,3 +61,16 @@ body {
   font-size: 1.1rem;
   font-weight: 600;
 }
+
+/* Chrome/Safari autofill paints its own light-blue background over inputs, which clashes with the
+   floating-label white notch (visible hard edges on the login form). Force the field back to our
+   white background and normal text colour when autofilled. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: rgb(15 23 42);
+  caret-color: rgb(15 23 42);
+  transition: background-color 999999s ease-in-out 0s;
+}

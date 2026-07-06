@@ -14,8 +14,10 @@ import { InfoHint } from "@/components/crm/info-hint";
 
 // label positioning shared by all variants: centred when resting, floated when
 // the control is focused or filled (data-filled on the wrapper).
+// NOTE: no `truncate` here — overflow-hidden on the label would clip the InfoHint tooltip;
+// only the inner text span truncates.
 const LABEL_BASE =
-  "pointer-events-none absolute left-2.5 z-[1] flex max-w-[85%] items-center gap-1 truncate bg-white px-1 transition-all duration-150";
+  "pointer-events-none absolute left-2.5 z-[1] flex max-w-[85%] items-center gap-1 bg-white px-1 transition-all duration-150";
 const LABEL_RESTING = "top-1/2 -translate-y-1/2 text-sm text-text-secondary/80";
 const LABEL_FLOATED =
   "group-focus-within:top-0 group-focus-within:text-[11px] group-focus-within:font-medium group-focus-within:text-brand-primary " +
