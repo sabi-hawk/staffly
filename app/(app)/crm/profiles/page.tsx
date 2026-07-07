@@ -13,6 +13,7 @@ import { StatusPill } from "@/components/crm/status-pill";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
+import { StacksManager } from "@/components/crm/stacks-manager";
 import { parsePaging } from "@/lib/pagination";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -53,7 +54,10 @@ export default async function CrmProfilesPage({
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>CRM Profiles ({count ?? 0})</CardTitle>
         {canManage && (
-          <Button asChild size="sm"><Link href="/crm/profiles/new"><Plus className="size-4" /> Add profile</Link></Button>
+          <div className="flex items-center gap-2">
+            <StacksManager />
+            <Button asChild size="sm"><Link href="/crm/profiles/new"><Plus className="size-4" /> Add profile</Link></Button>
+          </div>
         )}
       </CardHeader>
       <CardContent>
