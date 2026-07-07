@@ -127,10 +127,10 @@ export const FloatSelect = React.forwardRef<
   HTMLSelectElement,
   React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; hint?: string; wrapClassName?: string }
 >(({ label, hint, className, wrapClassName, id, value, defaultValue, children, ...props }, ref) => {
-  const [innerFilled, setInnerFilled] = React.useState(defaultValue != null && String(defaultValue) !== "");
-  const filled = value !== undefined ? String(value ?? "") !== "" : innerFilled;
+  // A <select> always displays its selected option, so it is never visually empty — the label must
+  // ALWAYS float (resting it would overlap the shown value, e.g. "Owner (BD)" over "Unassigned").
   return (
-    <div className={cn("group relative", wrapClassName)} data-filled={filled}>
+    <div className={cn("group relative", wrapClassName)} data-filled="true">
       <select
         ref={ref}
         id={id}
@@ -138,19 +138,39 @@ export const FloatSelect = React.forwardRef<
         defaultValue={defaultValue}
         className={cn(CONTROL, "appearance-none pr-9", className)}
         {...props}
-        onChange={(e) => {
-          setInnerFilled(e.target.value !== "");
-          props.onChange?.(e);
-        }}
       >
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-[18px] -translate-y-1/2 text-text-secondary/70" />
       <FloatLabel label={label} hint={hint} htmlFor={id} />
     </div>
   );
 });
 FloatSelect.displayName = "FloatSelect";
+
+/** Compact native <select> for filters and utility controls (rows-per-page, toolbar filters) where a
+ * floating label would be overkill. Same custom chevron (gap from the wall, refined colour) as
+ * FloatSelect, so no browser-default arrow ever touches the right border. */
+export const NativeSelect = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement> & { wrapClassName?: string }
+>(({ className, wrapClassName, children, ...props }, ref) => (
+  <span className={cn("relative inline-flex items-center", wrapClassName)}>
+    <select
+      ref={ref}
+      className={cn(
+        "h-9 appearance-none rounded-md border border-border bg-white pl-3 pr-8 text-sm text-text-primary",
+        "transition-colors hover:border-brand-primary/40 focus:outline-none focus:ring-2 focus:ring-brand-primary/70",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </select>
+    <ChevronDown className="pointer-events-none absolute right-2.5 size-[18px] text-text-secondary/70" />
+  </span>
+));
+NativeSelect.displayName = "NativeSelect";
 
 /** Floating-label wrapper for custom controls (DatePicker, FileInput, comboboxes).
  * Pass `filled` so the label knows when to stay floated; the child control should

@@ -7,10 +7,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FloatSelect } from "@/components/ui/field";
 import type { Opt } from "@/lib/crm/options";
 
 type Row = { developer_id: string; role: "developer" | "closer" };
-const selectCls = "h-9 rounded-md border border-border bg-white px-3 text-sm";
 
 export function DealDevelopers({ dealId, developers, initial }: { dealId: string; developers: Opt[]; initial: Row[] }) {
   const router = useRouter();
@@ -45,14 +45,27 @@ export function DealDevelopers({ dealId, developers, initial }: { dealId: string
       <div className="space-y-2">
         {rows.map((r, i) => (
           <div key={i} className="flex flex-wrap items-center gap-2">
-            <select className={`${selectCls} min-w-[220px]`} value={r.developer_id} onChange={(e) => update(i, { developer_id: e.target.value })} aria-label="Developer">
+            <FloatSelect
+              label="Developer"
+              hint="The team member who works this deal. They see the deal name on their dashboard, not the financials."
+              wrapClassName="min-w-[220px]"
+              value={r.developer_id}
+              onChange={(e) => update(i, { developer_id: e.target.value })}
+              aria-label="Developer"
+            >
               <option value="">Select a developer…</option>
               {developers.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-            </select>
-            <select className={selectCls} value={r.role} onChange={(e) => update(i, { role: e.target.value as Row["role"] })} aria-label="Role">
+            </FloatSelect>
+            <FloatSelect
+              label="Role"
+              hint="Whether this person is the developer building the work or the closer who landed the deal."
+              value={r.role}
+              onChange={(e) => update(i, { role: e.target.value as Row["role"] })}
+              aria-label="Role"
+            >
               <option value="developer">Developer</option>
               <option value="closer">Closer</option>
-            </select>
+            </FloatSelect>
             <Button variant="outline" size="sm" onClick={() => remove(i)} aria-label="Remove"><Trash2 className="size-4" /></Button>
           </div>
         ))}

@@ -2,6 +2,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NativeSelect } from "@/components/ui/field";
 import { PAGE_SIZES } from "@/lib/pagination";
 
 export { PAGE_SIZES, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
@@ -38,15 +39,15 @@ export function Pagination({
     <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-caption text-text-secondary">
       <div className="flex items-center gap-2">
         <span>Rows per page</span>
-        <select
+        <NativeSelect
           value={pageSize}
           onChange={(e) => go({ pageSize: Number(e.target.value) })}
-          className="h-8 rounded-md border border-border bg-white px-2 text-sm"
+          className="h-8"
         >
           {PAGE_SIZES.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
-        </select>
+        </NativeSelect>
         <span className="tabular">
           {from}–{to} of {total}
         </span>

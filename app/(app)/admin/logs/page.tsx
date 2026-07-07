@@ -10,6 +10,7 @@ import { karachiMidnightISO } from "@/lib/time";
 import type { AuditLog } from "@/lib/types";
 import { LogsTable } from "@/components/admin/logs-table";
 import { LogDateFilter } from "@/components/admin/log-date-filter";
+import { NativeSelect } from "@/components/ui/field";
 import { entityLabel } from "@/lib/audit/labels";
 
 const ENTITIES = ["profiles", "attendance", "leave_requests", "salary_structures",
@@ -54,14 +55,14 @@ export default async function LogsPage({
             <CardDescription>Every change on the platform — who, when, and what changed{superAdmin ? "" : " (payroll & financial entries are super-admin only)"}.</CardDescription>
           </div>
           <form className="flex flex-wrap items-end gap-2" id="log-filters">
-            <select name="entity" defaultValue={searchParams.entity ?? ""} className={selectCls}>
+            <NativeSelect name="entity" defaultValue={searchParams.entity ?? ""}>
               <option value="">All modules</option>
               {ENTITIES.map((e) => <option key={e} value={e}>{entityLabel(e)}</option>)}
-            </select>
-            <select name="action" defaultValue={searchParams.action ?? ""} className={selectCls}>
+            </NativeSelect>
+            <NativeSelect name="action" defaultValue={searchParams.action ?? ""} className="capitalize">
               <option value="">All actions</option>
               {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
+            </NativeSelect>
             <input name="actor" defaultValue={searchParams.actor ?? ""} placeholder="Actor email" className={`${selectCls} w-48`} />
             <LogDateFilter name="from" defaultValue={searchParams.from ?? ""} placeholder="From date" className="w-40" />
             <LogDateFilter name="to" defaultValue={searchParams.to ?? ""} placeholder="To date" className="w-40" />

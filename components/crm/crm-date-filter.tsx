@@ -39,7 +39,7 @@ export function CrmDateFilter({ range, from, to }: { range: RangeKey; from: stri
         <div className="flex items-center gap-1.5">
           <DatePicker value={from} max={to || undefined} onChange={(v) => go({ range: "custom", from: v, to })}
             placeholder="From" className="h-8 w-36 px-2 text-caption" />
-          <span className="text-caption text-text-secondary">–</span>
+          <span className="text-caption text-text-secondary">to</span>
           <DatePicker value={to} min={from || undefined} onChange={(v) => go({ range: "custom", from, to: v })}
             placeholder="To" className="h-8 w-36 px-2 text-caption" />
         </div>

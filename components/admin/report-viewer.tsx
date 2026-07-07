@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/input";
-import { FloatSelect } from "@/components/ui/field";
+import { FloatSelect, NativeSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -130,9 +130,9 @@ export function ReportViewer({ employees }: { employees: { id: string; full_name
               <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-caption text-text-secondary">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="report-page-size" className="font-normal text-text-secondary">Rows per page</Label>
-                  <select id="report-page-size" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
+                  <NativeSelect id="report-page-size" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8">
                     {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </NativeSelect>
                   <span className="tabular">{daily.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, daily.length)} of {daily.length}</span>
                 </div>
                 <div className="flex items-center gap-1">

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FloatInput } from "@/components/ui/field";
+import { FloatInput, NativeSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -101,15 +101,15 @@ export function PayrollClient({
         <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0">
           <CardTitle>Payroll runs &amp; payments</CardTitle>
           <div className="flex gap-2">
-            <select aria-label="Filter by employee" value={empFilter} onChange={(e) => setEmpFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
+            <NativeSelect aria-label="Filter by employee" value={empFilter} onChange={(e) => setEmpFilter(e.target.value)}>
               <option value="">All employees</option>
               {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-            </select>
-            <select aria-label="Filter by status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-9 rounded-md border border-border bg-white px-3 text-sm">
+            </NativeSelect>
+            <NativeSelect aria-label="Filter by status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All statuses</option>
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
-            </select>
+            </NativeSelect>
           </div>
         </CardHeader>
         <CardContent>
@@ -212,9 +212,9 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
                 <div className="flex flex-wrap items-end gap-2 pt-1">
                   <Input aria-label="Line label" placeholder="label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} className="h-8 w-40" />
                   <Input aria-label="Line amount" placeholder="amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} className="h-8 w-28" />
-                  <select aria-label="Line type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} className="h-8 rounded-md border border-border bg-white px-2 text-sm">
+                  <NativeSelect aria-label="Line type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} className="h-8">
                     <option value="addition">Addition</option><option value="deduction">Deduction</option>
-                  </select>
+                  </NativeSelect>
                   <Input aria-label="Line description" placeholder="description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} className="h-8 w-48" />
                   <Button size="sm" onClick={() => { onAddLine(run.id, nl.label, nl.amount, nl.kind, nl.description); setNl({ label: "", amount: "", kind: "addition", description: "" }); }}>Add line</Button>
                 </div>

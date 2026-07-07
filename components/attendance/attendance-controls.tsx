@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Label } from "@/components/ui/input";
+import { FloatSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import { RANGE_LABELS, type RangeKey } from "@/lib/time";
@@ -32,52 +32,43 @@ export function AttendanceControls({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="att-employee" className="block text-caption font-medium text-text-primary">Employee</Label>
-        <select
-          id="att-employee"
-          value={employeeId}
-          onChange={(e) => set({ employeeId: e.target.value })}
-          className="h-9 rounded-md border border-border bg-white px-3 text-sm"
-        >
-          <option value="">All employees</option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.full_name} {e.employee_code ? `(#${e.employee_code})` : ""}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div className="flex flex-wrap items-center gap-3">
+      <FloatSelect
+        id="att-employee"
+        label="Employee"
+        hint="Whose attendance to show. Choose All employees for the whole team."
+        value={employeeId}
+        onChange={(e) => set({ employeeId: e.target.value })}
+        wrapClassName="w-60"
+      >
+        <option value="">All employees</option>
+        {employees.map((e) => (
+          <option key={e.id} value={e.id}>
+            {e.full_name}{e.employee_code ? ` (#${e.employee_code})` : ""}
+          </option>
+        ))}
+      </FloatSelect>
 
-      <div className="space-y-1.5">
-        <span className="block text-caption font-medium text-text-primary">Range</span>
-        <div className="inline-flex rounded-md border border-border bg-white p-0.5">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              onClick={() => set({ range: r })}
-              className={cn(
-                "rounded px-3 py-1.5 text-caption font-medium transition-colors",
-                range === r ? "bg-brand-light text-brand-primary" : "text-text-secondary hover:bg-surface"
-              )}
-            >
-              {RANGE_LABELS[r]}
-            </button>
-          ))}
-        </div>
+      {/* segmented range control, same height as the fields (h-10) */}
+      <div className="inline-flex h-10 items-center rounded-md border border-border bg-surface p-1">
+        {RANGES.map((r) => (
+          <button
+            key={r}
+            onClick={() => set({ range: r })}
+            className={cn(
+              "h-full rounded px-3 text-caption font-medium transition-colors",
+              range === r ? "bg-white text-brand-primary shadow-card" : "text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {RANGE_LABELS[r]}
+          </button>
+        ))}
       </div>
 
       {range === "custom" && (
-        <div className="flex items-end gap-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="att-from" className="block text-caption font-medium text-text-primary">From</Label>
-            <DatePicker id="att-from" value={from} onChange={(v) => set({ from: v })} className="w-40" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="att-to" className="block text-caption font-medium text-text-primary">To</Label>
-            <DatePicker id="att-to" value={to} onChange={(v) => set({ to: v })} className="w-40" />
-          </div>
+        <div className="flex items-center gap-2">
+          <DatePicker id="att-from" label="From" hint="Start of the range." value={from} max={to || undefined} onChange={(v) => set({ from: v })} className="w-40" />
+          <DatePicker id="att-to" label="To" hint="End of the range." value={to} min={from || undefined} onChange={(v) => set({ to: v })} className="w-40" />
         </div>
       )}
     </div>

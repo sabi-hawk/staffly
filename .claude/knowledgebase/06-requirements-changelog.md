@@ -433,3 +433,12 @@ nav group, "Company settings" is renamed **Configuration**. **Shipped same day.*
    em-dash copy sweep, single tabbed bell, filled info glyph, profile numbers 0043/0044 (list,
    banner, pickers, calendar), profiles banner edit-in-place + upload card, leads Owner filter
    gated (BD hidden, BD Lead defaults to self w/ All BDs), select chevron gap fixed.
+
+## 2026-07-08 — Field/select consistency (owner)
+Attendance Employee dropdown, the lead EDIT card, and the CRM filters (profiles/leads/interviews/
+assessments) were still on the old pre-floating-label pattern (native selects, bold top labels,
+browser arrows touching the wall, mismatched heights). Brought them all to the FloatSelect/FloatInput
+standard used on the leaves form. Select chevrons unified (gap + refined colour + slightly bigger);
+FloatSelect label always floats; new NativeSelect for compact utility selects. Attendance range is now
+a matched-height segmented control (no bold "Range" label); custom From/To are labelled DatePickers.
+FieldLabel component removed. **Shipped same day.**

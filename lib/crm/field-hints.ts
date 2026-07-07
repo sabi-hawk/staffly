@@ -10,8 +10,8 @@ export const LEAD_HINTS: Record<string, string> = {
   owner: "The BD who owns this lead. Only a BD-Lead or admin can reassign it to someone else.",
   budget: "The budget the company is offering (what they're willing to pay).",
   expected_budget: "The rate we asked for / expect for this role.",
-  shift: "The working hours/timezone for this role, if known in advance (free text — e.g. \"US EST · 6pm–2am PKT\").",
-  job_description: "The full job description from the client — paste it here so anyone can read the requirements.",
+  shift: "The working hours/timezone for this role, if known in advance (free text, e.g. \"US EST, 6pm to 2am PKT\").",
+  job_description: "The full job description from the client. Paste it here so anyone can read the requirements.",
   notes: "Private BD notepad: call notes, next steps, anything useful for this deal.",
 };
 
@@ -26,7 +26,7 @@ export const INTERVIEW_HINTS: Record<string, string> = {
   interview_at: "The scheduled date & time of the interview.",
   given_by: "The developer who will take (or took) this interview.",
   whom_should_give: "The developer expected to take the next round, if it advances.",
-  feedback: "How the interview went — notes from the developer or client.",
+  feedback: "How the interview went: notes from the developer or client.",
 };
 
 export const ASSESSMENT_HINTS: Record<string, string> = {

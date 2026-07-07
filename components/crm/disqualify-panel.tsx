@@ -5,11 +5,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { DISQUALIFY_CATEGORIES } from "@/lib/crm/constants";
-
-const selectCls = "h-9 w-full rounded-md border border-border bg-white px-3 text-sm";
 
 export function QualificationPanel({
   leadId,
@@ -72,16 +70,22 @@ export function QualificationPanel({
         <div className="space-y-3 rounded-lg border border-border p-3">
           <p className="text-caption text-text-secondary">Why isn&apos;t this a qualified lead?</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="unqual-reason">Reason</Label>
-              <select id="unqual-reason" className={selectCls} value={cat} onChange={(e) => setCat(e.target.value)}>
-                {DISQUALIFY_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="unqual-note">Note *</Label>
-              <Input id="unqual-note" value={text} onChange={(e) => setText(e.target.value)} placeholder="Details…" />
-            </div>
+            <FloatSelect
+              id="unqual-reason"
+              label="Reason"
+              hint="Why this lead is not worth pursuing, for example a fake job posting or a budget that is too low."
+              value={cat}
+              onChange={(e) => setCat(e.target.value)}
+            >
+              {DISQUALIFY_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </FloatSelect>
+            <FloatInput
+              id="unqual-note"
+              label="Note *"
+              hint="A short explanation of why this lead is unqualified. This is required."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
           </div>
           <div className="flex gap-2">
             <Button size="sm" disabled={busy || !text.trim()} onClick={() => act({ action: "disqualify", category: cat, note: text }, "Marked unqualified")}>

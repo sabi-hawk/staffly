@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { FloatSelect } from "@/components/ui/field";
 
 export type RoleOpt = { id: string; key: string; name: string; description: string | null };
 
@@ -32,15 +33,17 @@ export function RoleAssign({ employeeId, roles, currentRoleId }: { employeeId: s
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <FloatSelect
+          label="Role"
+          hint="The role that controls what this employee can access. Assigning it also updates their base role and permission flags."
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
           aria-label="Role"
-          className="h-9 min-w-[220px] rounded-md border border-border bg-white px-3 text-sm"
+          wrapClassName="min-w-[220px]"
         >
           <option value="">Select a role…</option>
           {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </select>
+        </FloatSelect>
         <Button size="sm" onClick={save} disabled={busy || roleId === (currentRoleId ?? "")}>
           {busy ? "Saving…" : "Assign role"}
         </Button>

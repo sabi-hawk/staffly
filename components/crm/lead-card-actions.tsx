@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
+import { NativeSelect } from "@/components/ui/field";
 import { LEAD_STATUS_META, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 
-const selectCls = "h-8 rounded-md border border-border bg-white px-2 text-caption";
 const needsReason = (s: string) => (LEAD_REASON_STATUSES as readonly string[]).includes(s);
 
 export function LeadCardActions({
@@ -56,9 +56,9 @@ export function LeadCardActions({
   return (
     <div className="flex flex-1 flex-wrap items-center gap-2">
       <label htmlFor={`lead-status-${leadId}`} className="sr-only">Status</label>
-      <select
+      <NativeSelect
         id={`lead-status-${leadId}`}
-        className={selectCls}
+        className="h-8 text-caption"
         value={pending ?? status}
         onChange={(e) => onPick(e.target.value)}
         disabled={busy}
@@ -66,7 +66,7 @@ export function LeadCardActions({
         {LEAD_STATUS_META.map((s) => (
           <option key={s.value} value={s.value}>{s.label}</option>
         ))}
-      </select>
+      </NativeSelect>
 
       <Link
         href={`/crm/leads/${leadId}`}

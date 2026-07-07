@@ -46,3 +46,12 @@ in the same change. Seed = `supabase/seed.sql` + `scripts/seed.mjs`.
   (see `FloatSelect`).
 - **No em dashes (—) in user-visible copy** — write plain sentences (owner: reads as AI-generated).
 - Every field that needs explaining gets an InfoHint `hint` (2 words to 3 lines, say WHY it exists).
+
+### Selects & filters (2026-07-08)
+- Form selects → `FloatSelect` (floating label ALWAYS visible, since a select is never visually
+  empty). Compact filter/utility selects (rows-per-page, toolbar filters, log filters) → `NativeSelect`
+  from `components/ui/field.tsx` (custom chevron with a gap from the right border + refined colour;
+  never the browser-default arrow touching the wall).
+- CRM list filters (`components/crm/filter-bar.tsx`) use `FloatSelect` + `FloatInput` so they match
+  the forms — one field standard across the platform. Do NOT hand-roll `selectCls` / native `<select>`
+  in new UI.
