@@ -25,7 +25,7 @@ export function BarChart({ groups, series, height = 220 }: { groups: BarGroup[];
             return (
               <rect key={`${gi}-${si}`} x={x} y={8 + plotH - h} width={barW - 3} height={h}
                 rx="2" fill={series[si].color}>
-                <title>{`${g.label} — ${series[si].name}: ${v}`}</title>
+                <title>{`${g.label} · ${series[si].name}: ${v}`}</title>
               </rect>
             );
           })

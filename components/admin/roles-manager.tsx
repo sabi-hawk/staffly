@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Lock, X, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { RoleEditor, type PermRow } from "./role-editor";
 
 export type RoleRow = {
@@ -77,11 +77,12 @@ export function RolesManager({ roles, catalog }: { roles: RoleRow[]; catalog: Pe
           {/* no flex-wrap: a long reason must never push the actions below the text */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
+              {/* sleek, low-profile meta chips (owner: less bulky than the bordered badges) */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="font-semibold text-text-primary">{r.name}</span>
-                {r.is_system && <Badge tone="neutral"><Lock className="mr-1 size-3" /> system</Badge>}
-                <Badge tone="brand">{r.grants.length} permissions</Badge>
-                <Badge tone={r.users > 0 ? "success" : "neutral"}>{r.users} user{r.users === 1 ? "" : "s"}</Badge>
+                {r.is_system && <span className="inline-flex items-center gap-1 text-[11px] text-text-secondary"><Lock className="size-3" /> System</span>}
+                <span className="text-[11px] text-text-secondary"><span className="font-medium text-brand-primary">{r.grants.length}</span> permissions</span>
+                <span className="text-[11px] text-text-secondary"><span className={cn("font-medium", r.users > 0 ? "text-success" : "text-text-primary")}>{r.users}</span> user{r.users === 1 ? "" : "s"}</span>
                 {ROLE_FLAGS[r.key] && <FlagChip {...ROLE_FLAGS[r.key]} />}
               </div>
               {r.description && <p className="mt-1 text-sm text-text-secondary">{r.description}</p>}

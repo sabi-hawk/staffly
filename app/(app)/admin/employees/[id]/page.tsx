@@ -6,7 +6,8 @@ import { PERM } from "@/lib/access/permissions";
 import { resolveRange, type RangeKey } from "@/lib/time";
 import { buildEmployeeReport } from "@/lib/services/reports";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
+import { EmployeeAttendanceTable } from "@/components/admin/employee-attendance-table";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
@@ -119,26 +120,43 @@ export default async function EmployeeDetail({
         </Card>
       )}
 
-      {/* Capability flags (admin + super admin) */}
-      {adminViewer && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Flags</CardTitle>
-            <CardDescription>Developer (assignable in pickers) / BD-Lead / deal-assigned. Assigning a role syncs the BD-Lead and deal-assigned flags automatically.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer }} />
-          </CardContent>
-        </Card>
+      {/* Shift (after Role) — collapsible */}
+      <CollapsibleCard title="Shift" defaultOpen={false}>
+        <ShiftEditor employeeId={p.id} shift={shift} />
+      </CollapsibleCard>
+
+      {/* Compensation (super admin only) — after Role, collapsible */}
+      {superAdmin && (
+        <CollapsibleCard
+          title="Compensation"
+          description={`Base salary ${formatPKR(salary?.base_salary ?? 0)} · additional categories below`}
+          defaultOpen={false}
+        >
+          <CompensationEditor employeeId={p.id} components={comps} baseSalary={Number(salary?.base_salary ?? 0)} />
+        </CollapsibleCard>
       )}
 
-      {/* Attendance summary with range */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>Attendance summary</CardTitle>
-          <RangeTabs range={range} from={from} to={to} />
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Commission policy (BD employees, super admin only) */}
+      {superAdmin && isBD && (
+        <CollapsibleCard title="Commission policy" description="Percentage commitments for this business-development employee." defaultOpen={false}>
+          <CommissionEditor employeeId={p.id} policies={policies} />
+        </CollapsibleCard>
+      )}
+
+      {/* Capability flags (admin + super admin) — collapsible */}
+      {adminViewer && (
+        <CollapsibleCard
+          title="Flags"
+          description="Developer (assignable in pickers) / BD-Lead / deal-assigned. Assigning a role syncs the BD-Lead and deal-assigned flags automatically."
+          defaultOpen={false}
+        >
+          <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer }} />
+        </CollapsibleCard>
+      )}
+
+      {/* Attendance summary with range — collapsible + paginated */}
+      <CollapsibleCard title="Attendance summary" action={<RangeTabs range={range} from={from} to={to} />} defaultOpen={false}>
+        <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <StatCard label="Total hours" value={formatHours(report.totalHours)} icon={Clock} />
             <StatCard label="Deficit" value={formatHours(report.totalDeficitHours)} icon={TrendingDown} tone="danger" />
@@ -147,69 +165,9 @@ export default async function EmployeeDetail({
             <StatCard label="Leaves" value={report.leaveDays} icon={Plane} tone="neutral" />
             <StatCard label="Missing" value={report.missingDays} icon={CalendarX} tone="warning" />
           </div>
-          <Table>
-            <THead><TR><TH>Date</TH><TH>Hours</TH><TH>Deficit/Extra</TH><TH>Task summary</TH></TR></THead>
-            <TBody>
-              {report.daily.slice(-15).reverse().map((r: any) => {
-                const summaryText = (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
-                return (
-                  <TR key={r.work_date}>
-                    <TD className="tabular">{r.work_date}</TD>
-                    <TD className="tabular">{formatHours(r.total_hours)}</TD>
-                    <TD>
-                      {Number(r.deficit_hours) > 0 && <Badge tone="danger">-{formatHours(r.deficit_hours)}</Badge>}
-                      {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
-                    </TD>
-                    <TD className="max-w-[260px]">
-                      {summaryText ? (
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate text-text-secondary">{summaryText}</span>
-                            {r.summary_late && <Badge tone="warning">late</Badge>}
-                          </div>
-                          {r.summary_late && r.summary_at && <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>}
-                        </div>
-                      ) : r.check_in_time ? <Badge tone="warning">missing</Badge> : <span className="text-text-secondary">—</span>}
-                    </TD>
-                  </TR>
-                );
-              })}
-            </TBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Shift */}
-      <Card>
-        <CardHeader><CardTitle>Shift</CardTitle></CardHeader>
-        <CardContent><ShiftEditor employeeId={p.id} shift={shift} /></CardContent>
-      </Card>
-
-      {/* Commission policy (BD employees, super admin only) */}
-      {superAdmin && isBD && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Commission policy</CardTitle>
-            <CardDescription>Percentage commitments for this business-development employee.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CommissionEditor employeeId={p.id} policies={policies} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Compensation (super admin only) */}
-      {superAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Compensation</CardTitle>
-            <CardDescription>Base salary {formatPKR(salary?.base_salary ?? 0)} · additional categories below</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CompensationEditor employeeId={p.id} components={comps} baseSalary={Number(salary?.base_salary ?? 0)} />
-          </CardContent>
-        </Card>
-      )}
+          <EmployeeAttendanceTable daily={report.daily} />
+        </div>
+      </CollapsibleCard>
 
       {/* Editable details */}
       <Card>

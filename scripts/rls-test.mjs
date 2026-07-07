@@ -241,6 +241,11 @@ async function main() {
     await pgc.query(`delete from deal_developers where deal_id=$1 and developer_id=$2`, [anyDeal, EMP]);
   }
 
+  // Reset EMP to a clean baseline: the auto-flag trigger (0047) + seed role-sync can leave EMP as a
+  // deal-developer if EMP is on a demo deal, which would break the guard tests below. (pgc = service
+  // role, bypasses RLS/guard.)
+  await pgc.query(`update profiles set is_deal_developer=false, app_role_id=(select id from app_roles where key='employee') where id=$1`, [EMP]);
+
   // ── is_deal_developer flag (0031): only admins may set it; a non-admin self-set is blocked by the guard.
   const empFlag = await emp.from("profiles").update({ is_deal_developer: true }).eq("id", EMP).select();
   const flagAfter = (await pgc.query(`select is_deal_developer from profiles where id=$1`, [EMP])).rows[0]?.is_deal_developer;

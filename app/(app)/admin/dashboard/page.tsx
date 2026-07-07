@@ -109,7 +109,7 @@ export default async function AdminDashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Live status — {today}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Live status · {today}</CardTitle></CardHeader>
           <CardContent>
             <Table>
               <THead><TR><TH>Employee</TH><TH>Type</TH><TH>In</TH><TH>Out</TH><TH>Status</TH></TR></THead>

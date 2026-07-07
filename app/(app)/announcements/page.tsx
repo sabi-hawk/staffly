@@ -63,7 +63,7 @@ export default async function AnnouncementsPage({ searchParams }: { searchParams
                 </span>
               </div>
               {a.body_text && <p className="mt-1 whitespace-pre-wrap text-sm text-text-secondary">{a.body_text}</p>}
-              <p className="mt-2 text-[11px] text-text-secondary">— {a.profiles?.full_name ?? "Admin"}</p>
+              <p className="mt-2 text-[11px] text-text-secondary">by {a.profiles?.full_name ?? "Admin"}</p>
             </div>
           ))}
           <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

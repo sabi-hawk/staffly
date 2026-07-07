@@ -52,7 +52,7 @@ export default async function LogsPage({
         <CardHeader className="space-y-3">
           <div>
             <CardTitle>Activity Log</CardTitle>
-            <CardDescription>Every change on the platform — who, when, and what changed{superAdmin ? "" : " (payroll & financial entries are super-admin only)"}.</CardDescription>
+            <CardDescription>Every change on the platform: who, when, and what changed{superAdmin ? "" : " (payroll & financial entries are super-admin only)"}.</CardDescription>
           </div>
           <form className="flex flex-wrap items-end gap-2" id="log-filters">
             <NativeSelect name="entity" defaultValue={searchParams.entity ?? ""}>

@@ -24,7 +24,7 @@ export function LineChart({ points, series, height = 200 }: { points: LinePoint[
         {series.map((s, si) =>
           points.map((p, i) => (
             <circle key={`${si}-${i}`} cx={x(i)} cy={y(p.values[si])} r="4" fill={s.color}>
-              <title>{`${p.label} — ${s.name}: ${p.values[si]}`}</title>
+              <title>{`${p.label} · ${s.name}: ${p.values[si]}`}</title>
             </circle>
           ))
         )}

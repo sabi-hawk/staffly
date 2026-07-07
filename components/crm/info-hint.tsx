@@ -8,7 +8,7 @@ export function InfoHint({ text, label }: { text: string; label?: string }) {
     <span className="group/hint relative inline-flex align-middle">
       <button
         type="button"
-        aria-label={label ? `${label} — ${text}` : text}
+        aria-label={label ? `${label}: ${text}` : text}
         className="text-text-secondary/50 transition-colors hover:text-brand-primary focus:text-brand-primary focus:outline-none"
       >
         <svg viewBox="0 0 16 16" className="size-3.5" aria-hidden="true">

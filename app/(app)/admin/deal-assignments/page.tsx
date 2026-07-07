@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
@@ -14,6 +16,7 @@ export default async function DealAssignmentsPage() {
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.dealsDirectory)) redirect("/dashboard");
   const supabase = createClient();
+  const canOpenDeal = hasPermP(me, PERM.dealsView); // only super-admin may open the full deal
   const { data } = await supabase.rpc("deal_directory");
   const rows = (data ?? []) as any[];
 
@@ -21,7 +24,7 @@ export default async function DealAssignmentsPage() {
     <Card>
       <CardHeader>
         <CardTitle>Deal assignments</CardTitle>
-        <CardDescription>Which developer is assigned to which client deal. Names only — deal financials are super-admin only.</CardDescription>
+        <CardDescription>Which developer is assigned to which client deal. Names only; deal financials are super-admin only.{canOpenDeal ? " Click a deal to open it." : ""}</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -31,7 +34,13 @@ export default async function DealAssignmentsPage() {
           <TBody>
             {rows.map((r) => (
               <TR key={`${r.deal_id}-${r.developer_id}-${r.role}`}>
-                <TD className="font-medium">{r.deal_name}</TD>
+                <TD className="font-medium">
+                  {canOpenDeal ? (
+                    <Link href={`/crm/deals/${r.deal_id}`} className="inline-flex items-center gap-1 text-brand-primary hover:underline">
+                      {r.deal_name} <ExternalLink className="size-3.5" />
+                    </Link>
+                  ) : r.deal_name}
+                </TD>
                 <TD>{r.developer_name}</TD>
                 <TD className="capitalize">{r.role}</TD>
                 <TD><Badge tone={statusTone(r.status)}>{labelize(r.status)}</Badge></TD>

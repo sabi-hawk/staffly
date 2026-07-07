@@ -60,7 +60,7 @@ export default async function AttendancePage({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
           <p className="text-sm text-text-primary">
             <span className="font-medium text-warning">⚠ Today's task summary is missing.</span>{" "}
-            <span className="text-text-secondary">Please add a couple of lines on what you worked on — before you sign off for the day.</span>
+            <span className="text-text-secondary">Please add a couple of lines on what you worked on, before you sign off for the day.</span>
           </p>
           <DailySummary workDate={today} today={today} html={todayRow!.daily_summary} late={todayRow!.summary_late} />
         </div>

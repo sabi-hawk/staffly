@@ -37,7 +37,7 @@ export default async function RolesPage() {
       <CardHeader>
         <CardTitle>Roles &amp; permissions</CardTitle>
         <CardDescription>
-          Every role&apos;s permission grants — the system defaults carry the reason they exist and can&apos;t be
+          Every role&apos;s permission grants. The system defaults carry the reason they exist and can&apos;t be
           deleted. Create custom roles from the same catalog; assign a role on the employee&apos;s page.
         </CardDescription>
       </CardHeader>
