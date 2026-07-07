@@ -5,10 +5,19 @@ import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { FloatInput } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR } from "@/lib/utils";
 import type { CompensationComponent } from "@/lib/types";
+
+// A category is one of three kinds:
+//  recurring + fixed    → added to every payslip at the fixed amount
+//  recurring + variable → added to every payslip; the amount is a default to review each run
+//  occasional           → NOT auto-added; included in a payslip only when you add it that month
+function typeBadge(c: CompensationComponent) {
+  if (!c.recurring) return <Badge tone="neutral">Occasional</Badge>;
+  return c.is_fixed_amount ? <Badge tone="brand">Monthly · fixed</Badge> : <Badge tone="warning">Monthly · variable</Badge>;
+}
 
 /** Super-admin editor for an employee's base salary + dynamic compensation categories. */
 export function CompensationEditor({
@@ -25,6 +34,7 @@ export function CompensationEditor({
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [recurring, setRecurring] = useState(true);
+  const [fixedAmount, setFixedAmount] = useState(true);
   const [busy, setBusy] = useState(false);
   const [base, setBase] = useState(String(baseSalary ?? 0));
   const [savingBase, setSavingBase] = useState(false);
@@ -32,7 +42,6 @@ export function CompensationEditor({
   async function saveBase() {
     setSavingBase(true);
     const supabase = createClient();
-    // update the active salary structure, or create one if none exists
     const { data: existing } = await supabase
       .from("salary_structures").select("id").eq("employee_id", employeeId).eq("is_active", true).maybeSingle();
     const value = Number(base) || 0;
@@ -56,11 +65,12 @@ export function CompensationEditor({
       amount: Number(amount),
       description: description || null,
       recurring,
+      is_fixed_amount: recurring ? fixedAmount : true,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Category added");
-    setLabel(""); setAmount(""); setDescription(""); setRecurring(true);
+    setLabel(""); setAmount(""); setDescription(""); setRecurring(true); setFixedAmount(true);
     router.refresh();
   }
 
@@ -76,60 +86,57 @@ export function CompensationEditor({
     <div className="space-y-4">
       {/* base salary */}
       <div className="flex flex-wrap items-end gap-3 rounded-md border border-border p-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="comp-base">Base salary (PKR)</Label>
-          <Input id="comp-base" type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} className="w-48" />
-          <p className="text-caption text-text-secondary">Set 0 for commission-only staff; net pay is then just their compensation categories.</p>
-        </div>
+        <FloatInput id="comp-base" label="Base salary (PKR)" hint="Set 0 for commission-only staff; net pay is then just their compensation categories." type="number" min={0} value={base} onChange={(e) => setBase(e.target.value)} wrapClassName="w-56" />
         <Button onClick={saveBase} disabled={savingBase}>{savingBase ? "Saving…" : "Update base salary"}</Button>
       </div>
 
       <div className="space-y-2">
         <p className="text-caption font-medium text-text-secondary">Additional categories</p>
-        {components.length === 0 && (
-          <p className="text-caption text-text-secondary">No additional compensation categories yet.</p>
-        )}
+        {components.length === 0 && <p className="text-caption text-text-secondary">No additional compensation categories yet.</p>}
         {components.map((c) => (
           <div key={c.id} className="flex items-start justify-between rounded-md border border-border p-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-text-primary">{c.label}</span>
-                <Badge tone={c.recurring ? "brand" : "neutral"}>{c.recurring ? "recurring" : "one-off"}</Badge>
+                {typeBadge(c)}
               </div>
               {c.description && <p className="text-caption text-text-secondary">{c.description}</p>}
+              {!c.recurring && <p className="text-caption text-text-secondary">Not on the payslip by default; add it to a run when it applies.</p>}
             </div>
             <div className="flex items-center gap-3">
-              <span className="tabular font-semibold text-text-primary">{formatPKR(c.amount)}</span>
-              <button onClick={() => remove(c.id)} className="text-text-secondary hover:text-danger" aria-label="Remove">
-                <Trash2 className="size-4" />
-              </button>
+              <span className="tabular font-semibold text-text-primary">{formatPKR(c.amount)}{c.recurring && !c.is_fixed_amount ? " (default)" : ""}</span>
+              <button onClick={() => remove(c.id)} className="text-text-secondary hover:text-danger" aria-label="Remove"><Trash2 className="size-4" /></button>
             </div>
           </div>
         ))}
       </div>
 
-      <form onSubmit={add} className="grid gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="comp-label">Category</Label>
-          <Input id="comp-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Fuel Allowance" />
+      <form onSubmit={add} className="space-y-3 rounded-md border border-dashed border-border p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FloatInput id="comp-label" label="Category" hint="e.g. Fuel Allowance, Bonus, Internet Allowance." value={label} onChange={(e) => setLabel(e.target.value)} />
+          <FloatInput id="comp-amount" label={fixedAmount || !recurring ? "Amount (PKR)" : "Default amount (PKR)"} hint={recurring && !fixedAmount ? "The amount varies each month; this is the default you review per run." : "The amount added to pay for this category."} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <FloatInput id="comp-description" label="Description" hint="Why or when it was decided (shown for context)." value={description} onChange={(e) => setDescription(e.target.value)} wrapClassName="sm:col-span-2" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="comp-amount">Amount (PKR)</Label>
-          <Input id="comp-amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className="flex items-center gap-2 text-sm text-text-primary">
+            <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
+            Applies every month
+          </label>
+          {recurring && (
+            <label className="flex items-center gap-2 text-sm text-text-primary">
+              <input type="checkbox" checked={fixedAmount} onChange={(e) => setFixedAmount(e.target.checked)} />
+              Fixed amount (uncheck if it varies each month)
+            </label>
+          )}
         </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="comp-description">Description</Label>
-          <Input id="comp-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Why / when it was decided" />
-        </div>
-        <label className="flex items-center gap-2 text-caption text-text-secondary">
-          <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} />
-          Recurring (applies every month)
-        </label>
-        <div className="sm:col-span-2">
-          <Button type="submit" disabled={busy}>
-            <Plus className="size-4" /> Add category
-          </Button>
-        </div>
+        <p className="text-caption text-text-secondary">
+          {recurring
+            ? fixedAmount
+              ? "Added to every payslip at this amount."
+              : "Added to every payslip; review the amount each run."
+            : "An occasional category (e.g. a bonus). Saved here but only added to a payslip when you apply it for that month."}
+        </p>
+        <Button type="submit" disabled={busy}><Plus className="size-4" /> Add category</Button>
       </form>
     </div>
   );

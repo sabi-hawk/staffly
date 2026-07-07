@@ -9,8 +9,9 @@ import { parsePaging } from "@/lib/pagination";
 import { karachiMidnightISO } from "@/lib/time";
 import type { AuditLog } from "@/lib/types";
 import { LogsTable } from "@/components/admin/logs-table";
-import { LogDateFilter } from "@/components/admin/log-date-filter";
-import { NativeSelect } from "@/components/ui/field";
+import { LogFilters } from "@/components/admin/log-filters";
+import { FilterShell } from "@/components/crm/filter-shell";
+import { LoginPager } from "@/components/admin/login-pager";
 import { entityLabel } from "@/lib/audit/labels";
 
 const ENTITIES = ["profiles", "attendance", "leave_requests", "salary_structures",
@@ -19,12 +20,12 @@ const ENTITIES = ["profiles", "attendance", "leave_requests", "salary_structures
   "leads", "interviews", "assessments", "assessment_documents",
   "deals", "deal_documents", "receiving_accounts", "payment_methods"];
 const ACTIONS = ["insert", "update", "delete", "download"];
-const selectCls = "h-9 rounded-md border border-border bg-white px-3 text-sm";
+const LOGIN_PAGE_SIZE = 15;
 
 export default async function LogsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; pageSize?: string; entity?: string; action?: string; actor?: string; from?: string; to?: string };
+  searchParams: { page?: string; pageSize?: string; entity?: string; action?: string; actor?: string; from?: string; to?: string; lpage?: string };
 }) {
   const viewer = await getCurrentProfile();
   if (!viewer || !(hasPermP(viewer, PERM.activityViewOps) || hasPermP(viewer, PERM.activityViewFinancial))) redirect("/admin/dashboard");
@@ -36,15 +37,16 @@ export default async function LogsPage({
   if (searchParams.entity) q = q.eq("entity", searchParams.entity);
   if (searchParams.action) q = q.eq("action", searchParams.action);
   if (searchParams.actor) q = q.ilike("actor_email", `%${searchParams.actor}%`);
-  // date filters interpreted in Asia/Karachi (created_at is UTC timestamptz)
   if (searchParams.from) q = q.gte("created_at", karachiMidnightISO(searchParams.from));
   if (searchParams.to) q = q.lte("created_at", new Date(`${searchParams.to}T23:59:59+05:00`).toISOString());
   const { data: logs, count } = await q;
 
   const superAdmin = hasPermP(viewer, PERM.activityViewFinancial);
-  const { data: logins } = superAdmin
-    ? await supabase.from("login_events").select("*").order("created_at", { ascending: false }).limit(15)
-    : { data: [] };
+  const loginPage = Math.max(1, Number(searchParams.lpage) || 1);
+  const loginFrom = (loginPage - 1) * LOGIN_PAGE_SIZE;
+  const { data: logins, count: loginCount } = superAdmin
+    ? await supabase.from("login_events").select("*", { count: "exact" }).order("created_at", { ascending: false }).range(loginFrom, loginFrom + LOGIN_PAGE_SIZE - 1)
+    : { data: [], count: 0 };
 
   return (
     <div className="space-y-6">
@@ -52,27 +54,24 @@ export default async function LogsPage({
         <CardHeader className="space-y-3">
           <div>
             <CardTitle>Activity Log</CardTitle>
-            <CardDescription>Every change on the platform: who, when, and what changed{superAdmin ? "" : " (payroll & financial entries are super-admin only)"}.</CardDescription>
+            <CardDescription>Every change on the platform: who, when, and what changed{superAdmin ? "" : " (payroll and financial entries are super-admin only)"}.</CardDescription>
           </div>
-          <form className="flex flex-wrap items-end gap-2" id="log-filters">
-            <NativeSelect name="entity" defaultValue={searchParams.entity ?? ""}>
-              <option value="">All modules</option>
-              {ENTITIES.map((e) => <option key={e} value={e}>{entityLabel(e)}</option>)}
-            </NativeSelect>
-            <NativeSelect name="action" defaultValue={searchParams.action ?? ""} className="capitalize">
-              <option value="">All actions</option>
-              {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-            </NativeSelect>
-            <input name="actor" defaultValue={searchParams.actor ?? ""} placeholder="Actor email" className={`${selectCls} w-48`} />
-            <LogDateFilter name="from" defaultValue={searchParams.from ?? ""} placeholder="From date" className="w-40" />
-            <LogDateFilter name="to" defaultValue={searchParams.to ?? ""} placeholder="To date" className="w-40" />
-            <button type="submit" className="h-9 rounded-md bg-brand-primary px-4 text-sm font-medium text-white">Apply</button>
-          </form>
         </CardHeader>
         <CardContent>
-          <AutoSubmitScript />
-          <LogsTable rows={(logs ?? []) as AuditLog[]} />
-          <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
+          <FilterShell
+            toolbar={
+              <div className="mb-4">
+                <LogFilters
+                  entities={ENTITIES.map((e) => ({ value: e, label: entityLabel(e) }))}
+                  actions={ACTIONS.map((a) => ({ value: a, label: a }))}
+                  initial={{ entity: searchParams.entity ?? "", action: searchParams.action ?? "", actor: searchParams.actor ?? "", from: searchParams.from ?? "", to: searchParams.to ?? "" }}
+                />
+              </div>
+            }
+          >
+            <LogsTable rows={(logs ?? []) as AuditLog[]} />
+            <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
+          </FilterShell>
         </CardContent>
       </Card>
 
@@ -80,7 +79,7 @@ export default async function LogsPage({
         <Card>
           <CardHeader>
             <CardTitle>Login activity</CardTitle>
-            <CardDescription>IP &amp; device captured at sign-in (a browser can&apos;t expose a hardware MAC address).</CardDescription>
+            <CardDescription>IP and device captured at sign-in (a browser can&apos;t expose a hardware MAC address).</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -97,21 +96,10 @@ export default async function LogsPage({
                 {(logins ?? []).length === 0 && <TR><TD colSpan={4} className="py-6 text-center text-text-secondary">No logins recorded yet.</TD></TR>}
               </TBody>
             </Table>
+            <LoginPager page={loginPage} pageSize={LOGIN_PAGE_SIZE} total={loginCount ?? 0} />
           </CardContent>
         </Card>
       )}
     </div>
-  );
-}
-
-/** Progressive enhancement: submit the filter form when a select changes. */
-function AutoSubmitScript() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html:
-          "document.addEventListener('change',function(e){var t=e.target;if(t&&t.form&&t.form.id==='log-filters'&&t.tagName==='SELECT'){t.form.requestSubmit?t.form.requestSubmit():t.form.submit();}});",
-      }}
-    />
   );
 }

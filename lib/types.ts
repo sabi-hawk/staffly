@@ -175,6 +175,7 @@ export interface CompensationComponent {
   amount: number;
   description: string | null;
   recurring: boolean;
+  is_fixed_amount: boolean;
   is_active: boolean;
   created_by: string | null;
   created_at: string;

@@ -24,7 +24,22 @@ export default function HandbookPage() {
           <li>Check in when you start and check out when you leave. You may check out and back in for <strong>breaks</strong> during the day. Your timer pauses on checkout and resumes on the next check-in.</li>
           <li>Your day's total is the <strong>sum of your worked sessions</strong> (breaks are not counted).</li>
           <li><strong>Deficit</strong> (short of your shift) and <strong>extra</strong> hours are tracked per day. Extra hours on one day never cancel a shortfall on another day (non-netting).</li>
-          <li>Forgot to check out? An admin can correct your time, and you can edit your own checkout for the current day.</li>
+          <li>Forgot to check out? An admin can correct your time, and you can edit your own checkout for the current day. Working late is fine: a checkout after midnight is recorded on the correct day.</li>
+        </ul>
+      </Section>
+
+      <Section title="Daily task summary">
+        <ul>
+          <li>On each working day you check in, write a short <strong>task summary</strong> of what you worked on before you sign off.</li>
+          <li>You can edit the summary the <strong>same day</strong>; once the day has passed it is locked. A summary added after the day is flagged as <strong>added late</strong> for admins.</li>
+          <li>Admins can see who is still missing today&apos;s summary.</li>
+        </ul>
+      </Section>
+
+      <Section title="Missing attendance">
+        <ul>
+          <li>A scheduled working day with <strong>no attendance and no approved leave</strong> is treated like unpaid leave and <strong>deducted</strong> from that month&apos;s pay.</li>
+          <li>The payslip lists the exact missing dates. If a day was missed by mistake, an admin fixes the record (adds the attendance or a leave) and regenerates payroll to clear the deduction.</li>
         </ul>
       </Section>
 
@@ -39,7 +54,7 @@ export default function HandbookPage() {
 
       <Section title="Casual leave">
         <ul>
-          <li><strong>1 day per month</strong>, submitted for admin approval like all leave.</li>
+          <li><strong>1 day per month</strong>, submitted for admin approval like all leave. Only <strong>one casual request per month</strong>.</li>
           <li>Casual leave is <strong>use-it-or-lose-it</strong>: if you don't use it in a month, it does <strong>not</strong> carry over.</li>
         </ul>
       </Section>
@@ -79,6 +94,7 @@ export default function HandbookPage() {
       <Section title="Holidays & calendar">
         <ul>
           <li>Public/national/company holidays are published on the shared <strong>Calendar</strong> and excluded from working-day calculations.</li>
+          <li>A holiday can apply to the <strong>whole company or specific teams</strong>. You only see the holidays that apply to you; for anyone outside a holiday&apos;s audience that day stays a normal working day.</li>
           <li>The calendar also shows who is on approved leave so the team can plan around it.</li>
         </ul>
       </Section>

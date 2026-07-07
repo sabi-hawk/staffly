@@ -103,14 +103,15 @@ export function navForPerms(perms: ReadonlySet<string> | string[]): NavEntry[] {
     ...(crm.length ? group("CRM", FolderKanban, crm) : []),
     ...pick(has, { label: "Payroll", href: "/admin/payroll", icon: Wallet, perm: PERM.payrollView }),
 
-    // Management
+    // Management — Reports lives here (it's the people/employee report). Activity Log is its own
+    // top-level item (a group with one child renders flat).
     ...group("People", Users, [
       ...pick(has, { label: "Employees", href: "/admin/employees", icon: Users, perm: PERM.employeesView }),
       ...pick(has, { label: "Roles", href: "/admin/roles", icon: ShieldCheck, perm: PERM.rolesManage }),
+      ...pick(has, { label: "Reports", href: "/admin/reports", icon: BarChart3, perm: PERM.reportsView }),
       ...pick(has, { label: "Deal assignments", href: "/admin/deal-assignments", icon: Handshake, perm: PERM.dealsDirectory }),
     ]),
-    ...group("Reports & Logs", BarChart3, [
-      ...pick(has, { label: "Reports", href: "/admin/reports", icon: BarChart3, perm: PERM.reportsView }),
+    ...group("Activity Log", ScrollText, [
       ...pick(has, { label: "Activity Log", href: "/admin/logs", icon: ScrollText, perm: PERM.activityViewOps }),
     ]),
     ...group("Documents", FileStack, [

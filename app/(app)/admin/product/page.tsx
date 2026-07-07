@@ -104,12 +104,49 @@ export default async function ProductDocPage() {
         </ul>
       </Section>
 
+      <Section title="Roles & permissions (RBAC)">
+        <ul>
+          <li>Every capability is a <strong>permission</strong> (module.action). A role is a set of permissions; the role decides what a person sees and can do (nav, pages, data).</li>
+          <li>Eight <strong>system roles</strong> ship with a written reason and can&apos;t be deleted. A super-admin can create <strong>custom roles</strong> from the same permission catalog and assign them on the employee&apos;s page.</li>
+          <li>Two roles auto-set a profile <strong>flag</strong> on assignment: BD Lead sets <code>is_bd_lead</code>; Deal-assigned Developer sets <code>is_deal_developer</code>. Assigning a developer to a deal in CRM also sets <code>is_deal_developer</code> automatically.</li>
+        </ul>
+      </Section>
+
+      <Section title="Configuration & holidays">
+        <ul>
+          <li>Leave quotas (annual/year, casual/month) drive the leave rules. <strong>Check-in buffer</strong> = grace before a check-in is marked late. <strong>Missed-checkout alert</strong> = hours past expected checkout before the system reminds the employee and alerts admins (a forgotten-checkout heads-up, never a warning held against anyone).</li>
+          <li>Holidays are managed on the Announcements page and can target the <strong>whole company or specific teams</strong>, and can exclude deal-assigned developers. Applicability drives both visibility and working-day math (attendance, leave counting, payroll).</li>
+        </ul>
+      </Section>
+
+      <Section title="Payroll">
+        <ul>
+          <li>Net = <strong>base salary + additions − deductions</strong>. Additions come from each employee&apos;s recurring compensation categories (e.g. fuel allowance) and BD commissions.</li>
+          <li>Deductions include unpaid leave and <strong>missing days</strong> (a scheduled working day with no attendance and no approved leave), each priced at base ÷ working-days, with the exact dates shown on the payslip so HR can fix and regenerate.</li>
+          <li>A run is a draft until <strong>finalised</strong>, then <strong>marked paid</strong> (with a paid date and receiving account). Payslips print or save as PDF.</li>
+        </ul>
+      </Section>
+
+      <Section title="Notifications & activity log">
+        <ul>
+          <li>Everyone has a topbar <strong>bell</strong>: leave decisions and new announcements arrive there (and leave decisions also send an email). Admins get a second tab for operational <strong>alerts</strong> (pending approvals, forgotten checkouts, closed leads).</li>
+          <li>The <strong>Activity Log</strong> records every change (who, when, what). It is scoped: super-admin sees all; admin/BD-Lead see non-financial entries; a BD sees their own CRM records. Financial and PII history stays super-admin only.</li>
+        </ul>
+      </Section>
+
       <Section title="Data privacy (defense in depth)">
         <ul>
           <li>Salary / payroll / compensation / payslips / login-events = <strong>super-admin only</strong>.</li>
           <li>Deal details/financials = <strong>super-admin only</strong>.</li>
           <li>CNIC / bank live in a separate private table (self or super-admin).</li>
           <li>Every rule is enforced in three layers: middleware, Supabase RLS, and the UI.</li>
+        </ul>
+      </Section>
+
+      <Section title="Sessions & security">
+        <ul>
+          <li>Sessions are long-lived: the login token refreshes automatically on every navigation and while a tab is open, so an all-day user is never logged out. If a session ever can&apos;t refresh, the user is returned to login and resumes exactly where they were.</li>
+          <li>Deactivated accounts are blocked at the middleware, RLS, and UI layers.</li>
         </ul>
       </Section>
     </div>
