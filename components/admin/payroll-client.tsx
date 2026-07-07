@@ -163,8 +163,10 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
         <TD className="tabular text-danger">{formatPKR(run.deductions)}</TD>
         <TD className="tabular font-semibold">{formatPKR(run.net_pay)}</TD>
         <TD>
-          <Badge tone={run.payment_status === "paid" ? "success" : "warning"}>{run.payment_status}</Badge>
-          {run.status === "finalised" && <Badge tone="neutral" className="ml-1">finalised</Badge>}
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Badge tone={run.payment_status === "paid" ? "success" : "warning"}>{run.payment_status}</Badge>
+            {run.status === "finalised" && <Badge tone="neutral">finalised</Badge>}
+          </span>
         </TD>
         <TD>
           <div className="flex items-center gap-1.5">

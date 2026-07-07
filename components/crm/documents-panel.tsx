@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Eye, Star, Trash2, Pencil, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
 import { FileInput } from "@/components/ui/file-input";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
@@ -79,7 +78,11 @@ function DocRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="truncate font-medium">{d.label || d.file_name || "Document"}</span>
-            {d.is_primary && <Badge tone="success">Primary</Badge>}
+            {d.is_primary && (
+              <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-success" title="Primary resume">
+                <Star className="size-3 fill-success" /> Primary
+              </span>
+            )}
           </div>
           <div className="truncate text-caption text-text-secondary">{d.file_name}</div>
         </div>

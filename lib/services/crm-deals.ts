@@ -1,5 +1,6 @@
 // CRM Deals service (admin/super-admin only — RLS enforces). Injected Supabase client.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 function pick(input: Record<string, unknown>, fields: string[]) {
   const row: Record<string, unknown> = {};
@@ -7,12 +8,13 @@ function pick(input: Record<string, unknown>, fields: string[]) {
     if (input[k] === undefined) continue;
     row[k] = input[k] === "" ? null : input[k];
   }
+  if (row.notes !== undefined && row.notes !== null) row.notes = sanitizeRichText(row.notes as string);
   return row;
 }
 
 const DEAL_FIELDS = [
   "name", "lead_id", "designation", "joining_date", "dev_profile_id", "working_developer", "salary",
-  "receiving_account_id", "payment_method_id", "profile_dob", "status",
+  "receiving_account_id", "payment_method_id", "profile_dob", "status", "notes",
 ];
 const ACCOUNT_FIELDS = ["holder_name", "bank_name", "account_number", "notes", "is_active"];
 const METHOD_FIELDS = ["name", "sort_order", "is_active"];

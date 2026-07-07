@@ -6,7 +6,7 @@ import { PERM } from "@/lib/access/permissions";
 import { isBdLead } from "@/lib/crm/access";
 import { bdOptions } from "@/lib/crm/options";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ProfileBanner } from "@/components/crm/profile-banner";
 import { PasswordPanel } from "@/components/crm/password-panel";
 import { DocumentsPanel, type Doc } from "@/components/crm/documents-panel";
@@ -52,18 +52,19 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
 
   let stacks: { id: string; label: string }[] = [];
   let owners: { id: string; label: string }[] = [];
-  let hasPassword = false;
   if (isAdmin) {
-    const [st, bd, sec] = await Promise.all([
+    const [st, bd] = await Promise.all([
       supabase.from("dev_stacks").select("id, name").eq("is_active", true).order("sort_order"),
       bdOptions(supabase),
-      // only whether a password EXISTS — the value is fetched lazily by PasswordPanel on Reveal
-      supabase.from("dev_profile_secrets").select("dev_profile_id, account_password").eq("dev_profile_id", params.id).maybeSingle(),
     ]);
     stacks = (st.data ?? []).map((s) => ({ id: s.id, label: s.name }));
     owners = bd;
-    hasPassword = !!sec.data?.account_password;
   }
+  // Whether a password EXISTS (the value itself loads lazily on Reveal). RLS returns the row to
+  // admins/super and — since 0045 — the owning BD, so a BD sees "set/not set" and can reveal/copy.
+  const { data: sec } = await supabase
+    .from("dev_profile_secrets").select("account_password").eq("dev_profile_id", params.id).maybeSingle();
+  const hasPassword = !!sec?.account_password;
 
   const stackName = (p.stack as { name: string } | null)?.name ?? "—";
   const ownerName = (p.owner as { full_name: string } | null)?.full_name ?? "Unassigned";
@@ -101,12 +102,13 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
         </CardContent>
       </Card>
 
-      {isAdmin && (
-        <Card>
-          <CardHeader><CardTitle>Account password</CardTitle></CardHeader>
-          <CardContent><PasswordPanel profileId={p.id} hasPassword={hasPassword} /></CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account password</CardTitle>
+          <CardDescription>{isAdmin ? "The login for this persona's job-application accounts." : "Reveal or copy the login for this persona; only an admin can change it."}</CardDescription>
+        </CardHeader>
+        <CardContent><PasswordPanel profileId={p.id} hasPassword={hasPassword} canEdit={isAdmin} /></CardContent>
+      </Card>{" "}
 
       <Card>
         <CardHeader><CardTitle>History</CardTitle></CardHeader>

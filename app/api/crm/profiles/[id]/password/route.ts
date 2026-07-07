@@ -5,12 +5,12 @@ import { PERM } from "@/lib/access/permissions";
 import { isAdminRole, isUuid } from "@/lib/crm/access";
 import { setDevProfilePassword } from "@/lib/services/dev-profiles";
 
-// Reveal the account password (admin/super-admin only). Fetched lazily on "Reveal" so the plaintext
-// is never embedded in the page's RSC payload. RLS on dev_profile_secrets also enforces admin-only.
+// Reveal the account password. Fetched lazily so the plaintext is never embedded in the page's RSC
+// payload. Authorization is enforced by RLS on dev_profile_secrets: admins/super, and (since 0045)
+// the owning BD / BD-Lead may read it. A caller without access simply gets an empty string.
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!hasPermP(me, PERM.crmProfilesPassword)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const { data } = await createClient()
     .from("dev_profile_secrets")

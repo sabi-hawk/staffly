@@ -13,6 +13,7 @@ import { formatPKR } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { DealDevelopers } from "@/components/crm/deal-developers";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
+import { RichNoteSection } from "@/components/crm/rich-note-section";
 import { RecordHistory } from "@/components/audit/record-history";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -75,6 +76,15 @@ export default async function DealDetail({ params }: { params: { id: string } })
         <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
         <CardContent><DealDocuments dealId={d.id} docs={docs} /></CardContent>
       </Card>
+
+      <RichNoteSection
+        endpoint={`/api/crm/deals/${d.id}`}
+        field="notes"
+        title="Notes"
+        description="Anything worth tracking about this deal: agreements, next steps, contacts, reminders."
+        valueHtml={d.notes}
+        placeholder="Type deal notes… you can format text and paste links."
+      />
 
       <Card>
         <CardHeader><CardTitle>Edit deal</CardTitle></CardHeader>
