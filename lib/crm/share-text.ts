@@ -22,7 +22,7 @@ type ShareLead = {
 };
 
 const line = (label: string, val: unknown) => (val ? `${label}: ${val}` : null);
-const ROUND_RANK = ["1st", "2nd", "3rd", "4th", "5th"];
+const ROUND_RANK = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "final"];
 
 export function leadShareText(l: ShareLead): string {
   const interviews = [...(l.interviews ?? [])].sort(

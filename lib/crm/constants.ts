@@ -22,7 +22,9 @@ export const DISQUALIFY_CATEGORIES = [
 ] as const;
 
 export const INTERVIEW_STATUS = ["pending", "scheduled", "completed", "cancelled"] as const;
-export const INTERVIEW_ROUND = ["1st", "2nd", "3rd", "final"] as const;
+export const INTERVIEW_ROUND = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "final"] as const;
+/** Display label for a round value ("final" → "Final", others as-is). */
+export const roundLabel = (r: string) => (r === "final" ? "Final" : r);
 export const INTERVIEW_OUTCOME = ["pending", "selected", "rejected", "on_hold"] as const;
 
 export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancelled"] as const;

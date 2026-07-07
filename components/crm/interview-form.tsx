@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { INTERVIEW_HINTS } from "@/lib/crm/field-hints";
-import { labelize, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
+import { labelize, roundLabel, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
@@ -103,7 +103,7 @@ export function InterviewForm({
         value={form.round}
         onChange={(e) => set("round", e.target.value)}
       >
-        {INTERVIEW_ROUND.map((s) => <option key={s} value={s}>{s}</option>)}
+        {INTERVIEW_ROUND.map((s) => <option key={s} value={s}>{roundLabel(s)}</option>)}
       </FloatSelect>
       <FloatSelect
         id="interview-outcome"

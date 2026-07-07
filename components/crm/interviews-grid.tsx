@@ -8,7 +8,7 @@ import { FilterShell } from "@/components/crm/filter-shell";
 import { ActivityRowActions } from "@/components/crm/activity-row-actions";
 import { interviewShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
-import { labelize, statusTone, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
+import { labelize, roundLabel, statusTone, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
 import { formatCrmDatetime, formatCrmDate } from "@/lib/utils";
 import { resolveRange, type RangeKey } from "@/lib/time";
 
@@ -50,7 +50,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
         <CrmFilterBar
           filters={[
             { key: "status", label: "Status", options: INTERVIEW_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
-            { key: "round", label: "Round", options: INTERVIEW_ROUND.map((s) => ({ value: s, label: s })) },
+            { key: "round", label: "Round", options: INTERVIEW_ROUND.map((s) => ({ value: s, label: roundLabel(s) })) },
             { key: "outcome", label: "Outcome", options: INTERVIEW_OUTCOME.map((s) => ({ value: s, label: labelize(s) })) },
           ]}
           search={{ key: "q", placeholder: "Search job or company" }}
@@ -73,7 +73,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
             <TR key={iv.id}>
               <TD className="font-medium">{iv.job_title || "—"}<div className="text-caption text-text-secondary">{iv.company}</div></TD>
               <TD className="text-text-secondary">{iv.owner?.full_name ?? "—"}</TD>
-              <TD>{iv.round ?? "—"}</TD>
+              <TD>{iv.round ? roundLabel(iv.round) : "—"}</TD>
               <TD><Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge></TD>
               <TD>{iv.outcome ? <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge> : "—"}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.received_date)}</TD>

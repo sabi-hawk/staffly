@@ -14,7 +14,7 @@ import { StatusPill } from "@/components/crm/status-pill";
 import { CopyButton } from "@/components/crm/copy-button";
 import { leadShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
-import { labelize, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
+import { labelize, roundLabel, statusTone, LEAD_STATUS, INTERVIEW_ROUND } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
 import { resolveRange, type RangeKey } from "@/lib/time";
 
@@ -146,7 +146,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
                   <div className="space-y-1.5">
                     {interviews.map((iv: any) => (
                       <div key={iv.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="rounded bg-surface px-1.5 py-0.5 font-medium text-text-primary">{iv.round ?? "—"}</span>
+                        <span className="rounded bg-surface px-1.5 py-0.5 font-medium text-text-primary">{iv.round ? roundLabel(iv.round) : "—"}</span>
                         <Badge tone={statusTone(iv.outcome || iv.status)}>{labelize(iv.outcome || iv.status)}</Badge>
                         <span className="text-text-secondary">{formatCrmDate(iv.received_date)}</span>
                       </div>

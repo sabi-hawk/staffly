@@ -1,21 +1,93 @@
 "use client";
 // Type-first Add flow (FRD-07): pick Interview or Assessment → New company (creates a lead) or
-// Existing company (searchable, recent-first → attaches). Creates the lead if new, then the activity.
-import { useMemo, useState } from "react";
+// Existing company (searchable dropdown, recent-first → attaches). Creates the lead if new, then the activity.
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Search, Check, CalendarClock, ClipboardList, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { INTERVIEW_HINTS, ASSESSMENT_HINTS } from "@/lib/crm/field-hints";
-import { INTERVIEW_ROUND, PRIORITIES } from "@/lib/crm/constants";
+import { INTERVIEW_ROUND, roundLabel, PRIORITIES } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import type { Opt } from "@/lib/crm/options";
 
 type LeadOpt = { id: string; company: string };
-const seg = (on: boolean) =>
-  `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${on ? "bg-brand-primary text-white" : "bg-surface text-text-secondary hover:text-text-primary"}`;
+
+/** Sleek segmented toggle: one active option per row. */
+function Segmented<T extends string>({ options, value, onChange }: { options: { key: T; label: string; icon?: any }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1">
+      {options.map((o) => {
+        const on = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              on ? "bg-white text-brand-primary shadow-card" : "text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {o.icon && <o.icon className="size-4" />} {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Searchable company dropdown: opens below on focus, filters as you type, recent-first. */
+function CompanyCombobox({ leads, leadId, onPick }: { leads: LeadOpt[]; leadId: string; onPick: (id: string, company: string) => void }) {
+  const [search, setSearch] = useState(leads.find((l) => l.id === leadId)?.company ?? "");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+  // no search text → recent-first (already ordered); with text → filter across all
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (q ? leads.filter((l) => l.company.toLowerCase().includes(q)) : leads).slice(0, 50);
+  }, [leads, search]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="group relative" data-filled="true">
+        <div className="pointer-events-none absolute left-2.5 top-0 z-[1] -translate-y-1/2 bg-white px-1 text-[11px] font-medium text-text-secondary/80">Existing company *</div>
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
+        <input
+          value={search}
+          onFocus={() => setOpen(true)}
+          onChange={(e) => { setSearch(e.target.value); setOpen(true); if (leadId) onPick("", ""); }}
+          placeholder="Search companies…"
+          className="h-10 w-full rounded-md border border-border bg-white pl-9 pr-3 text-sm text-text-primary transition-colors hover:border-brand-primary/40 focus:outline-none focus:ring-2 focus:ring-brand-primary/70"
+        />
+      </div>
+      {open && (
+        <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-soft">
+          {filtered.length === 0 && <div className="px-3 py-2 text-caption text-text-secondary">No companies match.</div>}
+          {filtered.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => { onPick(l.id, l.company); setSearch(l.company); setOpen(false); }}
+              className={cn("flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm hover:bg-surface", leadId === l.id && "text-brand-primary")}
+            >
+              {l.company}
+              {leadId === l.id && <Check className="size-4 text-brand-primary" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: Opt[] }) {
   const router = useRouter();
@@ -26,7 +98,6 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [newCompany, setNewCompany] = useState("");
   const [leadId, setLeadId] = useState("");
-  const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [received, setReceived] = useState(companyToday());
@@ -35,24 +106,16 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
   const [deadline, setDeadline] = useState("");
   const [priority, setPriority] = useState("");
 
-  const filtered = useMemo(
-    () => leads.filter((l) => l.company.toLowerCase().includes(search.toLowerCase())).slice(0, 8),
-    [leads, search]
-  );
   const selectedCompany = mode === "new" ? newCompany.trim() : leads.find((l) => l.id === leadId)?.company ?? "";
 
   function reset() {
-    setType("interview"); setMode("new"); setNewCompany(""); setLeadId(""); setSearch("");
+    setType("interview"); setMode("new"); setNewCompany(""); setLeadId("");
     setProfileId(""); setJobTitle(""); setReceived(companyToday()); setRound("1st");
     setInterviewAt(""); setDeadline(""); setPriority("");
   }
 
   async function post(url: string, body: Record<string, unknown>) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error ?? "Request failed");
     return json as { id: string };
@@ -63,14 +126,9 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
     if (mode === "existing" && !leadId) return toast.error("Pick an existing company");
     setBusy(true);
     try {
-      // resolve the lead (create it for a new company)
       let lid = leadId;
       if (mode === "new") {
-        const lead = await post("/api/crm/leads", {
-          company: newCompany.trim(),
-          dev_profile_id: profileId || null,
-          status: "in_progress",
-        });
+        const lead = await post("/api/crm/leads", { company: newCompany.trim(), dev_profile_id: profileId || null, status: "in_progress" });
         lid = lead.id;
       }
       const base = { lead_id: lid, company: selectedCompany, dev_profile_id: profileId || null, job_title: jobTitle || null };
@@ -90,7 +148,9 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
 
   if (!open) {
     return (
-      <Button size="sm" onClick={() => setOpen(true)}><Plus className="size-4" /> Add</Button>
+      <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5 rounded-lg shadow-card">
+        <span className="flex size-4 items-center justify-center rounded-full bg-white/25"><Plus className="size-3" /></span> Add
+      </Button>
     );
   }
 
@@ -102,112 +162,51 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
           <button onClick={() => setOpen(false)} className="rounded-md p-1 text-text-secondary hover:bg-surface" aria-label="Close"><X className="size-4" /></button>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <button className={seg(type === "interview")} onClick={() => setType("interview")}>Interview</button>
-            <button className={seg(type === "assessment")} onClick={() => setType("assessment")}>Assessment</button>
-          </div>
-
-          <div className="flex gap-2">
-            <button className={seg(mode === "new")} onClick={() => { setMode("new"); setRound("1st"); }}>New company</button>
-            <button className={seg(mode === "existing")} onClick={() => { setMode("existing"); setRound("2nd"); }}>Existing company</button>
-          </div>
+        <div className="space-y-3.5">
+          <Segmented
+            options={[{ key: "interview", label: "Interview", icon: CalendarClock }, { key: "assessment", label: "Assessment", icon: ClipboardList }]}
+            value={type}
+            onChange={setType}
+          />
+          <Segmented
+            options={[{ key: "new", label: "New company", icon: Plus }, { key: "existing", label: "Existing company", icon: Building2 }]}
+            value={mode}
+            onChange={(m) => { setMode(m); setRound(m === "existing" ? "2nd" : "1st"); }}
+          />
 
           {mode === "new" ? (
             <FloatInput
               id="add-company"
-              label="Company"
+              label="Company *"
               hint="The client company this came from, e.g. Acme Corp. A new lead is created with this name."
               value={newCompany}
               onChange={(e) => setNewCompany(e.target.value)}
             />
           ) : (
-            <div className="space-y-1.5">
-              <FloatInput
-                id="add-search"
-                label="Existing company"
-                hint="Type to search your existing leads, then pick the company from the list below. The activity attaches to that lead."
-                value={search}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setSearch(v);
-                  // editing the text away from the picked company clears the selection (avoids a stale pick)
-                  if (leadId && v !== leads.find((l) => l.id === leadId)?.company) setLeadId("");
-                }}
-              />
-              <div className="max-h-40 overflow-y-auto rounded-md border border-border">
-                {filtered.length === 0 && <div className="px-3 py-2 text-caption text-text-secondary">No matches.</div>}
-                {filtered.map((l) => (
-                  <button
-                    key={l.id}
-                    onClick={() => { setLeadId(l.id); setSearch(l.company); }}
-                    className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-surface ${leadId === l.id ? "bg-brand-light text-brand-primary" : ""}`}
-                  >
-                    {l.company}
-                  </button>
-                ))}
-              </div>
-              {leadId && <div className="text-caption text-brand-primary">Selected: {selectedCompany}</div>}
-            </div>
+            <CompanyCombobox leads={leads} leadId={leadId} onPick={(id) => setLeadId(id)} />
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <FloatSelect
-              id="add-profile"
-              label="Profile (optional)"
-              hint="Which of our dev profiles this activity is under. Leave unset if not decided yet."
-              value={profileId}
-              onChange={(e) => setProfileId(e.target.value)}
-            >
+            <FloatSelect id="add-profile" label="Profile (optional)" hint="Which of our dev profiles this activity is under. Leave unset if not decided yet." value={profileId} onChange={(e) => setProfileId(e.target.value)}>
               <option value="">Not set</option>
               {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
             </FloatSelect>
-            <DatePicker
-              id="add-received"
-              label="Received (email date)"
-              hint="The date the request email arrived. Defaults to today."
-              value={received}
-              onChange={setReceived}
-            />
+            <DatePicker id="add-received" label="Received (email date)" hint="The date the request email arrived. Defaults to today." value={received} onChange={setReceived} />
           </div>
 
-          <FloatInput
-            id="add-job"
-            label="Job title (optional)"
-            hint="The role this is for, e.g. Senior Full Stack Engineer."
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-          />
+          <FloatInput id="add-job" label="Job title (optional)" hint="The role this is for, e.g. Senior Full Stack Engineer." value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
 
           {type === "interview" ? (
             <div className="grid grid-cols-2 gap-3">
-              <FloatSelect
-                id="add-round"
-                label="Round"
-                hint={INTERVIEW_HINTS.round}
-                value={round}
-                onChange={(e) => setRound(e.target.value)}
-              >
-                {INTERVIEW_ROUND.map((r) => <option key={r} value={r}>{r}</option>)}
+              <FloatSelect id="add-round" label="Round" hint={INTERVIEW_HINTS.round} value={round} onChange={(e) => setRound(e.target.value)}>
+                {INTERVIEW_ROUND.map((r) => <option key={r} value={r}>{roundLabel(r)}</option>)}
               </FloatSelect>
               <DateTimePicker id="add-when" label="Interview at (optional)" hint={INTERVIEW_HINTS.interview_at} value={interviewAt} onChange={setInterviewAt} />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <DatePicker
-                id="add-deadline"
-                label="Deadline (optional)"
-                hint={ASSESSMENT_HINTS.deadline}
-                value={deadline}
-                onChange={setDeadline}
-              />
-              <FloatSelect
-                id="add-priority"
-                label="Priority (optional)"
-                hint={ASSESSMENT_HINTS.priority}
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-              >
+              <DatePicker id="add-deadline" label="Deadline (optional)" hint={ASSESSMENT_HINTS.deadline} value={deadline} onChange={setDeadline} />
+              <FloatSelect id="add-priority" label="Priority (optional)" hint={ASSESSMENT_HINTS.priority} value={priority} onChange={(e) => setPriority(e.target.value)}>
                 <option value="">Not set</option>
                 {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
               </FloatSelect>
