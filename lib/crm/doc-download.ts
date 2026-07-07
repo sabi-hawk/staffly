@@ -9,6 +9,7 @@ import { CRM_DOCS_BUCKET } from "@/lib/crm/docs";
 export function safeDownloadName(preferred: string | null, fileName: string | null): string {
   const ext = (fileName?.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
   const base = (preferred?.trim() || fileName?.replace(/\.[a-z0-9]+$/i, "") || "document")
+    .replace(/[\r\n]+/g, " ") // no CRLF into the Content-Disposition header
     .replace(/[\\/:*?"<>|]+/g, " ") // strip filesystem-illegal chars
     .replace(/\s+/g, " ")
     .trim();
