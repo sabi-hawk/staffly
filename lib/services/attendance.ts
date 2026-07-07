@@ -86,7 +86,8 @@ export async function checkOut(
   const now = new Date();
   let end = opts.time ? new Date(opts.time) : now;
   if (end.getTime() > now.getTime()) end = now;
-  if (end.getTime() < new Date(open.started_at).getTime()) throw new Error("Checkout cannot precede check-in");
+  // Overnight work is normal: a checkout before the check-in means the next day. Roll forward.
+  if (end.getTime() < new Date(open.started_at).getTime()) end = new Date(end.getTime() + 86_400_000);
 
   const { error } = await supabase.from("attendance_sessions").update({ ended_at: end.toISOString() }).eq("id", open.id);
   if (error) throw new Error(error.message);
@@ -128,15 +129,17 @@ export async function editAttendance(
     }
     if (opts.check_out_time) {
       const last = sessions[sessions.length - 1];
-      const newOut = new Date(opts.check_out_time);
-      if (newOut.getTime() < new Date(last.started_at).getTime())
-        throw new Error("Checkout cannot precede check-in");
+      let newOut = new Date(opts.check_out_time);
+      // Overnight work is normal: a checkout wall-clock before the check-in means it happened the
+      // NEXT day (e.g. checked in 3pm, out 1am). Roll it forward a day instead of rejecting it.
+      if (newOut.getTime() < new Date(last.started_at).getTime()) newOut = new Date(newOut.getTime() + 86_400_000);
       await supabase.from("attendance_sessions").update({ ended_at: newOut.toISOString() }).eq("id", last.id);
     }
   } else {
     const newIn = opts.check_in_time ? new Date(opts.check_in_time) : before.check_in_time ? new Date(before.check_in_time) : null;
-    const newOut = opts.check_out_time ? new Date(opts.check_out_time) : before.check_out_time ? new Date(before.check_out_time) : null;
-    if (newIn && newOut && newOut.getTime() < newIn.getTime()) throw new Error("Checkout cannot precede check-in");
+    let newOut = opts.check_out_time ? new Date(opts.check_out_time) : before.check_out_time ? new Date(before.check_out_time) : null;
+    // Overnight roll (see above): checkout before check-in is the next day, not an error.
+    if (newIn && newOut && newOut.getTime() < newIn.getTime()) newOut = new Date(newOut.getTime() + 86_400_000);
     const patch: Record<string, unknown> = {};
     if (opts.check_in_time) patch.check_in_time = newIn!.toISOString();
     if (opts.check_out_time) patch.check_out_time = newOut!.toISOString();

@@ -1,7 +1,8 @@
 "use client";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { FloatSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useFilterTransition } from "@/components/crm/filter-shell";
 import { cn } from "@/lib/utils";
 import { RANGE_LABELS, type RangeKey } from "@/lib/time";
 
@@ -20,15 +21,15 @@ export function AttendanceControls({
   from: string;
   to: string;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const { nav } = useFilterTransition(); // shared transition → spinner over the grid
 
   function set(next: Record<string, string>) {
     const sp = new URLSearchParams(params.toString());
     Object.entries(next).forEach(([k, v]) => (v ? sp.set(k, v) : sp.delete(k)));
     sp.set("page", "1");
-    router.push(`${pathname}?${sp.toString()}`);
+    nav(`${pathname}?${sp.toString()}`);
   }
 
   return (

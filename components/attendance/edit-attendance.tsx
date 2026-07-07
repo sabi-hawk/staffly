@@ -2,33 +2,33 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { FloatInput } from "@/components/ui/field";
 
 /** Time portion (HH:MM in Asia/Karachi) of an ISO instant, for the input default. */
 function localTime(iso: string | null): string {
   if (!iso) return "18:00";
-  return new Date(iso).toLocaleTimeString("en-GB", {
-    timeZone: "Asia/Karachi",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" });
 }
 
 /**
- * Edit check-in and/or check-out for a record.
+ * Edit check-in and/or check-out for a record — opens a modal (no inline grid shift).
  * - admin mode: both times editable + reason
  * - employee mode: checkout only (own current day)
  */
 export function EditAttendance({
   attendanceId,
   workDate,
+  employeeName,
   checkInTime,
   checkOutTime,
   mode = "admin",
 }: {
   attendanceId: string;
   workDate: string;
+  employeeName?: string;
   checkInTime: string | null;
   checkOutTime: string | null;
   mode?: "admin" | "employee";
@@ -58,30 +58,34 @@ export function EditAttendance({
     router.refresh();
   }
 
-  if (!open)
-    return (
-      <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
-        Edit
-      </Button>
-    );
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {mode === "admin" && (
-        <label className="flex items-center gap-1 text-caption text-text-secondary">
-          In
-          <Input type="time" value={inT} onChange={(e) => setInT(e.target.value)} className="h-8 w-28" />
-        </label>
-      )}
-      <label className="flex items-center gap-1 text-caption text-text-secondary">
-        Out
-        <Input type="time" value={outT} onChange={(e) => setOutT(e.target.value)} className="h-8 w-28" />
-      </label>
-      {mode === "admin" && (
-        <Input placeholder="reason" value={reason} onChange={(e) => setReason(e.target.value)} className="h-8 w-32" />
-      )}
-      <Button size="sm" onClick={save} disabled={busy}>Save</Button>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>×</Button>
-    </div>
+    <>
+      <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
+        <Pencil className="size-3.5" /> Edit
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogTitle>Edit attendance</DialogTitle>
+          <DialogDescription>
+            {employeeName ? `${employeeName} · ` : ""}{workDate}. A checkout past midnight is saved as the next day.
+          </DialogDescription>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {mode === "admin" && (
+              <FloatInput id="edit-in" type="time" label="Check in" value={inT} onChange={(e) => setInT(e.target.value)} />
+            )}
+            <FloatInput id="edit-out" type="time" label="Check out" value={outT} onChange={(e) => setOutT(e.target.value)}
+              wrapClassName={mode === "admin" ? "" : "col-span-2"} />
+            {mode === "admin" && (
+              <FloatInput id="edit-reason" label="Reason" hint="Why the record is being changed. Shown in the activity log."
+                value={reason} onChange={(e) => setReason(e.target.value)} wrapClassName="col-span-2" />
+            )}
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+            <Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

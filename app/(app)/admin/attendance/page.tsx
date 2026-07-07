@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { parsePaging } from "@/lib/pagination";
 import { AttendanceControls } from "@/components/attendance/attendance-controls";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
+import { FilterShell } from "@/components/crm/filter-shell";
 import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
 
 const time = (t: string | null) =>
@@ -50,20 +51,23 @@ export default async function AdminAttendancePage({
   const { data: rows, count } = await query;
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader><CardTitle>Attendance</CardTitle></CardHeader>
-        <CardContent>
-          <AttendanceControls
-            employees={employees ?? []}
-            employeeId={employeeId}
-            range={range}
-            from={from}
-            to={to}
-          />
-        </CardContent>
-      </Card>
-
+    <FilterShell
+      toolbar={
+        <Card>
+          <CardHeader><CardTitle>Attendance</CardTitle></CardHeader>
+          <CardContent>
+            <AttendanceControls
+              employees={employees ?? []}
+              employeeId={employeeId}
+              range={range}
+              from={from}
+              to={to}
+            />
+          </CardContent>
+        </Card>
+      }
+    >
+    <div className="space-y-6 pt-6">
       {(missingToday ?? []).length > 0 && (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2 text-warning"><AlertTriangle className="size-4" /> Missing today's task summary ({(missingToday ?? []).length})</CardTitle></CardHeader>
@@ -134,6 +138,7 @@ export default async function AdminAttendancePage({
                       <EditAttendance
                         attendanceId={r.id}
                         workDate={r.work_date}
+                        employeeName={r.profiles?.full_name}
                         checkInTime={r.check_in_time}
                         checkOutTime={r.check_out_time}
                         mode="admin"
@@ -151,5 +156,6 @@ export default async function AdminAttendancePage({
         </CardContent>
       </Card>
     </div>
+    </FilterShell>
   );
 }
