@@ -63,24 +63,39 @@ function NavGroupItem({
   collapsed,
   onNavigate,
   isActive,
+  onExpand,
+  openHint,
 }: {
   group: NavGroup;
   collapsed: boolean;
   onNavigate?: () => void;
   isActive: (href: string) => boolean;
+  onExpand: (label: string) => void;
+  openHint: string | null;
 }) {
   const anyChildActive = group.children.some((c) => isActive(c.href));
   const [open, setOpen] = useState(anyChildActive);
-  useEffect(() => { if (anyChildActive) setOpen(true); }, [anyChildActive]);
+  useEffect(() => { if (anyChildActive || openHint === group.label) setOpen(true); }, [anyChildActive, openHint, group.label]);
 
-  // Collapsed rail has no room for a labelled group → show the children as flat icon links.
+  // Collapsed rail: show ONE parent icon with a dot marking "has a submenu" (not the flattened
+  // children). Clicking it expands the sidebar and opens this group.
   if (collapsed) {
     return (
-      <>
-        {group.children.map((c) => (
-          <NavLink key={c.href} item={c} collapsed onNavigate={onNavigate} active={isActive(c.href)} />
-        ))}
-      </>
+      <button
+        onClick={() => onExpand(group.label)}
+        aria-label={group.label}
+        className={cn(
+          "group relative flex w-full items-center justify-center rounded-lg px-3 py-2 transition-colors",
+          anyChildActive ? "bg-brand-light text-brand-primary" : "text-text-secondary hover:bg-sidebar-muted hover:text-text-primary"
+        )}
+      >
+        <group.icon className="size-4 shrink-0" />
+        {/* dot = this item is a parent menu with children */}
+        <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-brand-primary" />
+        <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-text-primary px-2 py-1 text-xs text-white shadow-card group-hover:block">
+          {group.label}
+        </span>
+      </button>
     );
   }
 
@@ -113,18 +128,24 @@ function NavLinks({
   items,
   collapsed,
   onNavigate,
+  onExpand,
+  openHint,
 }: {
   items: NavEntry[];
   collapsed: boolean;
   onNavigate?: () => void;
+  onExpand?: (label: string) => void;
+  openHint?: string | null;
 }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
   return (
-    <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
+    // collapsed rail: overflow-visible so the hover tooltips can escape the rail (a scroll container
+    // would clip them). The collapsed list is short (top-level items only), so no scroll is needed.
+    <nav className={cn("flex-1 space-y-1 px-2 py-3", collapsed ? "overflow-visible" : "overflow-y-auto")}>
       {items.map((entry) =>
         isNavGroup(entry) ? (
-          <NavGroupItem key={entry.label} group={entry} collapsed={collapsed} onNavigate={onNavigate} isActive={isActive} />
+          <NavGroupItem key={entry.label} group={entry} collapsed={collapsed} onNavigate={onNavigate} isActive={isActive} onExpand={onExpand ?? (() => {})} openHint={openHint ?? null} />
         ) : (
           <NavLink key={entry.href} item={entry} collapsed={collapsed} onNavigate={onNavigate} active={isActive(entry.href)} />
         )
@@ -153,6 +174,9 @@ export function Sidebar({
   onClose?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [openHint, setOpenHint] = useState<string | null>(null);
+  // clicking a collapsed group icon expands the rail and opens that group
+  const expandTo = (label: string) => { setCollapsed(false); setOpenHint(label); };
 
   return (
     <>
@@ -171,7 +195,7 @@ export function Sidebar({
           {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronLeft className="size-3.5" />}
         </button>
         <Brand collapsed={collapsed} />
-        <NavLinks items={items} collapsed={collapsed} />
+        <NavLinks items={items} collapsed={collapsed} onExpand={expandTo} openHint={openHint} />
         {!collapsed && <RoleFooter role={role} />}
       </aside>
 
