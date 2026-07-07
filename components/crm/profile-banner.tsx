@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/crm/status-pill";
 import { Button } from "@/components/ui/button";
 import { ProfileForm, type Opt } from "./profile-form";
 
@@ -38,7 +38,7 @@ export function ProfileBanner({
           {profile.name} · {stackName}
         </CardTitle>
         <span className="flex items-center gap-2">
-          <Badge tone={profile.status === "active" ? "success" : "neutral"}>{profile.status}</Badge>
+          <StatusPill status={profile.status} />
           {canEdit && (
             <Button size="sm" variant="outline" onClick={() => setEditing((e) => !e)} aria-label={editing ? "Cancel editing" : "Edit profile"}>
               {editing ? <><X className="size-3.5" /> Cancel</> : <><Pencil className="size-3.5" /> Edit</>}

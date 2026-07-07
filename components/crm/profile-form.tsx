@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
+import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { StackField } from "@/components/crm/stack-field";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { Opt } from "@/lib/crm/options";
 
@@ -69,20 +70,7 @@ export function ProfileForm({
         value={form.name}
         onChange={(e) => set("name", e.target.value)}
       />
-      <div>
-        {/* pick an existing stack or type a new one (created on save) */}
-        <FloatInput
-          id="profile-stack"
-          label="Stack"
-          hint="Pick an existing stack or type a new one; new stacks are created on save."
-          list="profile-stack-options"
-          value={form.stack}
-          onChange={(e) => set("stack", e.target.value)}
-        />
-        <datalist id="profile-stack-options">
-          {stacks.map((s) => <option key={s.id} value={s.label} />)}
-        </datalist>
-      </div>
+      <StackField value={form.stack} onChange={(name) => set("stack", name)} stacks={stacks} />
       <FloatSelect
         id="profile-owner"
         label="Owner (BD)"

@@ -8,9 +8,11 @@
 // tooltips (InfoHint) ride along the label and stay hoverable in both states.
 // Do NOT introduce plain <Label> + <Input> stacks in new forms.
 import * as React from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InfoHint } from "@/components/crm/info-hint";
+import { SelectContent, SelectItem, toRadix, fromRadix } from "@/components/ui/select-content";
 
 // label positioning shared by all variants: centred when resting, floated when
 // the control is focused or filled (data-filled on the wrapper).
@@ -122,26 +124,60 @@ export const FloatTextarea = React.forwardRef<
 });
 FloatTextarea.displayName = "FloatTextarea";
 
-/** Floating-label select (custom chevron with a proper gap from the right border). */
+/** Floating-label select built on Radix Select so the list opens BELOW the field (native <select>
+ * centres its popup over the field on macOS). Keeps the familiar <option>-children + onChange API,
+ * so callers are unchanged. The label ALWAYS floats (a select always shows a value). */
+type OptionData = { value: string; label: React.ReactNode; disabled?: boolean };
+function readOptions(children: React.ReactNode): OptionData[] {
+  const out: OptionData[] = [];
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child) || child.type !== "option") return;
+    const p = child.props as { value?: string | number; children?: React.ReactNode; disabled?: boolean };
+    out.push({ value: String(p.value ?? ""), label: p.children, disabled: p.disabled });
+  });
+  return out;
+}
+
 export const FloatSelect = React.forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; hint?: string; wrapClassName?: string }
->(({ label, hint, className, wrapClassName, id, value, defaultValue, children, ...props }, ref) => {
-  // A <select> always displays its selected option, so it is never visually empty — the label must
-  // ALWAYS float (resting it would overlap the shown value, e.g. "Owner (BD)" over "Unassigned").
+  HTMLButtonElement,
+  Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "onChange"> & {
+    label: string;
+    hint?: string;
+    wrapClassName?: string;
+    onChange?: (e: { target: { value: string } }) => void;
+  }
+>(({ label, hint, className, wrapClassName, id, value, defaultValue, children, onChange, disabled, required, name, ...props }, ref) => {
+  const options = readOptions(children);
+  const controlled = value !== undefined;
   return (
     <div className={cn("group relative", wrapClassName)} data-filled="true">
-      <select
-        ref={ref}
-        id={id}
-        value={value}
-        defaultValue={defaultValue}
-        className={cn(CONTROL, "appearance-none pr-9", className)}
-        {...props}
+      <SelectPrimitive.Root
+        value={controlled ? toRadix(String(value)) : undefined}
+        defaultValue={defaultValue !== undefined ? toRadix(String(defaultValue)) : undefined}
+        onValueChange={(v) => onChange?.({ target: { value: fromRadix(v) } })}
+        disabled={disabled}
+        required={required}
+        name={name}
       >
-        {children}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-[18px] -translate-y-1/2 text-text-secondary/70" />
+        <SelectPrimitive.Trigger
+          ref={ref}
+          id={id}
+          aria-label={(props as { "aria-label"?: string })["aria-label"] ?? label}
+          className={cn(CONTROL, "flex items-center justify-between gap-2 pr-3 text-left", className)}
+        >
+          <span className="truncate"><SelectPrimitive.Value /></span>
+          <SelectPrimitive.Icon>
+            <ChevronDown className="size-[18px] shrink-0 text-text-secondary/70" />
+          </SelectPrimitive.Icon>
+        </SelectPrimitive.Trigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={toRadix(o.value)} className={o.disabled ? "pointer-events-none opacity-50" : undefined}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </SelectPrimitive.Root>
       <FloatLabel label={label} hint={hint} htmlFor={id} />
     </div>
   );

@@ -442,3 +442,9 @@ standard used on the leaves form. Select chevrons unified (gap + refined colour 
 FloatSelect label always floats; new NativeSelect for compact utility selects. Attendance range is now
 a matched-height segmented control (no bold "Range" label); custom From/To are labelled DatePickers.
 FieldLabel component removed. **Shipped same day.**
+
+## 2026-07-08 — Dropdowns open below + configurable stacks + Active label (owner)
+Dropdowns (owner/status/filters, all FloatSelect) opened centered over the field on macOS; rebuilt
+FloatSelect on Radix Select so the list anchors BELOW the trigger (unchanged option/onChange API).
+Profile Stack is now a real dropdown matching the others, with an "Add a new stack" action (created on
+save). Profile banner status uses StatusPill so "Active" is capitalised and sleek. Shipped same day.
