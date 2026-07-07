@@ -27,8 +27,9 @@ export function companyDow(date: Date = new Date()): number {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
 }
 
-export type RangeKey = "month" | "3w" | "1m" | "3m" | "custom";
+export type RangeKey = "week" | "month" | "3w" | "1m" | "3m" | "custom";
 export const RANGE_LABELS: Record<RangeKey, string> = {
+  week: "This week",
   month: "This month",
   "3w": "Last 3 weeks",
   "1m": "Last month",
@@ -54,6 +55,13 @@ export function resolveRange(
   const r: RangeKey = range ?? "1m";
   if (r === "custom") {
     return { from: customFrom || isoDaysAgo(30), to: customTo || today, range: "custom" };
+  }
+  if (r === "week") {
+    // This week: Monday → today (company timezone).
+    const d = new Date(`${today}T00:00:00+05:00`);
+    const dow = (d.getUTCDay() + 6) % 7; // Mon=0
+    d.setUTCDate(d.getUTCDate() - dow);
+    return { from: companyToday(d), to: today, range: "week" };
   }
   if (r === "month") {
     // Current calendar month, 1st → today (company timezone).

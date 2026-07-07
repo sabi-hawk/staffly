@@ -146,6 +146,42 @@ async function main() {
     ]);
     console.log("seeded demo lead + interview + assessment (DemoCorp → Shaiza)");
 
+    // Extra demo history spread across the last 5 weeks so the BD Performance dashboard (per-BD
+    // bars + weekly trend) has something to show. Idempotent: prior PerfDemo rows are removed first.
+    const fatima = bds.find((b) => b.full_name === "Fatima Sultan")?.id ?? null;
+    const perfBds = [shaiza, areeba, fatima].filter(Boolean);
+    await admin.from("interviews").delete().ilike("company", "PerfDemo%");
+    await admin.from("assessments").delete().ilike("company", "PerfDemo%");
+    await admin.from("leads").delete().ilike("company", "PerfDemo%");
+    const dayMs = 86400_000;
+    for (let w = 1; w <= 5; w++) {
+      const when = new Date(Date.now() - w * 7 * dayMs);
+      const whenISO = when.toISOString();
+      const dateStr = new Date(when.getTime() + 5 * 3600_000).toISOString().slice(0, 10);
+      for (let bi = 0; bi < perfBds.length; bi++) {
+        const bd = perfBds[bi];
+        const { data: l } = await admin.from("leads").insert({
+          company: `PerfDemo ${w}-${bi}`, role: "Engineer", dev_profile_id: sabahat.id, owner_bd_id: bd,
+          status: w % 3 === 0 ? "closed" : "in_progress", created_at: whenISO, updated_at: whenISO,
+        }).select("id, company").single();
+        const ivCount = ((w + bi) % 3) + 1;
+        for (let k = 0; k < ivCount; k++) {
+          await admin.from("interviews").insert({
+            lead_id: l.id, dev_profile_id: sabahat.id, owner_bd_id: bd, job_title: "Engineer",
+            company: l.company, status: "scheduled", round: "1st", received_date: dateStr,
+            outcome: k === 0 && w % 2 === 0 ? "selected" : null,
+          });
+        }
+        if ((w + bi) % 2 === 0) {
+          await admin.from("assessments").insert({
+            lead_id: l.id, dev_profile_id: sabahat.id, owner_bd_id: bd, job_title: "Take-home",
+            company: l.company, status: "pending", priority: "medium", duration: "1h", entry_date: dateStr,
+          });
+        }
+      }
+    }
+    console.log("seeded BD-performance demo history (5 weeks x BDs)");
+
     // Demo deal (admin-only) from the DemoCorp lead.
     await admin.from("receiving_accounts").delete().eq("holder_name", "Demo Holder");
     const { data: acct } = await admin.from("receiving_accounts")

@@ -5,13 +5,12 @@ import { PERM } from "@/lib/access/permissions";
 import { resolveRange, type RangeKey } from "@/lib/time";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { StatCard } from "@/components/ui/stat-card";
-import { CrmDateFilter } from "@/components/crm/crm-date-filter";
+import { BdPerformanceFilter } from "@/components/crm/bd-performance-filter";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { BarChart } from "@/components/charts/bar-chart";
 import { LineChart } from "@/components/charts/line-chart";
 import { formatCrmDate } from "@/lib/utils";
-import { Briefcase, CalendarClock, ClipboardList, Trophy } from "lucide-react";
+import { Briefcase, CalendarClock, ClipboardList, Trophy, type LucideIcon } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const dynamic = "force-dynamic";
@@ -30,29 +29,53 @@ function weekStart(dateIso: string): string {
   return d.toISOString().slice(0, 10);
 }
 
+function MiniStat({ label, value, icon: Icon, tone }: { label: string; value: number; icon: LucideIcon; tone: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-white px-3.5 py-2.5">
+      <span className={`flex size-9 shrink-0 items-center justify-center rounded-md ${tone}`}><Icon className="size-4" /></span>
+      <div className="min-w-0">
+        <div className="text-lg font-semibold leading-none text-text-primary tabular">{value}</div>
+        <div className="mt-1 truncate text-caption text-text-secondary">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border bg-white p-4">
+      <h3 className="mb-3 text-sm font-semibold text-text-primary">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
 // BD Performance (admin/super via crm.analytics.view — revoked from BD/BD Lead, 0038):
-// per-BD activity, weekly trend, and closed deals over a date range.
-export default async function BdPerformancePage({ searchParams }: { searchParams: { range?: string; from?: string; to?: string } }) {
+// per-BD activity, weekly trend, and closed deals over a date range, filterable by BD.
+export default async function BdPerformancePage({ searchParams }: { searchParams: { range?: string; from?: string; to?: string; bd?: string } }) {
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.crmAnalyticsView)) redirect("/dashboard");
   const supabase = createClient();
-  const { from, to, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
+  const { from, to, range } = resolveRange((searchParams.range as RangeKey) ?? "month", searchParams.from, searchParams.to);
+  const bdFilter = searchParams.bd || "";
   // Karachi day edges (a bare date would anchor to UTC midnight = 5am PKT and drop early rows).
   const fromISO = new Date(`${from}T00:00:00+05:00`).toISOString();
   const toISO = new Date(`${to}T23:59:59.999+05:00`).toISOString();
 
   const [bdsRes, leadsRes, ivRes, asRes] = await Promise.all([
     supabase.from("profiles").select("id, full_name").eq("department", "Business Development").order("full_name"),
-    // leads created in range PLUS closed deals whose close (last update) falls in range
     supabase.from("leads").select("owner_bd_id, status, created_at, updated_at")
       .or(`and(created_at.gte.${fromISO},created_at.lte.${toISO}),and(status.eq.closed,updated_at.gte.${fromISO},updated_at.lte.${toISO})`),
     supabase.from("interviews").select("owner_bd_id, outcome, received_date").gte("received_date", from).lte("received_date", to),
     supabase.from("assessments").select("owner_bd_id, entry_date").gte("entry_date", from).lte("entry_date", to),
   ]);
-  const bds = bdsRes.data ?? [];
-  const leads = (leadsRes.data ?? []) as any[];
-  const interviews = (ivRes.data ?? []) as any[];
-  const assessments = (asRes.data ?? []) as any[];
+  const allBds = bdsRes.data ?? [];
+  const bds = bdFilter ? allBds.filter((b) => b.id === bdFilter) : allBds;
+  const bdIds = new Set(bds.map((b) => b.id));
+  const keep = (ownerId: string | null) => !bdFilter || ownerId === bdFilter;
+  const leads = ((leadsRes.data ?? []) as any[]).filter((l) => keep(l.owner_bd_id));
+  const interviews = ((ivRes.data ?? []) as any[]).filter((i) => keep(i.owner_bd_id));
+  const assessments = ((asRes.data ?? []) as any[]).filter((a) => keep(a.owner_bd_id));
   const inRange = (iso: string | null) => !!iso && iso >= fromISO && iso <= toISO;
 
   const rows = bds.map((b) => {
@@ -90,6 +113,8 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
   const trend = Array.from(weeks.entries()).sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([w, values]) => ({ label: formatCrmDate(w).slice(0, 6), values }));
 
+  const hasBarData = rows.some((r) => r.leads + r.interviews + r.assessments > 0);
+
   return (
     <Card>
       <CardHeader className="flex-col items-start gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
@@ -97,30 +122,36 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
           <CardTitle>BD Performance</CardTitle>
           <CardDescription>{formatCrmDate(from)} → {formatCrmDate(to)} (inclusive) · leads by entry date, deals by close date</CardDescription>
         </div>
-        <CrmDateFilter range={range} from={from} to={to} />
+        <BdPerformanceFilter range={range} from={from} to={to} bd={bdFilter} bds={allBds} />
       </CardHeader>
       <CardContent>
         <FilterShell toolbar={null}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Leads" value={totals.leads} icon={Briefcase} tone="brand" />
-            <StatCard label="Interviews" value={totals.interviews} icon={CalendarClock} tone="success" />
-            <StatCard label="Assessments" value={totals.assessments} icon={ClipboardList} tone="warning" />
-            <StatCard label="Deals closed" value={totals.closed} icon={Trophy} tone="neutral" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <MiniStat label="Leads" value={totals.leads} icon={Briefcase} tone="bg-brand-light text-brand-primary" />
+            <MiniStat label="Interviews" value={totals.interviews} icon={CalendarClock} tone="bg-success/10 text-success" />
+            <MiniStat label="Assessments" value={totals.assessments} icon={ClipboardList} tone="bg-warning/10 text-warning" />
+            <MiniStat label="Deals closed" value={totals.closed} icon={Trophy} tone="bg-gray-100 text-text-secondary" />
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-text-primary">Activity per BD</h3>
-              <BarChart groups={rows.map((r) => ({ label: r.name, values: [r.leads, r.interviews, r.assessments] }))} series={SERIES} />
-            </div>
-            <div>
-              <h3 className="mb-2 text-sm font-semibold text-text-primary">Weekly trend</h3>
-              <LineChart points={trend} series={SERIES} />
-            </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <Panel title={bdFilter ? "Activity" : "Activity per BD"}>
+              {hasBarData ? (
+                <BarChart groups={rows.map((r) => ({ label: r.name, values: [r.leads, r.interviews, r.assessments] }))} series={SERIES} />
+              ) : (
+                <p className="py-10 text-center text-caption text-text-secondary">No activity in this range.</p>
+              )}
+            </Panel>
+            <Panel title="Weekly trend">
+              {trend.length > 0 ? (
+                <LineChart points={trend} series={SERIES} />
+              ) : (
+                <p className="py-10 text-center text-caption text-text-secondary">No activity in this range.</p>
+              )}
+            </Panel>
           </div>
 
-          <div className="mt-6">
-            <h3 className="mb-2 text-sm font-semibold text-text-primary">Breakdown</h3>
+          <div className="mt-4 rounded-lg border border-border bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold text-text-primary">Breakdown</h3>
             <Table>
               <THead>
                 <TR><TH>BD</TH><TH>Leads</TH><TH>Interviews</TH><TH>Selected</TH><TH>Assessments</TH><TH>Deals closed</TH><TH>Dismissed/Rejected</TH></TR>
