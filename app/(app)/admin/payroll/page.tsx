@@ -34,6 +34,13 @@ export default async function PayrollPage() {
     bank_account_number: privById.get(e.id)?.bank_account_number ?? null,
   }));
 
+  // Saved compensation categories per employee — so the run's "Add line" can quick-add an occasional
+  // (or variable) category (label + amount) instead of retyping. Occasional ones aren't auto-added.
+  const { data: compRows } = await supabase
+    .from("compensation_components").select("employee_id, label, amount, recurring, is_fixed_amount, description").eq("is_active", true);
+  const compsByEmp: Record<string, { label: string; amount: number; recurring: boolean; is_fixed_amount: boolean; description: string | null }[]> = {};
+  for (const c of compRows ?? []) (compsByEmp[c.employee_id] ??= []).push(c);
+
   return (
     <div className="space-y-6">
       <div>
@@ -44,6 +51,7 @@ export default async function PayrollPage() {
         initialRuns={runs ?? []}
         linesByRun={linesByRun}
         employees={employees}
+        compsByEmp={compsByEmp}
         defaultFrom={from}
         defaultTo={to}
       />

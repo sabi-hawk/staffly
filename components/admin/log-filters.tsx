@@ -2,7 +2,7 @@
 // Activity Log filter bar. Floating-label fields (Module / Action / Actor / From / To), a Clear
 // button, and navigation through the shared FilterShell transition so ONLY the grid reloads (a
 // spinner over it) instead of a full-page refresh.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,10 @@ export function LogFilters({ entities, actions, initial }: {
   const [actor, setActor] = useState(initial.actor);
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
+  // keep the fields in sync when the URL changes externally (back/forward, a shared link)
+  useEffect(() => {
+    setEntity(initial.entity); setAction(initial.action); setActor(initial.actor); setFrom(initial.from); setTo(initial.to);
+  }, [initial.entity, initial.action, initial.actor, initial.from, initial.to]);
 
   const anyActive = !!(entity || action || actor || from || to);
 
@@ -38,7 +42,7 @@ export function LogFilters({ entities, actions, initial }: {
   function clear() {
     setEntity(""); setAction(""); setActor(""); setFrom(""); setTo("");
     const sp = new URLSearchParams(params.toString());
-    ["entity", "action", "actor", "from", "to", "page"].forEach((k) => sp.delete(k));
+    ["entity", "action", "actor", "from", "to", "page", "lpage"].forEach((k) => sp.delete(k));
     const qs = sp.toString();
     nav(qs ? `${pathname}?${qs}` : pathname);
   }

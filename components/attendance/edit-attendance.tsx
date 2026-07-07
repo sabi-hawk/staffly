@@ -67,7 +67,7 @@ export function EditAttendance({
         <DialogContent>
           <DialogTitle>Edit attendance</DialogTitle>
           <DialogDescription>
-            {employeeName ? `${employeeName} · ` : ""}{workDate}. A checkout past midnight is saved as the next day.
+            {employeeName ? `${employeeName} · ` : ""}{workDate}. A checkout time earlier than the check-in is treated as the next day (e.g. in 3pm, out 1am).
           </DialogDescription>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {mode === "admin" && (

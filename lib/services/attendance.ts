@@ -132,14 +132,20 @@ export async function editAttendance(
       let newOut = new Date(opts.check_out_time);
       // Overnight work is normal: a checkout wall-clock before the check-in means it happened the
       // NEXT day (e.g. checked in 3pm, out 1am). Roll it forward a day instead of rejecting it.
-      if (newOut.getTime() < new Date(last.started_at).getTime()) newOut = new Date(newOut.getTime() + 86_400_000);
+      let rolled = false;
+      if (newOut.getTime() < new Date(last.started_at).getTime()) { newOut = new Date(newOut.getTime() + 86_400_000); rolled = true; }
+      // Only when we ROLLED: if the result is in the future, the entered time was just before check-in
+      // by mistake (a same-day correction, not an overnight shift) — reject the ~24h session.
+      if (rolled && newOut.getTime() > Date.now() + 60_000) throw new Error("That checkout time is before the check-in. For an overnight shift the checkout is on the next day, but that would be in the future — please re-check the time.");
       await supabase.from("attendance_sessions").update({ ended_at: newOut.toISOString() }).eq("id", last.id);
     }
   } else {
     const newIn = opts.check_in_time ? new Date(opts.check_in_time) : before.check_in_time ? new Date(before.check_in_time) : null;
     let newOut = opts.check_out_time ? new Date(opts.check_out_time) : before.check_out_time ? new Date(before.check_out_time) : null;
     // Overnight roll (see above): checkout before check-in is the next day, not an error.
-    if (newIn && newOut && newOut.getTime() < newIn.getTime()) newOut = new Date(newOut.getTime() + 86_400_000);
+    let rolled = false;
+    if (newIn && newOut && newOut.getTime() < newIn.getTime()) { newOut = new Date(newOut.getTime() + 86_400_000); rolled = true; }
+    if (rolled && newOut!.getTime() > Date.now() + 60_000) throw new Error("That checkout time is before the check-in. For an overnight shift the checkout is on the next day, but that would be in the future — please re-check the time.");
     const patch: Record<string, unknown> = {};
     if (opts.check_in_time) patch.check_in_time = newIn!.toISOString();
     if (opts.check_out_time) patch.check_out_time = newOut!.toISOString();

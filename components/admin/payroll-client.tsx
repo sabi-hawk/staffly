@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FloatInput, NativeSelect } from "@/components/ui/field";
+import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -15,16 +14,20 @@ import { formatPKR, formatCode } from "@/lib/utils";
 
 type Line = { id: string; label: string; amount: number; kind: string; description: string | null };
 
+type SavedComp = { label: string; amount: number; recurring: boolean; is_fixed_amount: boolean; description: string | null };
+
 export function PayrollClient({
   initialRuns,
   linesByRun,
   employees,
+  compsByEmp = {},
   defaultFrom,
   defaultTo,
 }: {
   initialRuns: any[];
   linesByRun: Record<string, Line[]>;
   employees: { id: string; full_name: string; employee_code: string | null }[];
+  compsByEmp?: Record<string, SavedComp[]>;
   defaultFrom: string;
   defaultTo: string;
 }) {
@@ -124,6 +127,7 @@ export function PayrollClient({
                 return (
                   <RunRow
                     key={r.id} run={r} emp={names[r.employee_id]} lines={lines} open={open}
+                    savedComps={compsByEmp[r.employee_id] ?? []}
                     onToggle={() => setExpanded(open ? null : r.id)}
                     onFinalise={() => finalise(r.id)} onMarkPaid={markPaid}
                     onAddLine={addLine} onRemoveLine={removeLine}
@@ -139,11 +143,13 @@ export function PayrollClient({
   );
 }
 
-function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAddLine, onRemoveLine }: any) {
+function RunRow({ run, emp, lines, open, savedComps = [], onToggle, onFinalise, onMarkPaid, onAddLine, onRemoveLine }: any) {
   const [paidAt, setPaidAt] = useState("");
   const [account, setAccount] = useState(emp?.bank_account_number ? `${emp?.bank_name ?? ""} ${emp.bank_account_number}`.trim() : "");
   const [showPay, setShowPay] = useState(false);
   const [nl, setNl] = useState({ label: "", amount: "", kind: "addition", description: "" });
+  // occasional (non-recurring) + variable categories are the ones worth quick-adding to a run
+  const pickable: SavedComp[] = (savedComps as SavedComp[]).filter((c) => !c.recurring || !c.is_fixed_amount);
   const additions = lines.filter((l: Line) => l.kind !== "deduction" && l.kind !== "base");
   const deductions = lines.filter((l: Line) => l.kind === "deduction");
 
@@ -211,14 +217,31 @@ function RunRow({ run, emp, lines, open, onToggle, onFinalise, onMarkPaid, onAdd
                 </div>
               ))}
               {run.status === "draft" && (
-                <div className="flex flex-wrap items-end gap-2 pt-1">
-                  <Input aria-label="Line label" placeholder="label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} className="h-8 w-40" />
-                  <Input aria-label="Line amount" placeholder="amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} className="h-8 w-28" />
-                  <NativeSelect aria-label="Line type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} className="h-8">
-                    <option value="addition">Addition</option><option value="deduction">Deduction</option>
-                  </NativeSelect>
-                  <Input aria-label="Line description" placeholder="description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} className="h-8 w-48" />
-                  <Button size="sm" onClick={() => { onAddLine(run.id, nl.label, nl.amount, nl.kind, nl.description); setNl({ label: "", amount: "", kind: "addition", description: "" }); }}>Add line</Button>
+                <div className="space-y-2 border-t border-border pt-2">
+                  {pickable.length > 0 && (
+                    <FloatSelect
+                      label="Add a saved category"
+                      hint="Quick-add one of this employee's occasional or variable compensation categories (fills the label and amount below)."
+                      value=""
+                      onChange={(e) => {
+                        const c = pickable.find((x) => x.label === e.target.value);
+                        if (c) setNl({ label: c.label, amount: String(c.amount), kind: "addition", description: c.description ?? "" });
+                      }}
+                      wrapClassName="w-72"
+                    >
+                      <option value="">Pick a category…</option>
+                      {pickable.map((c) => <option key={c.label} value={c.label}>{c.label} ({formatPKR(c.amount)}{c.recurring ? " · variable" : ""})</option>)}
+                    </FloatSelect>
+                  )}
+                  <div className="flex flex-wrap items-end gap-2">
+                    <FloatInput label="Label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} wrapClassName="w-40" />
+                    <FloatInput label="Amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} wrapClassName="w-28" />
+                    <FloatSelect label="Type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} wrapClassName="w-36">
+                      <option value="addition">Addition</option><option value="deduction">Deduction</option>
+                    </FloatSelect>
+                    <FloatInput label="Description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} wrapClassName="w-48" />
+                    <Button size="sm" onClick={() => { onAddLine(run.id, nl.label, nl.amount, nl.kind, nl.description); setNl({ label: "", amount: "", kind: "addition", description: "" }); }}>Add line</Button>
+                  </div>
                 </div>
               )}
             </div>
