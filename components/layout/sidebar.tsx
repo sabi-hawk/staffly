@@ -40,6 +40,7 @@ function NavLink({
       onClick={onNavigate}
       className={cn(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        collapsed && "justify-center", // center the icon so it lines up with the grouped (dotted) icons
         nested && "py-1.5",
         active
           ? "bg-brand-light text-brand-primary"
