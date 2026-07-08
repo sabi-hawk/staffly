@@ -9,6 +9,7 @@ import { CheckWidget } from "@/components/attendance/check-widget";
 import { SummaryRange } from "@/components/attendance/summary-range";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { DailySummary } from "@/components/attendance/daily-summary";
+import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
 import { CorrectionRequest } from "@/components/attendance/correction-request";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -48,6 +49,22 @@ export default async function AttendancePage({
     .from("attendance").select("*").eq("employee_id", profile.id)
     .gte("work_date", from).lte("work_date", to)
     .order("work_date", { ascending: false });
+
+  // Per-day job counts across the shown range so each day's summary shows the full breakdown (BDs only;
+  // returns nothing for a user who owns no profiles).
+  const jobsByDate: Record<string, JobLine[]> = {};
+  const histDates = (history ?? []).map((r) => r.work_date);
+  if (histDates.length) {
+    const { data: jrows } = await supabase
+      .from("bd_job_applications")
+      .select("work_date, count, profile:dev_profiles(profile_no, name)")
+      .eq("owner_bd_id", profile.id)
+      .in("work_date", histDates);
+    for (const j of (jrows ?? []) as any[]) {
+      const label = j.profile ? `#${j.profile.profile_no} ${j.profile.name}` : "—";
+      (jobsByDate[j.work_date] ??= []).push({ label, count: Number(j.count) || 0 });
+    }
+  }
 
   // Today's row is fetched independently of the range so the "missing summary" prompt always shows.
   const { data: todayRow } = await supabase
@@ -151,7 +168,18 @@ export default async function AttendancePage({
                         {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                       </TD>
                     )}
-                    <TD><DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} /></TD>
+                    <TD>
+                      {(() => {
+                        const jobs = jobsByDate[r.work_date] ?? [];
+                        const notesText = (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+                        const total = jobs.reduce((s, j) => s + j.count, 0);
+                        // A day with a summary → eye view of the full breakdown (counts + notes). Otherwise
+                        // the add/late control (today: add; past missing: add late).
+                        return notesText || total > 0
+                          ? <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} />
+                          : <DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} />;
+                      })()}
+                    </TD>
                     <TD>{r.work_date === today && r.check_in_time && (
                       <EditAttendance
                         attendanceId={r.id}

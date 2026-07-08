@@ -9,8 +9,8 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 The Recent-days "Task summary" column only showed the notes text (not the BD job counts). Now a day
 with a summary shows an **eye icon** that opens a mini modal (`DaySummary`) with the formatted
 breakdown: per-profile job applications (name → count) + total, and the notes. Past missing days keep
-"Add (late)"; today points to the Today's-summary card. Dashboard job counts are fetched per recent day.
-Shipped same day.
+"Add (late)"; today points to the Today's-summary card. Job counts are fetched per shown day. Applied on
+**both** the dashboard Recent days and the Attendance-page history. Shipped same day.
 
 ## 2026-07-08 — Consolidate BD job counts + summary into one "Today's summary" (owner)
 The BD job-application counts and the daily task summary were two separate things (counts card up top,
