@@ -19,6 +19,9 @@ function PickerLabel({ label, hint, htmlFor }: { label: string; hint?: string; h
         "pointer-events-none absolute z-[1] flex max-w-[80%] items-center gap-1 bg-white px-1 transition-all duration-150",
         "left-8 top-1/2 -translate-y-1/2 text-sm text-text-secondary/80",
         "group-focus-within:left-2 group-focus-within:top-0 group-focus-within:text-[11px] group-focus-within:font-medium group-focus-within:text-brand-primary",
+        // float while the calendar popover is OPEN too — Radix moves focus into the calendar, so
+        // focus-within alone drops the label back to centre the moment the calendar opens.
+        "group-data-[open=true]:left-2 group-data-[open=true]:top-0 group-data-[open=true]:text-[11px] group-data-[open=true]:font-medium group-data-[open=true]:text-brand-primary",
         "group-data-[filled=true]:left-2 group-data-[filled=true]:top-0 group-data-[filled=true]:text-[11px] group-data-[filled=true]:font-medium"
       )}
     >
@@ -192,7 +195,7 @@ export function DatePicker({
   );
   if (!label) return picker;
   return (
-    <div className="group relative" data-filled={!!date}>
+    <div className="group relative" data-filled={!!date} data-open={open}>
       {picker}
       <PickerLabel label={label} hint={hint} htmlFor={id} />
     </div>
@@ -256,7 +259,7 @@ export function DateTimePicker({
   );
   if (!label) return picker;
   return (
-    <div className="group relative" data-filled={!!date}>
+    <div className="group relative" data-filled={!!date} data-open={open}>
       {picker}
       <PickerLabel label={label} hint={hint} htmlFor={id} />
     </div>

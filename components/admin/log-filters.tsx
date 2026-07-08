@@ -58,8 +58,8 @@ export function LogFilters({ entities, actions, initial }: {
         {actions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </FloatSelect>
       <FloatInput label="Actor email" value={actor} onChange={(e) => setActor(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") apply(); }} wrapClassName="w-56" />
-      <DatePicker label="From" value={from} max={to || undefined} onChange={setFrom} className="w-40" />
-      <DatePicker label="To" value={to} min={from || undefined} onChange={setTo} className="w-40" />
+      <DatePicker id="log-from" label="From" value={from} max={to || undefined} onChange={setFrom} className="w-40" />
+      <DatePicker id="log-to" label="To" value={to} min={from || undefined} onChange={setTo} className="w-40" />
       <Button size="sm" onClick={apply}>Apply</Button>
       {anyActive && (
         <button onClick={clear} aria-label="Clear filters" title="Clear filters" className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-white text-text-secondary hover:bg-surface hover:text-text-primary">
