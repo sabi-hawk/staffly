@@ -34,8 +34,13 @@ Every change follows `.claude/skills/feature-workflow/SKILL.md`:
 **capture** the requirement (changelog) → **ground** in the KB/code (reuse `lib/services/*`, `lib/*`)
 → **decide** (record in `.claude/DECISIONS.md`; ask the owner only for big/irreversible/conflicting)
 → **implement** small slices → **self-test** (`tsc`, `build`, `npm run report`) → **validate** with
-review subagents → **browser-verify** (Playwright screenshots) → **sync the KB** → **commit**
-(push when asked). Production gate: `.claude/knowledgebase/reference/07-production-readiness.md`.
+review subagents → **browser-verify** (Playwright screenshots) → **sync the KB + in-app docs** →
+**commit** (push when asked). Production gate: `.claude/knowledgebase/reference/07-production-readiness.md`.
+
+**Docs stay in lockstep (owner-mandated 2026-07-08).** Every development, business-rule change/update,
+or new case updates — in the SAME change — the KB (`.claude/…`) **and** the user-facing **Handbook**
+(`app/(app)/handbook/page.tsx`) **and** the **Product document** (`app/(app)/admin/product/page.tsx`).
+A rule an employee experiences → Handbook; a new module/workflow/capability → Product doc. Not optional.
 
 ## 4. Decide vs ask
 Decide and proceed for naming, structure, defaults, copy, refactors, test data — anything resolvable

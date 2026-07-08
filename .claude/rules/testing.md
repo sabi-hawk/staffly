@@ -21,6 +21,9 @@ client-import 0-row-grid bug and the broken alerts feed).
 - `npm run report` → all suites PASS.
 - The affected screens verified via screenshots (no broken layout / dead control).
 - KB updated (`.claude/database/database.md` + relevant `knowledgebase/<module>/`).
+- **In-app docs updated in the same change (owner-mandated):** the **Handbook**
+  (`app/(app)/handbook/page.tsx`) for any rule an employee experiences, and the **Product document**
+  (`app/(app)/admin/product/page.tsx`) for any new module/workflow/capability.
 
 ## Canonical test data
 Don't point tests at ad-hoc data — rely on `npm run seed:test`. Canonical attendance subject =

@@ -51,9 +51,18 @@ expansions, ask the owner.
 Use the **browser-verify** skill (Playwright headless → screenshots in `test-artifacts/`) and **read
 the PNGs** to confirm it renders and works. This catches what unit tests miss.
 
-## 8. Sync the knowledge base
+## 8. Sync the knowledge base — AND the in-app Handbook + Product doc
 Update `.claude/database/database.md` (any schema change) + the relevant
 `.claude/knowledgebase/<module>` and the requirements changelog — in the **same** change as the code.
+
+**Owner-mandated (2026-07-08): on every development, business-rule change/update, or new case, also
+update the user-facing docs in the SAME change:**
+- **Handbook** — `app/(app)/handbook/page.tsx` (the employee-facing policy/how-to: attendance, leave
+  rules, probation, calendar, deal-developers, etc.). Any change to a rule an employee experiences
+  (e.g. leave types, half-days, corrections) must be reflected here in plain language.
+- **Product document** — `app/(app)/admin/product/page.tsx` (the evolving product overview /
+  capabilities doc). New modules, workflows, or admin capabilities get a section/line here.
+These are living docs, not the KB: keep them accurate for the reader. Skipping them is not "done".
 
 ## 9. Commit (+ push when asked)
 Commit per slice with a clear message (Co-Authored-By trailer). Push only when the owner asks
