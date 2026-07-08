@@ -5,6 +5,13 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-08 — Consolidate BD job counts + summary into one "Today's summary" (owner)
+The BD job-application counts and the daily task summary were two separate things (counts card up top,
+"Add summary" down in Recent days). Merged into ONE `DailyReport` card on the dashboard: for a BD it is
+job counts per profile (+ total) **and** a Notes editor (other work — meetings, creating/maturing
+profiles, mentoring), saved together; for everyone else it is just Notes. Removed the standalone
+`BdJobCounts` card and the redundant today's-row summary entry. See DECISIONS #99. Shipped same day.
+
 ## 2026-07-08 — Leave & attendance flexibility (owner) — multi-phase
 1. **Half-day leave** under casual (0.5); the one monthly casual day can be split into two half-days on
    different days; half-days beyond the allowance fall to unpaid.

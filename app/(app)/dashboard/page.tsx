@@ -5,7 +5,7 @@ import { myProfilesWithCounts } from "@/lib/services/bd-jobs";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { DailySummary } from "@/components/attendance/daily-summary";
-import { BdJobCounts } from "@/components/attendance/bd-job-counts";
+import { DailyReport } from "@/components/attendance/daily-report";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -51,8 +51,15 @@ export default async function EmployeeDashboard() {
 
       <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />
 
-      {/* BD-primary: log today's job applications per assigned profile (hidden for non-BDs). */}
-      {jobProfiles.length > 0 && <BdJobCounts profiles={jobProfiles} workDate={today} />}
+      {/* One consolidated "Today's summary": BDs get job counts + notes; everyone else just notes. */}
+      {(jobProfiles.length > 0 || !!todayRow?.check_in_time) && (
+        <DailyReport
+          profiles={jobProfiles}
+          workDate={today}
+          checkedIn={!!todayRow?.check_in_time}
+          notesHtml={todayRow?.daily_summary ?? null}
+        />
+      )}
 
       {dealNames.length > 0 && (
         <Card>
@@ -101,7 +108,16 @@ export default async function EmployeeDashboard() {
                   <TD className="tabular">{r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—"}</TD>
                   <TD className="tabular">{r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : <Badge tone="danger">open</Badge>}</TD>
                   <TD className="tabular">{formatHours(r.total_hours)}</TD>
-                  <TD><DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} /></TD>
+                  <TD>
+                    {r.work_date === today ? (
+                      // Today's summary is edited in the "Today's summary" card above — just reflect it here.
+                      (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()
+                        ? <span className="max-w-[240px] truncate text-text-secondary">{(r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
+                        : <span className="text-caption text-text-secondary">Add it in “Today’s summary” above</span>
+                    ) : (
+                      <DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} />
+                    )}
+                  </TD>
                 </TR>
               ))}
               {(recent ?? []).length === 0 && (

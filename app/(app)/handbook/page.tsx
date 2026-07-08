@@ -29,11 +29,12 @@ export default function HandbookPage() {
         </ul>
       </Section>
 
-      <Section title="Daily task summary">
+      <Section title="Today&apos;s summary">
         <ul>
-          <li>On each working day you check in, write a short <strong>task summary</strong> of what you worked on before you sign off.</li>
-          <li>You can edit the summary the <strong>same day</strong>; once the day has passed it is locked. A summary added after the day is flagged as <strong>added late</strong> for admins.</li>
-          <li>Admins can see who is still missing today&apos;s summary.</li>
+          <li>On each working day you check in, fill your <strong>Today&apos;s summary</strong> before you sign off — one card on your dashboard.</li>
+          <li><strong>Business Development:</strong> your summary is two things — the <strong>job applications</strong> you made today <strong>per profile</strong> assigned to you (with a running total), and <strong>Notes</strong> for anything else (meetings, creating or maturing profiles, helping juniors, etc.). Save them together.</li>
+          <li><strong>Everyone else</strong> (developers, designers, etc.): just the <strong>Notes</strong> — a couple of lines on what you worked on.</li>
+          <li>You can edit it the <strong>same day</strong>; once the day has passed the notes are locked. Notes added after the day are flagged as <strong>added late</strong> for admins. Admins can see who is still missing today&apos;s summary.</li>
         </ul>
       </Section>
 
