@@ -6,6 +6,7 @@ import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { DailySummary } from "@/components/attendance/daily-summary";
 import { DailyReport } from "@/components/attendance/daily-report";
+import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,21 @@ export default async function EmployeeDashboard() {
 
   // BD daily job applications: the profiles this user OWNS (empty for non-BDs → card hidden).
   const jobProfiles = await myProfilesWithCounts(supabase, profile.id, today);
+
+  // Per-day job counts across the recent range, so each day's summary shows the full breakdown.
+  const recentDates = (recent ?? []).map((r) => r.work_date);
+  const jobsByDate: Record<string, JobLine[]> = {};
+  if (jobProfiles.length && recentDates.length) {
+    const { data: jrows } = await supabase
+      .from("bd_job_applications")
+      .select("work_date, count, profile:dev_profiles(profile_no, name)")
+      .eq("owner_bd_id", profile.id)
+      .in("work_date", recentDates);
+    for (const j of (jrows ?? []) as any[]) {
+      const label = j.profile ? `#${j.profile.profile_no} ${j.profile.name}` : "—";
+      (jobsByDate[j.work_date] ??= []).push({ label, count: Number(j.count) || 0 });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -109,14 +125,14 @@ export default async function EmployeeDashboard() {
                   <TD className="tabular">{r.check_out_time ? new Date(r.check_out_time).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : <Badge tone="danger">open</Badge>}</TD>
                   <TD className="tabular">{formatHours(r.total_hours)}</TD>
                   <TD>
-                    {r.work_date === today ? (
-                      // Today's summary is edited in the "Today's summary" card above — just reflect it here.
-                      (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()
-                        ? <span className="max-w-[240px] truncate text-text-secondary">{(r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
-                        : <span className="text-caption text-text-secondary">Add it in “Today’s summary” above</span>
-                    ) : (
-                      <DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} />
-                    )}
+                    {(() => {
+                      const jobs = jobsByDate[r.work_date] ?? [];
+                      const notesText = (r.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+                      const total = jobs.reduce((s, j) => s + j.count, 0);
+                      if (notesText || total > 0) return <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} />;
+                      if (r.work_date === today) return <span className="text-caption text-text-secondary">Add it in “Today’s summary” above</span>;
+                      return <DailySummary workDate={r.work_date} today={today} html={r.daily_summary} late={r.summary_late} />;
+                    })()}
                   </TD>
                 </TR>
               ))}
