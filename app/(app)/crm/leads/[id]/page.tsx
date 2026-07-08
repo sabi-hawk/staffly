@@ -94,6 +94,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
             developers={developers}
             interviews={interviews}
             assessments={assessments}
+            canManage={isSuperAdminRole(me.role)}
             initialEdit={initialEdit as { kind: "interviews" | "assessments"; id: string } | null}
           />
         </CardContent>

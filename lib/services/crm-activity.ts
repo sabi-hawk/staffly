@@ -117,3 +117,25 @@ export async function updateAssessment(supabase: SupabaseClient, id: string, inp
   sanitizeRichFields(input);
   return update(supabase, "assessments", id, pick(input as never, ASSESSMENT_FIELDS as never));
 }
+
+// ── Dismiss / restore (soft-hide) ──
+// A BD may dismiss their own interview/assessment (crossed out, kept for audit). Only a super admin
+// can restore (un-dismiss) or hard-delete — the DB trigger crm_guard_undismiss (0049) enforces that a
+// non-super can only set dismissed_at (null → now), never clear it, and stamps dismissed_by server-side.
+export type ActivityKind = "interviews" | "assessments";
+
+export async function dismissActivity(supabase: SupabaseClient, kind: ActivityKind, id: string, reason?: string) {
+  const { error } = await supabase
+    .from(kind)
+    .update({ dismissed_at: new Date().toISOString(), dismiss_reason: reason?.trim() || null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function restoreActivity(supabase: SupabaseClient, kind: ActivityKind, id: string) {
+  const { error } = await supabase
+    .from(kind)
+    .update({ dismissed_at: null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}

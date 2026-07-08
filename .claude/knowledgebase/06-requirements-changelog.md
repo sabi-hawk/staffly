@@ -448,3 +448,14 @@ Dropdowns (owner/status/filters, all FloatSelect) opened centered over the field
 FloatSelect on Radix Select so the list anchors BELOW the trigger (unchanged option/onChange API).
 Profile Stack is now a real dropdown matching the others, with an "Add a new stack" action (created on
 save). Profile banner status uses StatusPill so "Active" is capitalised and sleek. Shipped same day.
+
+## 2026-07-08 — BD dismiss-not-delete for CRM activity records (owner)
+A BD must not be able to permanently DELETE interviews/assessments (or leads). They may only
+**dismiss** a record, which crosses it out (strikethrough) but keeps it for audit. Only a
+**super admin** can **restore** (un-dismiss) or **hard-delete** a record. Model: new
+`dismissed_at`/`dismissed_by`/`dismiss_reason` on interviews + assessments; RLS delete tightened to
+super_admin only on leads/interviews/assessments; a BEFORE-UPDATE trigger blocks any non-super from
+clearing/altering `dismissed_at` (so BD can dismiss but never restore); dismissed rows render
+struck-through; row actions show Dismiss (BD) vs Restore+Delete (super). Leads already dismiss via
+`status='dismissed'`; this adds the same soft-hide to the two activity records and removes the BD
+hard-delete. See DECISIONS.md.

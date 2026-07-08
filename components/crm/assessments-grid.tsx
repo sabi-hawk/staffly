@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth";
+import { isSuperAdminRole } from "@/lib/crm/access";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
@@ -18,6 +20,8 @@ type SP = { page?: string; pageSize?: string; status?: string; priority?: string
 /** Assessments tab of the CRM Leads hub — grid filtered by Received (entry_date, default last 30 days). */
 export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
+  const me = await getCurrentProfile();
+  const isSuper = isSuperAdminRole(me?.role);
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const today = companyToday();
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
@@ -25,7 +29,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   let query = supabase
     .from("assessments")
     .select(
-      "id, job_title, company, status, priority, duration, deadline, entry_date, budget, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name)",
+      "id, job_title, company, status, priority, duration, deadline, entry_date, dismissed_at, budget, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name)",
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
@@ -73,17 +77,17 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
           {list.map((as) => {
             const overdue = as.deadline && as.deadline < today && !["completed", "cancelled"].includes(as.status);
             return (
-              <TR key={as.id}>
+              <TR key={as.id} className={as.dismissed_at ? "opacity-55 [&_td]:line-through" : undefined}>
                 <TD className="font-medium">{as.job_title || "—"}<div className="text-caption text-text-secondary">{as.company}</div></TD>
                 <TD className="text-text-secondary">{as.owner?.full_name ?? "—"}</TD>
-                <TD><Badge tone={statusTone(as.status)}>{labelize(as.status)}</Badge></TD>
-                <TD>{as.priority ? <Badge tone={as.priority === "high" ? "danger" : "neutral"}>{as.priority}</Badge> : "—"}</TD>
+                <TD className="no-underline"><Badge tone={statusTone(as.status)}>{labelize(as.status)}</Badge></TD>
+                <TD className="no-underline">{as.priority ? <Badge tone={as.priority === "high" ? "danger" : "neutral"}>{as.priority}</Badge> : "—"}</TD>
                 <TD>{as.duration ?? "—"}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.entry_date)}</TD>
                 <TD className={overdue ? "font-medium text-danger" : "text-text-secondary"}>{as.deadline ? formatCrmDate(as.deadline) : "—"}{overdue ? " · overdue" : ""}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.created_at)}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.updated_at)}</TD>
-                <TD><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} copyText={assessmentShareText(as)} /></TD>
+                <TD className="no-underline"><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} copyText={assessmentShareText(as)} dismissed={!!as.dismissed_at} canManage={isSuper} /></TD>
               </TR>
             );
           })}

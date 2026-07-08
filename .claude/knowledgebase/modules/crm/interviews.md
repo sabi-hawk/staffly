@@ -44,3 +44,8 @@ Belongs to a [lead](leads-deals.md); references a [profile](profiles.md); develo
   as **Asia/Karachi** (+5, no DST) — the form round-trips via `toUtcIso`/`toLocalInput`.
 - Managed on the **lead detail** (`components/crm/lead-activity.tsx` + `interview-form.tsx`); flat
   read grid at `/crm/interviews`. Service `lib/services/crm-activity.ts`; routes `app/api/crm/interviews/*`.
+- **Dismiss-not-delete (0049):** a BD may **dismiss** an interview (soft-hide — crossed out, kept for
+  audit; `dismissed_at/dismissed_by/dismiss_reason`) but cannot hard-delete or restore. Only a
+  **super admin** restores or deletes (RLS `super_delete` + the `crm_guard_undismiss` trigger; routes
+  gate on `isSuperAdminRole`). Both the grid (`interviews-grid.tsx`) and the lead-detail list strike out
+  a dismissed row and show Dismiss (BD) vs Restore + Delete (super). See DECISIONS #97.

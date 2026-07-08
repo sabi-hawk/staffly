@@ -126,6 +126,7 @@ export interface Interview {
   feedback: string | null; // FRD-07
   notes: string | null;
   notes2: string | null;
+  dismissed_at: string | null; // soft-hide (0049): BD may dismiss, only super restores/deletes
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +154,7 @@ export interface Assessment {
   feedback: string | null; // FRD-07
   notes: string | null;
   extra: string | null;
+  dismissed_at: string | null; // soft-hide (0049): BD may dismiss, only super restores/deletes
   created_at: string;
   updated_at: string;
 }

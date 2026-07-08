@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth";
+import { isSuperAdminRole } from "@/lib/crm/access";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
@@ -18,13 +20,15 @@ type SP = { page?: string; pageSize?: string; status?: string; round?: string; o
 /** Interviews tab of the CRM Leads hub — grid filtered by Received date (default last 30 days). */
 export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
+  const me = await getCurrentProfile();
+  const isSuper = isSuperAdminRole(me?.role);
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
 
   let query = supabase
     .from("interviews")
     .select(
-      "id, job_title, company, status, round, outcome, interview_at, received_date, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!interviews_owner_bd_id_fkey(full_name)",
+      "id, job_title, company, status, round, outcome, interview_at, received_date, dismissed_at, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!interviews_owner_bd_id_fkey(full_name)",
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
@@ -70,17 +74,17 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
         </THead>
         <TBody>
           {list.map((iv) => (
-            <TR key={iv.id}>
+            <TR key={iv.id} className={iv.dismissed_at ? "opacity-55 [&_td]:line-through" : undefined}>
               <TD className="font-medium">{iv.job_title || "—"}<div className="text-caption text-text-secondary">{iv.company}</div></TD>
               <TD className="text-text-secondary">{iv.owner?.full_name ?? "—"}</TD>
               <TD>{iv.round ? roundLabel(iv.round) : "—"}</TD>
-              <TD><Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge></TD>
-              <TD>{iv.outcome ? <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge> : "—"}</TD>
+              <TD className="no-underline"><Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge></TD>
+              <TD className="no-underline">{iv.outcome ? <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge> : "—"}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.received_date)}</TD>
               <TD className="text-text-secondary">{formatCrmDatetime(iv.interview_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.created_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.updated_at)}</TD>
-              <TD><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} copyText={interviewShareText(iv)} /></TD>
+              <TD className="no-underline"><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} copyText={interviewShareText(iv)} dismissed={!!iv.dismissed_at} canManage={isSuper} /></TD>
             </TR>
           ))}
           {list.length === 0 && <TR><TD colSpan={10} className="py-6 text-center text-text-secondary">No interviews match.</TD></TR>}

@@ -118,6 +118,39 @@ async function main() {
   check("trigger: closing a lead inserts one crm_alert", alertN === 1, `${alertN} alert(s)`);
   await pgc.query(`delete from leads where id=$1`, [tLead]); // cascade removes the alert
 
+  // ── dismiss-not-delete (0049): a BD may dismiss (soft-hide) own interview/assessment but never
+  //    hard-delete or restore; only a super admin restores/deletes.
+  const dIv = (await pgc.query(
+    `insert into interviews (company, owner_bd_id, status) values ('__RLS_DISMISS_CO__', $1, 'pending') returning id`,
+    [EMP2])).rows[0].id;
+  const shaizaBd = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+  // 1. BD hard-delete → blocked (super_delete RLS); row survives.
+  await shaizaBd.from("interviews").delete().eq("id", dIv);
+  const survived = (await pgc.query(`select 1 from interviews where id=$1`, [dIv])).rowCount === 1;
+  check("BD: hard-delete own interview → blocked (row survives)", survived);
+  // 2. BD dismiss own interview → allowed.
+  const bdDismiss = await shaizaBd.from("interviews").update({ dismissed_at: new Date().toISOString() }).eq("id", dIv).select("id");
+  const dismissedAt = (await pgc.query(`select dismissed_at, dismissed_by from interviews where id=$1`, [dIv])).rows[0];
+  check("BD: dismiss own interview → allowed", !bdDismiss.error && !!dismissedAt?.dismissed_at);
+  check("BD: dismiss stamps dismissed_by = BD (trigger)", dismissedAt?.dismissed_by === EMP2);
+  // 3. BD un-dismiss (clear) → blocked by trigger.
+  const bdUndismiss = await shaizaBd.from("interviews").update({ dismissed_at: null }).eq("id", dIv).select("id");
+  const stillDismissed = !!(await pgc.query(`select dismissed_at from interviews where id=$1`, [dIv])).rows[0]?.dismissed_at;
+  check("BD: restore (un-dismiss) own interview → blocked (trigger)", !!bdUndismiss.error && stillDismissed);
+  // 4. admin un-dismiss → blocked by trigger (not super).
+  const admUndismiss = await hira.from("interviews").update({ dismissed_at: null }).eq("id", dIv).select("id");
+  const stillDismissed2 = !!(await pgc.query(`select dismissed_at from interviews where id=$1`, [dIv])).rows[0]?.dismissed_at;
+  check("admin: restore (un-dismiss) interview → blocked (super-only trigger)", !!admUndismiss.error && stillDismissed2);
+  // 5. super restore → allowed (clears reason/by too).
+  const supRestore = await founder.from("interviews").update({ dismissed_at: null }).eq("id", dIv).select("id");
+  const cleared = (await pgc.query(`select dismissed_at, dismissed_by from interviews where id=$1`, [dIv])).rows[0];
+  check("super_admin: restore interview → allowed", !supRestore.error && !cleared?.dismissed_at && !cleared?.dismissed_by);
+  // 6. super hard-delete → allowed.
+  const supDelete = await founder.from("interviews").delete().eq("id", dIv).select("id");
+  const gone = (await pgc.query(`select 1 from interviews where id=$1`, [dIv])).rowCount === 0;
+  check("super_admin: hard-delete interview → allowed", (supDelete.data?.length ?? 0) === 1 && gone);
+  await pgc.query(`delete from interviews where id=$1`, [dIv]); // best-effort cleanup
+
   // ── dev-profile documents (0022/0023): owner BD writes/soft-deletes own; non-owner BD + non-BD
   //     blocked; admin soft/hard-deletes + sees history; soft-deleted hidden from the owner's SELECT.
   const shaizaProfile = (await pgc.query(

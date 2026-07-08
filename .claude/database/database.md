@@ -199,15 +199,19 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - **interviews** — id, lead_id→leads, dev_profile_id, owner_bd_id, job_title, company, job_post_url,
   status(pending|scheduled|completed|cancelled), given_by/whom_should_give→profiles (is_developer),
   interview_at (UTC), **round**(1st|2nd|3rd|final), **outcome**(pending|selected|rejected|on_hold),
-  notes, notes2.
+  notes, notes2, **dismissed_at/dismissed_by/dismiss_reason** (0049 soft-hide: BD dismisses, only super
+  restores/deletes).
 - **assessments** — id, lead_id, dev_profile_id, owner_bd_id, job_title, company, status(pending|
   in_progress|completed|cancelled), entry_date, deadline, completion_date, mail_subject, job_post_url,
   job_description, completed_by→profiles, priority(high|medium|low), budget(text), assessment_link,
-  duration(15m…2h+), notes, extra.
+  duration(15m…2h+), notes, extra, **dismissed_at/dismissed_by/dismiss_reason** (0049, as interviews).
 - **assessment_documents** — id, assessment_id, doc_type(resume_cv|extra), label, file_path (private
   `crm-docs` bucket), file_name, uploaded_by. Downloads audit-logged.
-  RLS for leads/interviews/assessments/(their docs): **owner-scoped** — `auth_is_bd_lead() OR
+  RLS for leads/interviews/assessments/(their docs): **owner-scoped** for select/insert/update —
+  `auth_is_bd_lead() OR
   (owner_bd_id = auth.uid() AND auth_is_bd())`; a BD manages only their own, BD-Lead/admin manage all.
+  **DELETE is super_admin only** (0049); a BD dismisses instead of deleting, and only a super admin
+  restores (the `crm_guard_undismiss` trigger blocks any non-super from clearing `dismissed_at`).
 - **deals** — id, lead_id→leads, designation, joining_date, dev_profile_id, working_developer→profiles,
   salary (numeric PKR), receiving_account_id→receiving_accounts, payment_method_id→payment_methods,
   profile_dob, status(active|ended|cancelled). **admin/super-admin ONLY.**
@@ -333,3 +337,20 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - `0044_calendar_profile_label.sql` — `crm_calendar()` returns `profile_label` ("#no Name") for
   viewers who can already expand the event (owner or crm.leads.all); the cross-BD masked view is
   unchanged (time + stack + colour).
+- `0045_deal_notes_and_secret_read.sql` — `deals.notes` (rich-text HTML, sanitized at the write path);
+  `dev_secrets_owner_read` RLS so a deal's owner can read its secrets.
+- `0046_role_text_no_emdash.sql` — data hotfix: strip em dashes from `app_roles.description/reason`
+  text (owner: em dashes read as AI-generated).
+- `0047_auto_deal_developer_flag.sql` — `sync_deal_developer_flag()` SECURITY-DEFINER trigger on
+  `deal_developers` (insert) and `deals` (working_developer set): auto-sets the engineer's
+  `is_deal_developer` flag + deal_developer app_role; backfilled existing assignments.
+- `0048_compensation_amount_type.sql` — `compensation_components.is_fixed_amount boolean not null
+  default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
+  recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
+  only added to a payslip when picked).
+- `0049_crm_dismiss_not_delete.sql` — **BD dismiss-not-delete**: `interviews`/`assessments` +
+  `dismissed_at`/`dismissed_by`/`dismiss_reason`. DELETE on `leads`/`interviews`/`assessments` tightened
+  to **super_admin only** (owner_write split into owner_insert + owner_update + super_delete). Trigger
+  `crm_guard_undismiss` (BEFORE UPDATE) lets a non-super only set `dismissed_at` (null→now) — never clear
+  or re-stamp it — and stamps `dismissed_by=auth.uid()` on dismiss, nulling reason/by on a super restore.
+  So a BD dismisses (soft-hide, crossed out); only a super admin restores or hard-deletes.

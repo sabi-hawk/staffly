@@ -42,3 +42,6 @@ Belongs to a [lead](leads-deals.md); references a [profile](profiles.md). Access
   private `crm-docs` bucket (`assessments/<id>/…`), signed-URL + audit-logged downloads.
 - Managed on the **lead detail** (`lead-activity.tsx` + `assessment-form.tsx` + `assessment-docs.tsx`);
   flat grid `/crm/assessments` with **overdue** highlight (deadline < today Asia/Karachi & not completed).
+- **Dismiss-not-delete (0049):** same model as interviews — a BD **dismisses** (soft-hide, crossed out,
+  kept for audit); only a **super admin** restores or hard-deletes (RLS `super_delete` +
+  `crm_guard_undismiss` trigger; routes gate on `isSuperAdminRole`). See DECISIONS #97.
