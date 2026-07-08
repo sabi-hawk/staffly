@@ -9,6 +9,7 @@ import { CheckWidget } from "@/components/attendance/check-widget";
 import { SummaryRange } from "@/components/attendance/summary-range";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { DailySummary } from "@/components/attendance/daily-summary";
+import { CorrectionRequest } from "@/components/attendance/correction-request";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -17,6 +18,8 @@ import { formatHours, formatCrmDate } from "@/lib/utils";
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
+const corrTone = (s: string) => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
+const corrKind: Record<string, string> = { missing: "Missing day", wrong_time: "Wrong times", forgot_checkout: "Forgot checkout" };
 
 export default async function AttendancePage({
   searchParams,
@@ -51,6 +54,14 @@ export default async function AttendancePage({
     .from("attendance").select("daily_summary, summary_late, check_in_time")
     .eq("employee_id", profile.id).eq("work_date", today).maybeSingle();
   const todaySummaryMissing = !!todayRow?.check_in_time && !(todayRow.daily_summary ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
+
+  // This employee's recent timesheet correction requests (pending shown prominently).
+  const { data: myCorrections } = await supabase
+    .from("attendance_correction_requests")
+    .select("id, work_date, kind, requested_check_in, requested_check_out, status, decision_note")
+    .eq("employee_id", profile.id)
+    .order("work_date", { ascending: false })
+    .limit(8);
 
   return (
     <div className="space-y-6">
@@ -87,6 +98,36 @@ export default async function AttendancePage({
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">Timesheet corrections</CardTitle>
+          <CorrectionRequest triggerLabel="Fix a day" />
+        </CardHeader>
+        <CardContent>
+          {(myCorrections ?? []).length > 0 ? (
+            <Table>
+              <THead><TR><TH>Day</TH><TH>Type</TH><TH>Requested in</TH><TH>Requested out</TH><TH>Status</TH></TR></THead>
+              <TBody>
+                {(myCorrections ?? []).map((c: any) => (
+                  <TR key={c.id}>
+                    <TD className="tabular">{c.work_date}</TD>
+                    <TD>{corrKind[c.kind] ?? c.kind}</TD>
+                    <TD className="tabular">{time(c.requested_check_in)}</TD>
+                    <TD className="tabular">{time(c.requested_check_out)}</TD>
+                    <TD>
+                      <Badge tone={corrTone(c.status) as any}>{c.status}</Badge>
+                      {c.status === "rejected" && c.decision_note && <div className="mt-1 max-w-[220px] text-caption text-danger">{c.decision_note}</div>}
+                    </TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          ) : (
+            <p className="text-caption text-text-secondary">Missed a day, or forgot to check in/out? Use <span className="font-medium text-text-primary">Fix a day</span> to send the real times for admin approval.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle>Attendance history</CardTitle></CardHeader>

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { formatHours } from "@/lib/utils";
+import { companyToday } from "@/lib/time";
+import { CorrectionRequest } from "@/components/attendance/correction-request";
 
 interface Session { id: string; started_at: string; ended_at: string | null }
 interface Today {
@@ -69,6 +71,12 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
 
   const statusKind = working ? (today.attendance?.status === "late" ? "late" : "working") : today.sessions.length ? "done" : "awaiting";
 
+  // "Something's off": the session is still open but started on a PAST day → they forgot to check out.
+  // The live timer would keep climbing; offer to stop & submit the real check-out for admin approval.
+  const openDate = today.openSince ? companyToday(new Date(today.openSince)) : null;
+  const staleOpen = working && !!openDate && openDate < companyToday();
+  const openTime = today.openSince ? new Date(today.openSince).toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "";
+
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -104,6 +112,22 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
               #{i + 1} {time(s.started_at)} → {s.ended_at ? time(s.ended_at) : "now"}
             </span>
           ))}
+        </div>
+      )}
+
+      {staleOpen && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger/40 bg-danger/5 px-3 py-2.5">
+          <p className="text-caption text-text-primary">
+            <span className="font-medium text-danger">Still checked in from {openDate}.</span>{" "}
+            <span className="text-text-secondary">Looks like a missed checkout — the timer keeps running. Submit the real check-out for approval.</span>
+          </p>
+          <CorrectionRequest
+            triggerLabel="Stop &amp; correct"
+            variant="danger"
+            defaultDate={openDate!}
+            defaultKind="forgot_checkout"
+            defaultIn={openTime}
+          />
         </div>
       )}
     </Card>

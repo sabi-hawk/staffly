@@ -151,6 +151,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   a half is a single date worth 0.5). Casual cap = 1.0/mo by total (two halves allowed); casual→unpaid
   fallback in `lib/services/leaves.ts`.
 - **leave_balances** — employee_id, year, annual_total/used, casual_month, casual_used, unpaid_used.
+- **attendance_correction_requests** (0052) — employee_id, attendance_id (null=missing day), work_date,
+  requested_check_in/out, kind (missing\|wrong_time\|forgot_checkout), reason, status, reviewed_by/at,
+  decision_note. Employee reads/inserts OWN pending; admin/HR (attendance.edit_all) decide; approval
+  applies the times to attendance. Notify trigger → employee_notifications.
 - **salary_structures** *(super_admin)* — employee_id, base_salary, currency. (type/overtime_rate/
   commission_rate/benefits are legacy, unused — additions are dynamic now.)
 - **compensation_components** *(super_admin)* — employee_id, **label, amount, description,
@@ -355,6 +359,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0052_attendance_corrections.sql` — **timesheet correction requests**: `attendance_correction_requests`
+  (employee_id, attendance_id NULL, work_date, requested_check_in/out, kind, reason, status, reviewed_by/at,
+  decision_note). RLS: employee reads/inserts OWN pending only + withdraws own; admin/HR
+  (`attendance.edit_all`) read all + decide; no self-approve. `notify_correction_decision` trigger bells
+  the employee on decision. Approval applies the times via `lib/services/attendance-corrections.ts`.
 - `0051_half_day_leave.sql` — **half-day leave**: `leave_requests.days_count`→`numeric(4,1)`;
   `+half_day boolean` `+half_period ('first'|'second')` with a check that a half is a single date worth
   0.5. Enables casual half-days (two per month) + the casual→unpaid fallback (see `lib/services/leaves.ts`).

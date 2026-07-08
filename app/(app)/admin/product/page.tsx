@@ -83,6 +83,7 @@ export default async function ProductDocPage() {
           <li>Multi-session days: check out / back in for breaks; the timer pauses and resumes.</li>
           <li><strong>Daily task summary</strong> (rich text) per work day: editable the same day; a past day with a summary is <strong>locked</strong>; a past day still missing can be added <strong>late</strong> (flagged, with the timestamp shown to admins).</li>
           <li>The attendance <strong>summary</strong> (worked days / leaves / missing / extra-deficit) is shown to employees only when the company setting is on (default on; admins always see it). The summary and the history grid share one date range.</li>
+          <li><strong>Timesheet corrections:</strong> an employee submits the real check-in/out for a missing or mis-recorded past day (up to 7 days back) via <em>Fix a day</em>; it stays <strong>pending</strong> and an admin approves (which applies the times to attendance, marking it edited) or rejects with a note. A session left open from a prior day (forgot to check out) is surfaced with a <em>Stop &amp; correct</em> action. Admin queue lives on the admin Attendance page; the employee is notified of the decision. (`attendance_correction_requests`, 0052.)</li>
         </ul>
       </Section>
 

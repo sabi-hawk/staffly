@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { checkIn, checkOut, editAttendance } from "@/lib/services/attendance";
 import { requestLeave, decideLeave, annualUsedThisYear, leaveSummary } from "@/lib/services/leaves";
+import { requestCorrection, decideCorrection } from "@/lib/services/attendance-corrections";
 
 const ymd = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 // build a date range covering exactly `n` weekdays, starting at the next Monday ≥21 days out
@@ -160,6 +161,35 @@ describe("§14.4 integration flows (cloud)", () => {
     expect(paid.unpaidFallback).toBe(true);
     expect(paid.requests.some((r: any) => r.type === "unpaid")).toBe(true);
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
+  });
+
+  it("timesheet correction — request a missing day, admin approve applies attendance", async () => {
+    // a day 2 days back (within the 7-day window) with NO attendance for SHAIZA
+    const wd = ymd(new Date(Date.now() - 2 * 86400000));
+    await admin.from("attendance_correction_requests").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
+    await admin.from("attendance_sessions").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
+    await admin.from("attendance").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
+
+    const cin = new Date(`${wd}T09:00:00+05:00`).toISOString();
+    const cout = new Date(`${wd}T17:00:00+05:00`).toISOString();
+    const { request } = await requestCorrection(admin, SHAIZA, { work_date: wd, check_in: cin, check_out: cout, kind: "missing", reason: "INT-CORR was working, not recorded" });
+    expect(request.status).toBe("pending");
+
+    await decideCorrection(admin, request.id, FOUNDER, { approve: true });
+    const { data: decided } = await admin.from("attendance_correction_requests").select("status").eq("id", request.id).single();
+    expect(decided!.status).toBe("approved");
+    // attendance now exists with the requested in/out and 8h total
+    const { data: att } = await admin.from("attendance").select("check_in_time, check_out_time, total_hours, is_edited").eq("employee_id", SHAIZA).eq("work_date", wd).single();
+    expect(att).toBeTruthy();
+    expect(new Date(att!.check_in_time).getTime()).toBe(new Date(cin).getTime());
+    expect(new Date(att!.check_out_time).getTime()).toBe(new Date(cout).getTime());
+    expect(Number(att!.total_hours)).toBeCloseTo(8, 1);
+    expect(att!.is_edited).toBe(true);
+
+    // cleanup
+    await admin.from("attendance_correction_requests").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
+    await admin.from("attendance_sessions").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
+    await admin.from("attendance").delete().eq("employee_id", SHAIZA).eq("work_date", wd);
   });
 
   it("deal-developer leave — record-only pending, bypasses notice + casual cap", async () => {

@@ -17,7 +17,9 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
    to check out) can be **stopped & corrected**; the existing missed-checkout alert surfaces it.
 Plan: `.claude/plans/delegated-noodling-lerdorf.md`. **Phase 1 (half-day + fallback) + backdate shipped
 2026-07-08** (migration 0051; `days_count` numeric; casual cap is now 1.0/month by total so two halves
-fit; `needsUnpaidConfirm` API signal + ConfirmDialog). See DECISIONS #100.
+fit; `needsUnpaidConfirm` API signal + ConfirmDialog). See DECISIONS #100. **Phase 3 (timesheet
+corrections) shipped 2026-07-08** (migration 0052 `attendance_correction_requests` + RLS + notify
+trigger; employee `Fix a day` + Stop&correct; admin approval queue applies the times). See DECISIONS #101.
 
 ## 2026-06-26 — Initial build (v1, "Staffly")
 Source: `source/Staffly_PRD_v2.1.docx`. Full HR portal: attendance, shifts, leave, hours

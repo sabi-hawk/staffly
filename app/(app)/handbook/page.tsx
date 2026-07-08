@@ -25,6 +25,7 @@ export default function HandbookPage() {
           <li>Your day's total is the <strong>sum of your worked sessions</strong> (breaks are not counted).</li>
           <li><strong>Deficit</strong> (short of your shift) and <strong>extra</strong> hours are tracked per day. Extra hours on one day never cancel a shortfall on another day (non-netting).</li>
           <li>Forgot to check out? An admin can correct your time, and you can edit your own checkout for the current day. Working late is fine: a checkout after midnight is recorded on the correct day.</li>
+          <li>If a session is still <strong>open from a previous day</strong> (you forgot to check out), your dashboard shows a warning and a <strong>Stop &amp; correct</strong> button to submit the real check-out.</li>
         </ul>
       </Section>
 
@@ -40,6 +41,14 @@ export default function HandbookPage() {
         <ul>
           <li>A scheduled working day with <strong>no attendance and no approved leave</strong> is treated like unpaid leave and <strong>deducted</strong> from that month&apos;s pay.</li>
           <li>The payslip lists the exact missing dates. If a day was missed by mistake, an admin fixes the record (adds the attendance or a leave) and regenerates payroll to clear the deduction.</li>
+        </ul>
+      </Section>
+
+      <Section title="Timesheet corrections">
+        <ul>
+          <li>Missed a day, or forgot to check in or out? Use <strong>Fix a day</strong> on your Attendance page to send the <strong>real check-in and check-out times</strong> (up to 7 days back) with a reason.</li>
+          <li>The request shows on your page as <strong>Pending</strong> and nothing changes until an <strong>admin approves</strong> it. On approval your attendance for that day is set to the times you gave; if rejected, you&apos;ll see the reason.</li>
+          <li>If you were actually <strong>on leave</strong> that day, file a <strong>leave request</strong> (you can backdate up to 7 days) instead of a timesheet correction.</li>
         </ul>
       </Section>
 

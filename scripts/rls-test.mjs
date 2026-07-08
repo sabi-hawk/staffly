@@ -178,6 +178,37 @@ async function main() {
     await pgc.query(`delete from bd_job_applications where work_date=$1 and dev_profile_id in ($2,$3)`, [jwd, myProf, notMyProf]); // cleanup
   }
 
+  // ── attendance correction requests (0052): employee inserts own pending; can't self-approve; scoped.
+  const corrDate = (await pgc.query(`select (company_today() - 1)::text d`)).rows[0].d;
+  await pgc.query(`delete from attendance_correction_requests where reason like 'RLS-CORR%'`);
+  const shaizaCorr = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+  // insert own, pending → allowed
+  const okIns = await shaizaCorr.from("attendance_correction_requests")
+    .insert({ employee_id: EMP2, work_date: corrDate, kind: "wrong_time", reason: "RLS-CORR mine", status: "pending" }).select("id");
+  check("employee: insert own pending correction → allowed", !okIns.error && (okIns.data?.length ?? 0) === 1);
+  const corrId = okIns.data?.[0]?.id;
+  // insert pre-approved (self-approve via insert) → blocked by the insert CHECK (status must be pending)
+  const badIns = await shaizaCorr.from("attendance_correction_requests")
+    .insert({ employee_id: EMP2, work_date: corrDate, kind: "wrong_time", reason: "RLS-CORR preapproved", status: "approved" }).select("id");
+  check("employee: insert a pre-approved correction → blocked", !!badIns.error || (badIns.data?.length ?? 0) === 0);
+  // update own → approved (self-approve) → blocked (no employee update policy)
+  if (corrId) {
+    await shaizaCorr.from("attendance_correction_requests").update({ status: "approved" }).eq("id", corrId);
+    const stillPending = (await pgc.query(`select status from attendance_correction_requests where id=$1`, [corrId])).rows[0]?.status;
+    check("employee: self-approve own correction → blocked (still pending)", stillPending === "pending");
+  }
+  // another employee cannot read it
+  const empCorr = await emp.from("attendance_correction_requests").select("id").eq("reason", "RLS-CORR mine");
+  check("employee (other): cannot read a colleague's correction", (empCorr.data?.length ?? 0) === 0);
+  // admin reads + can approve
+  const admReads = await hira.from("attendance_correction_requests").select("id").eq("reason", "RLS-CORR mine");
+  check("admin: reads correction requests (attendance.edit_all)", (admReads.data?.length ?? 0) === 1);
+  if (corrId) {
+    const admUpd = await hira.from("attendance_correction_requests").update({ status: "rejected", decision_note: "RLS test" }).eq("id", corrId).select("id");
+    check("admin: can decide a correction request", (admUpd.data?.length ?? 0) === 1);
+  }
+  await pgc.query(`delete from attendance_correction_requests where reason like 'RLS-CORR%'`);
+
   // ── dev-profile documents (0022/0023): owner BD writes/soft-deletes own; non-owner BD + non-BD
   //     blocked; admin soft/hard-deletes + sees history; soft-deleted hidden from the owner's SELECT.
   const shaizaProfile = (await pgc.query(

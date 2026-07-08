@@ -10,11 +10,13 @@ import { Pagination } from "@/components/ui/pagination";
 import { parsePaging } from "@/lib/pagination";
 import { AttendanceControls } from "@/components/attendance/attendance-controls";
 import { EditAttendance } from "@/components/attendance/edit-attendance";
+import { CorrectionActions } from "@/components/admin/correction-actions";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
+const kindLabel: Record<string, string> = { missing: "Missing day", wrong_time: "Wrong times", forgot_checkout: "Forgot checkout" };
 
 export default async function AdminAttendancePage({
   searchParams,
@@ -39,6 +41,13 @@ export default async function AdminAttendancePage({
     .eq("work_date", today)
     .not("check_in_time", "is", null)
     .is("daily_summary", null);
+
+  // Pending timesheet correction requests (employee wants a missing/wrong day fixed).
+  const { data: pendingCorrections } = await supabase
+    .from("attendance_correction_requests")
+    .select("*, profiles!attendance_correction_requests_employee_id_fkey(full_name, employee_code)")
+    .eq("status", "pending")
+    .order("work_date", { ascending: false });
 
   let query = supabase
     .from("attendance")
@@ -77,6 +86,31 @@ export default async function AdminAttendancePage({
                 {m.profiles?.full_name ?? "—"}
               </span>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {(pendingCorrections ?? []).length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="size-4 text-brand-primary" /> Timesheet correction requests ({(pendingCorrections ?? []).length})</CardTitle></CardHeader>
+          <CardContent>
+            <Table>
+              <THead><TR><TH>Code</TH><TH>Employee</TH><TH>Day</TH><TH>Type</TH><TH>Requested in</TH><TH>Requested out</TH><TH>Reason</TH><TH>Action</TH></TR></THead>
+              <TBody>
+                {(pendingCorrections ?? []).map((c: any) => (
+                  <TR key={c.id}>
+                    <TD className="tabular text-text-secondary">{formatCode(c.profiles?.employee_code)}</TD>
+                    <TD>{c.profiles?.full_name ?? "—"}</TD>
+                    <TD className="tabular">{c.work_date}</TD>
+                    <TD>{kindLabel[c.kind] ?? c.kind}</TD>
+                    <TD className="tabular">{time(c.requested_check_in)}</TD>
+                    <TD className="tabular">{time(c.requested_check_out)}</TD>
+                    <TD className="max-w-[220px] truncate text-text-secondary">{c.reason ?? "—"}</TD>
+                    <TD><CorrectionActions id={c.id} /></TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
           </CardContent>
         </Card>
       )}
