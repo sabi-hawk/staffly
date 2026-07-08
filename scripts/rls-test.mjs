@@ -151,6 +151,33 @@ async function main() {
   check("super_admin: hard-delete interview → allowed", (supDelete.data?.length ?? 0) === 1 && gone);
   await pgc.query(`delete from interviews where id=$1`, [dIv]); // best-effort cleanup
 
+  // ── BD job applications (0050): save_job_counts (definer, ownership-checked) + owner-scoped reads.
+  const jwd = (await pgc.query(`select company_today()::text d`)).rows[0].d;
+  const myProf = (await pgc.query(`select id from dev_profiles where owner_bd_id=$1 and status='active' limit 1`, [EMP2])).rows[0]?.id;
+  const notMyProf = (await pgc.query(`select id from dev_profiles where owner_bd_id is distinct from $1 limit 1`, [EMP2])).rows[0]?.id;
+  if (myProf && notMyProf) {
+    const shaizaJob = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+    // save: her own profile is accepted; a profile she does NOT own is ignored by the definer RPC.
+    const saveRes = await shaizaJob.rpc("save_job_counts", { p_work_date: jwd, p_counts: [{ dev_profile_id: myProf, count: 7 }, { dev_profile_id: notMyProf, count: 99 }] });
+    check("BD: save_job_counts saves only OWN profiles (1 of 2)", !saveRes.error && saveRes.data === 1, `saved=${saveRes.data}`);
+    const mine = (await pgc.query(`select count from bd_job_applications where dev_profile_id=$1 and work_date=$2`, [myProf, jwd])).rows[0]?.count;
+    check("BD: own profile count persisted (=7)", Number(mine) === 7);
+    const notMine = (await pgc.query(`select 1 from bd_job_applications where dev_profile_id=$1 and work_date=$2`, [notMyProf, jwd])).rowCount;
+    check("BD: count against a non-owned profile NOT written (RPC ignored it)", notMine === 0);
+    // owner-scoped reads: Shaiza sees her row; Areeba (other BD) does not; admin/BD-Lead sees it.
+    const shaizaSees = await shaizaJob.from("bd_job_applications").select("id").eq("dev_profile_id", myProf).eq("work_date", jwd);
+    check("BD: sees own job-application rows", (shaizaSees.data?.length ?? 0) === 1);
+    const areebaJob = await asUser(AREEBA_EMAIL, AREEBA_PW);
+    const areebaSees = await areebaJob.from("bd_job_applications").select("id").eq("dev_profile_id", myProf);
+    check("BD (other): cannot see a colleague's job-application rows", (areebaSees.data?.length ?? 0) === 0);
+    const adminSees = await hira.from("bd_job_applications").select("id").eq("dev_profile_id", myProf).eq("work_date", jwd);
+    check("admin/BD-Lead: sees all job-application rows (oversight)", (adminSees.data?.length ?? 0) === 1);
+    // direct insert (bypassing the definer RPC) is blocked — no write policy on the table.
+    const directIns = await shaizaJob.from("bd_job_applications").insert({ owner_bd_id: EMP2, dev_profile_id: myProf, work_date: jwd, count: 5 }).select();
+    check("BD: direct insert bypassing RPC → blocked (no write policy)", !!directIns.error || (directIns.data?.length ?? 0) === 0);
+    await pgc.query(`delete from bd_job_applications where work_date=$1 and dev_profile_id in ($2,$3)`, [jwd, myProf, notMyProf]); // cleanup
+  }
+
   // ── dev-profile documents (0022/0023): owner BD writes/soft-deletes own; non-owner BD + non-BD
   //     blocked; admin soft/hard-deletes + sees history; soft-deleted hidden from the owner's SELECT.
   const shaizaProfile = (await pgc.query(

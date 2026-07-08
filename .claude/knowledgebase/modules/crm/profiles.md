@@ -65,3 +65,7 @@ Access model → [access.md](access.md). Audited → [activity-log.md](activity-
 - Verified: `npm run report` all-PASS + 3 E2E tests (`tests/e2e/crm.spec.ts`) + screenshots (admin sees
   password/edit/upload; BD sees only own, no password/edit; non-BD blocked from `/crm`).
 - Demo data: `node scripts/seed-crm.mjs` (3 profiles).
+- **Daily job applications (0050):** each profile is what a BD applies to jobs under. A BD logs a daily
+  per-profile application count on the dashboard (`BdJobCounts` card → `save_job_counts` RPC, ownership-
+  checked; table `bd_job_applications`). Total + per-profile breakdown; feeds BD performance. See
+  DECISIONS #99. The textual task summary stays for other work.

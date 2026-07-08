@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { todayAttendance } from "@/lib/services/attendance";
+import { myProfilesWithCounts } from "@/lib/services/bd-jobs";
 import { companyToday } from "@/lib/time";
 import { CheckWidget } from "@/components/attendance/check-widget";
 import { DailySummary } from "@/components/attendance/daily-summary";
+import { BdJobCounts } from "@/components/attendance/bd-job-counts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +39,9 @@ export default async function EmployeeDashboard() {
   const { data: myDeals } = await supabase.rpc("my_deals");
   const dealNames = Array.from(new Set(((myDeals ?? []) as any[]).map((d) => d.name).filter(Boolean)));
 
+  // BD daily job applications: the profiles this user OWNS (empty for non-BDs → card hidden).
+  const jobProfiles = await myProfilesWithCounts(supabase, profile.id, today);
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,6 +50,9 @@ export default async function EmployeeDashboard() {
       </div>
 
       <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />
+
+      {/* BD-primary: log today's job applications per assigned profile (hidden for non-BDs). */}
+      {jobProfiles.length > 0 && <BdJobCounts profiles={jobProfiles} workDate={today} />}
 
       {dealNames.length > 0 && (
         <Card>

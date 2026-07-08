@@ -449,6 +449,18 @@ FloatSelect on Radix Select so the list anchors BELOW the trigger (unchanged opt
 Profile Stack is now a real dropdown matching the others, with an "Add a new stack" action (created on
 save). Profile banner status uses StatusPill so "Active" is capitalised and sleek. Shipped same day.
 
+## 2026-07-08 — BD daily job-application counts (per profile) (owner)
+BDs apply for jobs each day against the dev profiles assigned to them (1..N profiles). The daily-work
+capture for a BD should be **primarily** a per-profile job-count entry (70-80% of BDs only log counts),
+with the textual summary kept for the "other work" (resumes, cover letters, LinkedIn optimization,
+assisting junior BDs, etc.). Model: for the logged-in BD (or BD Lead), auto-list each profile they OWN
+with a label on the left (`#no Name · stack`) and a number input on the right for today's applied count;
+show the **total** across profiles plus the **segregated** per-profile counts. A BD Lead sees the
+profiles assigned to him, same mechanic. Counts feed BD performance (how many applications were filled).
+New table `bd_job_applications` (owner_bd_id, dev_profile_id, work_date, count) + a SECURITY-DEFINER
+`save_job_counts` RPC (validates profile ownership, uses auth.uid()); entry card on the dashboard for
+anyone who owns ≥1 profile; the textual summary stays. See DECISIONS #99.
+
 ## 2026-07-08 — Platform danger password on super-admin hard deletes (owner)
 Owner: "define in the ENV a platform-wide password so that even if someone had my own account's email
 and password, they still couldn't delete something crucial." Chosen scope (owner): **all super-admin

@@ -221,6 +221,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   Payoneer/Wise/Other). Read by any authenticated; write admin/super.
 - **deal_documents** — id, deal_id, label, file_path (private `crm-docs` bucket, `deals/<id>/…`),
   file_name, uploaded_by. **admin/super only**; downloads audit-logged.
+- **bd_job_applications** (0050) — id, owner_bd_id→profiles, dev_profile_id→dev_profiles (cascade),
+  work_date, count (int ≥0), unique(dev_profile_id, work_date). A BD's daily job-application count per
+  profile they own. **RLS: read** owner-scoped (`auth_is_bd_lead() OR owner_bd_id=auth.uid()`); **no
+  direct write policy** — all writes go through the definer `save_job_counts` RPC (ownership-checked).
+  updated_at + audit triggers.
 
 ## Functions & triggers
 - `compute_attendance_hours()` (BEFORE INSERT/UPDATE on attendance) — computes total/deficit/extra
@@ -348,6 +353,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0050_bd_job_applications.sql` — **BD daily job-application counts**: `bd_job_applications`
+  (owner_bd_id, dev_profile_id, work_date, count; unique per profile+day) + owner-scoped read RLS +
+  definer `save_job_counts(p_work_date, p_counts jsonb)` RPC (validates profile ownership via auth.uid,
+  upserts; the only write path). Feeds BD performance.
 - `0049_crm_dismiss_not_delete.sql` — **BD dismiss-not-delete**: `interviews`/`assessments` +
   `dismissed_at`/`dismissed_by`/`dismiss_reason`. DELETE on `leads`/`interviews`/`assessments` tightened
   to **super_admin only** (owner_write split into owner_insert + owner_update + super_delete). Trigger
