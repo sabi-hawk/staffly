@@ -5,6 +5,20 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-08 — Leave & attendance flexibility (owner) — multi-phase
+1. **Half-day leave** under casual (0.5); the one monthly casual day can be split into two half-days on
+   different days; half-days beyond the allowance fall to unpaid.
+2. **Casual→unpaid fallback**: picking casual with no balance left shows a confirm modal ("no casual left
+   → unpaid, proceed?"); on confirm it's recorded as unpaid (half stays half). Mirrors the annual overflow.
+3. **Backdated leave** up to 7 days (fill a missed day yourself; older needs an admin).
+4. **Timesheet correction requests** (Phase 3): for a missing/incorrect attendance record (forgot to
+   check in/out), the employee submits a correction (date + intended in/out + reason); it shows as
+   **Pending** and an admin approves/rejects (approval applies the record). A still-open session (forgot
+   to check out) can be **stopped & corrected**; the existing missed-checkout alert surfaces it.
+Plan: `.claude/plans/delegated-noodling-lerdorf.md`. **Phase 1 (half-day + fallback) + backdate shipped
+2026-07-08** (migration 0051; `days_count` numeric; casual cap is now 1.0/month by total so two halves
+fit; `needsUnpaidConfirm` API signal + ConfirmDialog). See DECISIONS #100.
+
 ## 2026-06-26 — Initial build (v1, "Staffly")
 Source: `source/Staffly_PRD_v2.1.docx`. Full HR portal: attendance, shifts, leave, hours
 analytics, work logs, profiles, payroll; Next.js 14 + Supabase + RLS; self-testing protocol §14.

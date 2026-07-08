@@ -10,6 +10,7 @@ import { companyToday } from "@/lib/time";
 export const ANNUAL_TOTAL = 8;
 export const CASUAL_MONTHLY_LIMIT = 1; // golden rule: casual 1/mo (no carry)
 export const ANNUAL_NOTICE_DAYS = 21;
+export const BACKDATE_DAYS = 7; // an employee may self-file leave up to 7 days back (older → admin adds)
 
 /** A configured quota, honouring an explicit 0; fall back to `dflt` only when unset/non-numeric. */
 function quota(value: unknown, dflt: number) {
@@ -195,15 +196,43 @@ export interface RequestLeaveInput {
   start_date: string;
   end_date: string;
   reason?: string;
+  half_day?: boolean;
+  half_period?: "first" | "second" | null;
+}
+
+/** Casual DAYS requested this calendar month (pending + approved), so multiple half-days count toward the
+ *  monthly cap before any is approved. Optionally excludes a request id (unused today). */
+export async function casualDaysThisMonth(supabase: SupabaseClient, employeeId: string, date = companyToday()) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const start = `${y}-${pad(m + 1)}-01`;
+  const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+  const { data } = await supabase
+    .from("leave_requests").select("days_count")
+    .eq("employee_id", employeeId).eq("type", "casual").in("status", ["pending", "approved"])
+    .gte("start_date", start).lte("start_date", end);
+  return (data ?? []).reduce((s, r) => s + Number(r.days_count), 0);
 }
 
 export async function requestLeave(
   supabase: SupabaseClient,
   employeeId: string,
   input: RequestLeaveInput,
-  opts: { allowShortNotice?: boolean } = {}
+  opts: { allowShortNotice?: boolean; allowUnpaidFallback?: boolean } = {}
 ) {
-  const daysCount = await workingDays(supabase, employeeId, input.start_date, input.end_date);
+  // Half-day: a single date worth 0.5 (casual or the unpaid fallback only; annual stays whole-day).
+  if (input.half_day) {
+    if (input.type === "annual") throw new Error("Annual leave can't be taken as a half day — use casual or unpaid.");
+    input = { ...input, end_date: input.start_date };
+  }
+  // Backdating: allow filling a missed day up to BACKDATE_DAYS back; older dates need an admin (AddLeave).
+  const backdateFloor = companyToday(new Date(new Date(`${companyToday()}T00:00:00+05:00`).getTime() - BACKDATE_DAYS * 86_400_000));
+  if (input.start_date < backdateFloor)
+    throw new Error(`You can backdate a leave up to ${BACKDATE_DAYS} days. For an older date, ask an admin to add it.`);
+
+  const daysCount = input.half_day ? 0.5 : await workingDays(supabase, employeeId, input.start_date, input.end_date);
   const q = await quotas(supabase);
   const ctx = await leaveCtx(supabase, employeeId);
   const probation = ctx.contract_type === "probation";
@@ -232,24 +261,54 @@ export async function requestLeave(
     throw new Error("Employees on probation don't have annual leave — please file it as unpaid.");
 
   if (input.type === "casual") {
-    if (probation) {
-      const used = await casualUsedInProbation(supabase, employeeId, ctx.joining_date);
-      if (used + daysCount > 1)
-        throw new Error("During probation only 1 casual leave is allowed — please file it as unpaid.");
-    } else {
-      // One casual request per month (counts a pending/approved request too, so a 2nd is blocked
-      // before the first is even decided) — and never more than the monthly day quota.
-      if (await casualRequestsThisMonth(supabase, employeeId, input.start_date) >= 1)
-        throw new Error("You already have a casual leave request for this month — only one is allowed per month.");
-      const used = await casualUsedThisMonth(supabase, employeeId, input.start_date);
-      if (used + daysCount > q.casual)
-        throw new Error(`Casual leave is limited to ${q.casual} day(s) per month (already used ${used}).`);
+    // Cap: probation = 1 for the whole probation window; permanent = q.casual per month. Usage is counted
+    // in DAYS incl. pending, so two half-days on different days both count toward the 1-day allowance.
+    const cap = probation ? 1 : q.casual;
+    const used = probation
+      ? await casualUsedInProbation(supabase, employeeId, ctx.joining_date)
+      : await casualDaysThisMonth(supabase, employeeId, input.start_date);
+    const remainingCasual = Math.max(cap - used, 0);
+
+    if (daysCount <= remainingCasual) {
+      // fits within the casual allowance → a single casual request, pending admin approval.
+      const { data } = await supabase.from("leave_requests")
+        .insert({ ...base(employeeId, input, daysCount), status: "pending" })
+        .select().single();
+      return { requests: [data], overflowOffered: false, needsUnpaidConfirm: false, lateNotice: false };
     }
-    // Every leave request now goes to admin for approval (owner rule) — no auto-approve, even casual.
-    const { data } = await supabase.from("leave_requests")
-      .insert({ ...base(employeeId, input, daysCount), status: "pending" })
-      .select().single();
-    return { requests: [data], overflowOffered: false, lateNotice: false };
+
+    // Exceeds the casual allowance → the shortfall must be UNPAID. For a half-day the fitting case is
+    // handled above, so casualPart is 0 (the whole half is unpaid). For a full/multi-day range, whole
+    // casual days are used first, the remainder unpaid.
+    const casualPart = input.half_day ? 0 : Math.min(Math.floor(remainingCasual), daysCount);
+    const unpaidPart = daysCount - casualPart;
+    if (!opts.allowUnpaidFallback) {
+      // No insert yet — the UI shows a confirm modal ("no casual left → unpaid"), then resubmits with
+      // allowUnpaidFallback so the employee explicitly opted into the unpaid portion.
+      return { requests: [], needsUnpaidConfirm: true, casualPart, unpaidPart, remainingCasual, overflowOffered: false, lateNotice: false };
+    }
+    const created: unknown[] = [];
+    if (input.half_day) {
+      const { data } = await supabase.from("leave_requests")
+        .insert({ ...base(employeeId, { ...input, type: "unpaid" }, 0.5), reason: (input.reason ?? "") + " (no casual left → unpaid)", status: "pending" })
+        .select().single();
+      created.push(data);
+    } else {
+      const split = splitWorkingDates(input.start_date, input.end_date, casualPart);
+      if (split.first) {
+        const { data } = await supabase.from("leave_requests")
+          .insert({ employee_id: employeeId, type: "casual", start_date: split.first.start, end_date: split.first.end, days_count: split.first.days, reason: input.reason ?? null, half_day: false, half_period: null, status: "pending" })
+          .select().single();
+        created.push(data);
+      }
+      if (split.rest) {
+        const { data } = await supabase.from("leave_requests")
+          .insert({ employee_id: employeeId, type: "unpaid", start_date: split.rest.start, end_date: split.rest.end, days_count: split.rest.days, reason: (input.reason ?? "") + " (no casual left → unpaid)", half_day: false, half_period: null, status: "pending" })
+          .select().single();
+        created.push(data);
+      }
+    }
+    return { requests: created, overflowOffered: false, needsUnpaidConfirm: false, unpaidFallback: true, casualPart, unpaidPart, lateNotice: false };
   }
 
   if (input.type === "unpaid") {
@@ -297,6 +356,8 @@ function base(employeeId: string, input: RequestLeaveInput, daysCount: number) {
     end_date: input.end_date,
     days_count: daysCount,
     reason: input.reason ?? null,
+    half_day: !!input.half_day,
+    half_period: input.half_day ? (input.half_period ?? "first") : null,
   };
 }
 

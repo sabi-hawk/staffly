@@ -57,7 +57,7 @@ export default async function AdminLeavesPage({
                   <TD className="capitalize">{r.type}</TD>
                   <TD className="tabular">{r.start_date}</TD>
                   <TD className="tabular">{r.end_date}</TD>
-                  <TD className="tabular">{r.days_count}</TD>
+                  <TD className="tabular">{r.days_count}{r.half_day ? ` · half (${r.half_period ?? "first"})` : ""}</TD>
                   <TD className="text-text-secondary">{r.reason ?? "—"}</TD>
                   <TD><LeaveActions id={r.id} /></TD>
                 </TR>

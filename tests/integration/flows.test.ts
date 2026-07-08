@@ -139,14 +139,26 @@ describe("§14.4 integration flows (cloud)", () => {
     await admin.from("leave_requests").delete().eq("employee_id", AREEBA).like("reason", "INT-TEST%");
   });
 
-  it("rule — casual capped per month (permanent, 1/month)", async () => {
+  it("rule — casual half-days + unpaid fallback (permanent, 1/month by total)", async () => {
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
-    const base = new Date(); base.setDate(10);
-    const day = (n: number) => { const x = new Date(base); x.setDate(10 + n); return ymd(x); };
-    await requestLeave(admin, HAMZA, { type: "casual", start_date: day(0), end_date: day(0), reason: "INT-CAS 1" });
-    await expect(
-      requestLeave(admin, HAMZA, { type: "casual", start_date: day(2), end_date: day(2), reason: "INT-CAS 2" })
-    ).rejects.toThrow(/per month/);
+    // 4 distinct WEEKDAYS at the start of next month → same month + future (past >7d hits the backdate
+    // floor; weekends yield 0 working days). Half-days are 0.5 regardless of weekday.
+    const nm = new Date(); nm.setMonth(nm.getMonth() + 1, 1);
+    const days: string[] = []; const cur = new Date(nm);
+    while (days.length < 4) { const dow = cur.getDay(); if (dow !== 0 && dow !== 6) days.push(ymd(cur)); cur.setDate(cur.getDate() + 1); }
+    // two half-days on different days use up the ONE casual day (0.5 + 0.5 = 1.0)
+    const h1 = await requestLeave(admin, HAMZA, { type: "casual", half_day: true, start_date: days[0], end_date: days[0], reason: "INT-CAS h1" });
+    expect(Number(h1.requests[0].days_count)).toBe(0.5);
+    const h2 = await requestLeave(admin, HAMZA, { type: "casual", half_day: true, start_date: days[1], end_date: days[1], reason: "INT-CAS h2" });
+    expect(Number(h2.requests[0].days_count)).toBe(0.5);
+    // casual now exhausted → a further casual asks for unpaid confirmation, inserts nothing yet
+    const over = await requestLeave(admin, HAMZA, { type: "casual", start_date: days[2], end_date: days[2], reason: "INT-CAS over" });
+    expect(over.needsUnpaidConfirm).toBe(true);
+    expect(over.requests.length).toBe(0);
+    // proceeding records it as UNPAID
+    const paid = await requestLeave(admin, HAMZA, { type: "casual", start_date: days[3], end_date: days[3], reason: "INT-CAS over2" }, { allowUnpaidFallback: true });
+    expect(paid.unpaidFallback).toBe(true);
+    expect(paid.requests.some((r: any) => r.type === "unpaid")).toBe(true);
     await admin.from("leave_requests").delete().eq("employee_id", HAMZA).like("reason", "INT-CAS%");
   });
 

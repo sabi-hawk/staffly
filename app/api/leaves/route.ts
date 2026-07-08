@@ -14,12 +14,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "type, start, end required" }, { status: 400 });
 
   try {
-    const result = await requestLeave(supabase, user.id, {
-      type: body.type,
-      start_date: body.start,
-      end_date: body.end,
-      reason: body.reason,
-    });
+    const result = await requestLeave(
+      supabase,
+      user.id,
+      {
+        type: body.type,
+        start_date: body.start,
+        end_date: body.end,
+        reason: body.reason,
+        half_day: !!body.half_day,
+        half_period: body.half_period === "second" ? "second" : "first",
+      },
+      { allowUnpaidFallback: !!body.allow_unpaid_fallback }
+    );
     return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });

@@ -54,15 +54,24 @@ export default function HandbookPage() {
 
       <Section title="Casual leave">
         <ul>
-          <li><strong>1 day per month</strong>, submitted for admin approval like all leave. Only <strong>one casual request per month</strong>.</li>
+          <li><strong>1 day per month</strong>, submitted for admin approval like all leave.</li>
+          <li>You can take it as a <strong>half day</strong> (counts as 0.5). Your one casual day can be split into <strong>two half-days on different days</strong> in the month.</li>
+          <li>If you have <strong>no casual left</strong> and still request it, the portal asks you to confirm — the leave is then recorded as <strong>unpaid</strong> (a half day stays a half day).</li>
           <li>Casual leave is <strong>use-it-or-lose-it</strong>: if you don't use it in a month, it does <strong>not</strong> carry over.</li>
         </ul>
       </Section>
 
       <Section title="Unpaid leave">
         <ul>
-          <li>Available beyond your paid quota and recorded against you.</li>
+          <li>Available beyond your paid quota and recorded against you. Can also be taken as a <strong>half day</strong>.</li>
           <li>Unpaid days are <strong>deducted</strong> from salary at <em>base salary ÷ working days in the period</em> per day.</li>
+        </ul>
+      </Section>
+
+      <Section title="Backdating a missed day">
+        <ul>
+          <li>If you were away and couldn&apos;t file at the time, you can <strong>backdate a leave request up to 7 days</strong> to fill the missed day. Older dates need an admin to add.</li>
+          <li>If a day is missing because you <strong>forgot to check in or out</strong> (not leave), use a <strong>timesheet correction</strong> instead (see Attendance) — you enter the real times and an admin approves it.</li>
         </ul>
       </Section>
 

@@ -89,8 +89,10 @@ export default async function ProductDocPage() {
       <Section title="Leave">
         <ul>
           <li><strong>Annual:</strong> accrues 1/month up to 8/year, carried within the calendar year, resets 1 Jan; needs approval + 21-day notice (admin override).</li>
-          <li><strong>Casual:</strong> 1 per month (no carry), auto-approved; only one casual request per month.</li>
-          <li><strong>Unpaid:</strong> unlimited, recorded, deducted.</li>
+          <li><strong>Casual:</strong> 1 per month (no carry). Can be taken as a <strong>half day</strong> (0.5); the monthly day can be two half-days on different days. All leave needs admin approval.</li>
+          <li><strong>Casual→unpaid fallback:</strong> requesting casual with no balance left prompts a confirm, then records the shortfall as <strong>unpaid</strong> (half stays half). Mirrors the annual overflow split.</li>
+          <li><strong>Unpaid:</strong> unlimited, recorded, deducted. Can also be a half day.</li>
+          <li><strong>Backdating:</strong> an employee can self-file leave up to <strong>7 days</strong> back to fill a missed day; older dates need an admin.</li>
           <li><strong>Probation</strong> (3 months): no annual; 1 casual for the whole probation; the rest unpaid.</li>
           <li><strong>Deal-assigned developers:</strong> our balances/caps don&apos;t apply; requests are recorded as pending for admin confirmation (client company governs their leave).</li>
         </ul>

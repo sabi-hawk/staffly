@@ -146,8 +146,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
 - **attendance** — employee_id, work_date (unique per employee/day), check_in_time,
   check_out_time, sources, status, work_log jsonb (Tiptap), expected_hours, **total_hours /
   deficit_hours / extra_hours** (trigger-computed), is_edited, edited_by, edit_reason.
-- **leave_requests** — employee_id, type, start/end_date, days_count, reason, status,
-  approved_by/at, decision_note.
+- **leave_requests** — employee_id, type, start/end_date, days_count **(numeric(4,1) — allows 0.5)**,
+  reason, status, approved_by/at, decision_note, **half_day**, **half_period ('first'|'second')** (0051;
+  a half is a single date worth 0.5). Casual cap = 1.0/mo by total (two halves allowed); casual→unpaid
+  fallback in `lib/services/leaves.ts`.
 - **leave_balances** — employee_id, year, annual_total/used, casual_month, casual_used, unpaid_used.
 - **salary_structures** *(super_admin)* — employee_id, base_salary, currency. (type/overtime_rate/
   commission_rate/benefits are legacy, unused — additions are dynamic now.)
@@ -353,6 +355,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0051_half_day_leave.sql` — **half-day leave**: `leave_requests.days_count`→`numeric(4,1)`;
+  `+half_day boolean` `+half_period ('first'|'second')` with a check that a half is a single date worth
+  0.5. Enables casual half-days (two per month) + the casual→unpaid fallback (see `lib/services/leaves.ts`).
 - `0050_bd_job_applications.sql` — **BD daily job-application counts**: `bd_job_applications`
   (owner_bd_id, dev_profile_id, work_date, count; unique per profile+day) + owner-scoped read RLS +
   definer `save_job_counts(p_work_date, p_counts jsonb)` RPC (validates profile ownership via auth.uid,
