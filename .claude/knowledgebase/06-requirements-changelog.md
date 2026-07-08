@@ -460,6 +460,9 @@ profiles assigned to him, same mechanic. Counts feed BD performance (how many ap
 New table `bd_job_applications` (owner_bd_id, dev_profile_id, work_date, count) + a SECURITY-DEFINER
 `save_job_counts` RPC (validates profile ownership, uses auth.uid()); entry card on the dashboard for
 anyone who owns ≥1 profile; the textual summary stays. See DECISIONS #99.
+**Reporting (follow-up, same day):** BD Performance (`/crm/analytics`) now shows a **Job applications**
+headline stat, an **Applications** column in the per-BD breakdown, and a segregated **Job applications
+by profile** table — all honouring the date-range + BD filters (admin/super via `crm.analytics.view`).
 
 ## 2026-07-08 — Platform danger password on super-admin hard deletes (owner)
 Owner: "define in the ENV a platform-wide password so that even if someone had my own account's email

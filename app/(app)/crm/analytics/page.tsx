@@ -10,7 +10,7 @@ import { FilterShell } from "@/components/crm/filter-shell";
 import { BarChart } from "@/components/charts/bar-chart";
 import { LineChart } from "@/components/charts/line-chart";
 import { formatCrmDate } from "@/lib/utils";
-import { Briefcase, CalendarClock, ClipboardList, Trophy, type LucideIcon } from "lucide-react";
+import { Briefcase, CalendarClock, ClipboardList, Trophy, Send, type LucideIcon } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const dynamic = "force-dynamic";
@@ -62,12 +62,14 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
   const fromISO = new Date(`${from}T00:00:00+05:00`).toISOString();
   const toISO = new Date(`${to}T23:59:59.999+05:00`).toISOString();
 
-  const [bdsRes, leadsRes, ivRes, asRes] = await Promise.all([
+  const [bdsRes, leadsRes, ivRes, asRes, appsRes] = await Promise.all([
     supabase.from("profiles").select("id, full_name").eq("department", "Business Development").order("full_name"),
     supabase.from("leads").select("owner_bd_id, status, created_at, updated_at")
       .or(`and(created_at.gte.${fromISO},created_at.lte.${toISO}),and(status.eq.closed,updated_at.gte.${fromISO},updated_at.lte.${toISO})`),
     supabase.from("interviews").select("owner_bd_id, outcome, received_date").gte("received_date", from).lte("received_date", to),
     supabase.from("assessments").select("owner_bd_id, entry_date").gte("entry_date", from).lte("entry_date", to),
+    supabase.from("bd_job_applications").select("owner_bd_id, dev_profile_id, count, work_date, profile:dev_profiles(profile_no, name)")
+      .gte("work_date", from).lte("work_date", to),
   ]);
   const allBds = bdsRes.data ?? [];
   const bds = bdFilter ? allBds.filter((b) => b.id === bdFilter) : allBds;
@@ -77,6 +79,24 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
   const interviews = ((ivRes.data ?? []) as any[]).filter((i) => keep(i.owner_bd_id));
   const assessments = ((asRes.data ?? []) as any[]).filter((a) => keep(a.owner_bd_id));
   const inRange = (iso: string | null) => !!iso && iso >= fromISO && iso <= toISO;
+
+  // Job applications (0050): per-BD total + per-profile (segregated) totals over the range.
+  const appRows = ((appsRes.data ?? []) as any[]).filter((a) => keep(a.owner_bd_id));
+  const appsByBd = new Map<string, number>();
+  const appsByProfile = new Map<string, { label: string; ownerId: string; count: number }>();
+  for (const a of appRows) {
+    const c = Number(a.count) || 0;
+    appsByBd.set(a.owner_bd_id, (appsByBd.get(a.owner_bd_id) ?? 0) + c);
+    const label = a.profile ? `#${a.profile.profile_no} ${a.profile.name}` : "—";
+    const prev = appsByProfile.get(a.dev_profile_id) ?? { label, ownerId: a.owner_bd_id, count: 0 };
+    prev.count += c;
+    appsByProfile.set(a.dev_profile_id, prev);
+  }
+  const totalApps = Array.from(appsByBd.values()).reduce((s, n) => s + n, 0);
+  const bdName = (id: string) => allBds.find((b) => b.id === id)?.full_name ?? "—";
+  const profileApps = Array.from(appsByProfile.values())
+    .filter((p) => p.count > 0)
+    .sort((a, b) => b.count - a.count);
 
   const rows = bds.map((b) => {
     const myLeads = leads.filter((l) => l.owner_bd_id === b.id);
@@ -89,6 +109,7 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
       interviews: myIv.length,
       selected: myIv.filter((i) => i.outcome === "selected").length,
       assessments: myAs.length,
+      applications: appsByBd.get(b.id) ?? 0,
       closed: myLeads.filter((l) => l.status === "closed" && inRange(l.updated_at)).length,
       dismissed: myLeads.filter((l) => (l.status === "dismissed" || l.status === "rejected") && inRange(l.created_at)).length,
     };
@@ -120,13 +141,14 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
       <CardHeader className="flex-col items-start gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>BD Performance</CardTitle>
-          <CardDescription>{formatCrmDate(from)} → {formatCrmDate(to)} (inclusive) · leads by entry date, deals by close date</CardDescription>
+          <CardDescription>{formatCrmDate(from)} → {formatCrmDate(to)} (inclusive) · applications & leads by date, deals by close date</CardDescription>
         </div>
         <BdPerformanceFilter range={range} from={from} to={to} bd={bdFilter} bds={allBds} />
       </CardHeader>
       <CardContent>
         <FilterShell toolbar={null}>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <MiniStat label="Job applications" value={totalApps} icon={Send} tone="bg-brand-primary/10 text-brand-primary" />
             <MiniStat label="Leads" value={totals.leads} icon={Briefcase} tone="bg-brand-light text-brand-primary" />
             <MiniStat label="Interviews" value={totals.interviews} icon={CalendarClock} tone="bg-success/10 text-success" />
             <MiniStat label="Assessments" value={totals.assessments} icon={ClipboardList} tone="bg-warning/10 text-warning" />
@@ -154,12 +176,13 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
             <h3 className="mb-3 text-sm font-semibold text-text-primary">Breakdown</h3>
             <Table>
               <THead>
-                <TR><TH>BD</TH><TH>Leads</TH><TH>Interviews</TH><TH>Selected</TH><TH>Assessments</TH><TH>Deals closed</TH><TH>Dismissed/Rejected</TH></TR>
+                <TR><TH>BD</TH><TH>Applications</TH><TH>Leads</TH><TH>Interviews</TH><TH>Selected</TH><TH>Assessments</TH><TH>Deals closed</TH><TH>Dismissed/Rejected</TH></TR>
               </THead>
               <TBody>
                 {rows.map((r) => (
                   <TR key={r.id}>
                     <TD className="font-medium">{r.name}</TD>
+                    <TD className="tabular font-medium">{r.applications}</TD>
                     <TD className="tabular">{r.leads}</TD>
                     <TD className="tabular">{r.interviews}</TD>
                     <TD className="tabular">{r.selected}</TD>
@@ -168,9 +191,32 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
                     <TD className="tabular text-text-secondary">{r.dismissed}</TD>
                   </TR>
                 ))}
-                {rows.length === 0 && <TR><TD colSpan={7} className="py-6 text-center text-text-secondary">No BDs found.</TD></TR>}
+                {rows.length === 0 && <TR><TD colSpan={8} className="py-6 text-center text-text-secondary">No BDs found.</TD></TR>}
               </TBody>
             </Table>
+          </div>
+
+          {/* Segregated per-profile application counts over the range (owner: profile-level visibility). */}
+          <div className="mt-4 rounded-lg border border-border bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold text-text-primary">Job applications by profile</h3>
+            {profileApps.length > 0 ? (
+              <Table>
+                <THead>
+                  <TR><TH>Profile</TH>{!bdFilter && <TH>BD</TH>}<TH className="text-right">Applications</TH></TR>
+                </THead>
+                <TBody>
+                  {profileApps.map((p) => (
+                    <TR key={p.label + p.ownerId}>
+                      <TD className="font-medium">{p.label}</TD>
+                      {!bdFilter && <TD className="text-text-secondary">{bdName(p.ownerId)}</TD>}
+                      <TD className="tabular text-right font-medium">{p.count}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            ) : (
+              <p className="py-8 text-center text-caption text-text-secondary">No job applications logged in this range.</p>
+            )}
           </div>
         </FilterShell>
       </CardContent>
