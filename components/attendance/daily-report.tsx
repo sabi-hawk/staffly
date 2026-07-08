@@ -29,8 +29,10 @@ export function DailyReport({
 }) {
   const router = useRouter();
   const isBd = profiles.length > 0;
+  // Start each field EMPTY (the floating label is the hint) unless a count is already saved, so typing a
+  // number never appends to a pre-filled "0". Empty is treated as 0 for the total and on save.
   const [counts, setCounts] = useState<Record<string, string>>(
-    () => Object.fromEntries(profiles.map((p) => [p.dev_profile_id, String(p.count || 0)]))
+    () => Object.fromEntries(profiles.map((p) => [p.dev_profile_id, p.count ? String(p.count) : ""]))
   );
   const [notes, setNotes] = useState(notesHtml ?? "");
   const [busy, setBusy] = useState(false);
@@ -91,7 +93,7 @@ export function DailyReport({
                   min={0}
                   inputMode="numeric"
                   label={p.label}
-                  value={counts[p.dev_profile_id] ?? "0"}
+                  value={counts[p.dev_profile_id] ?? ""}
                   disabled={busy}
                   onChange={(e) => setCounts((c) => ({ ...c, [p.dev_profile_id]: e.target.value }))}
                 />
