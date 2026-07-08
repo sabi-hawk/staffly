@@ -5,6 +5,15 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-08 — Disable Vercel crons for Hobby deploy; live attendance alerts instead (owner)
+Vercel Hobby only allows daily crons, but the missed-checkin/checkout scans need ~15-min. Disabled the
+crons (`vercel.json` → `"crons": []`) so it deploys on Hobby. No functionality lost: the admin dashboard
+now computes **missed check-in / overdue checkout LIVE on load** ("Attendance alerts · live" card), via
+read-only `findMissedCheckin`/`findMissedCheckout` helpers (refactored out of the scanners; overdue
+checkout bounded to the last ~2 days so stale open rows don't show). The scheduled *email* alerts are
+paused (were console-stubbed anyway). Re-enable path documented in `.claude/BACKLOG.md` — **Supabase
+pg_cron + pg_net is free** and the recommended way (hit the existing `/api/cron/*` routes), no Vercel Pro.
+
 ## 2026-07-08 — Summary column: eye-icon view of the full day summary (owner)
 The Recent-days "Task summary" column only showed the notes text (not the BD job counts). Now a day
 with a summary shows an **eye icon** that opens a mini modal (`DaySummary`) with the formatted

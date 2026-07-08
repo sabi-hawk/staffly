@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Users, UserCheck, Clock, Plane, Wifi, Bell, AlertTriangle, CalendarClock, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { companyToday, karachiMidnightISO } from "@/lib/time";
 import { refreshAdminNotifications, getAdminNotifications } from "@/lib/services/notifications";
+import { findMissedCheckin, findMissedCheckout } from "@/lib/services/crons";
 import { StatCard } from "@/components/ui/stat-card";
 import { DismissNotification } from "@/components/admin/dismiss-notification";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -19,8 +21,13 @@ export default async function AdminDashboard() {
   const dayStart = karachiMidnightISO(today);
   const dayEnd = new Date(new Date(dayStart).getTime() + 86400000).toISOString();
 
+  // Missed check-in / overdue-checkout are computed LIVE on load (no cron needed) — service-role client
+  // so we can scan every employee's shift + attendance. See the alerts backlog note for re-enabling the
+  // scheduled email alerts (Supabase pg_cron, free). This page is admin-gated by middleware.
+  const admin = createAdminClient();
+
   // Independent reads run in parallel (was ~7 sequential round-trips).
-  const [empRes, attRes, leavesRes, alertsRes, pendingRes, interviewsRes, notifications] =
+  const [empRes, attRes, leavesRes, pendingRes, interviewsRes, notifications, missedIn, overdueOut] =
     await Promise.all([
       supabase
         .from("profiles").select("id, full_name, employment_type, status, role")
@@ -32,23 +39,26 @@ export default async function AdminDashboard() {
         .from("leave_requests").select("employee_id").eq("status", "approved")
         .lte("start_date", today).gte("end_date", today),
       supabase
-        .from("alerts_log").select("*, profiles(full_name)")
-        .order("triggered_at", { ascending: false }).limit(8),
-      supabase
         .from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase
         .from("interviews").select("id", { count: "exact", head: true })
         .gte("interview_at", dayStart).lt("interview_at", dayEnd),
       // refresh must precede the read, so chain just these two
       refreshAdminNotifications(supabase).then(() => getAdminNotifications(supabase)),
+      findMissedCheckin(admin),
+      findMissedCheckout(admin),
     ]);
   const emps = empRes.data ?? [];
   const todayAtt = attRes.data ?? [];
   const attByEmp = new Map(todayAtt.map((a) => [a.employee_id, a]));
   const onLeave = new Set((leavesRes.data ?? []).map((l) => l.employee_id));
-  const alerts = alertsRes.data;
   const pendingLeaves = pendingRes.count;
   const interviewsToday = interviewsRes.count;
+  // Live attendance alerts (computed now, not from the cron/alerts_log feed).
+  const liveAlerts = [
+    ...missedIn.map((m) => ({ key: `in-${m.id}`, danger: false, label: "Not checked in", message: `${m.full_name} hasn't checked in (shift ${m.shift_start}).` })),
+    ...overdueOut.map((m) => ({ key: `out-${m.id}`, danger: true, label: "Still checked in", message: `${m.full_name} is still checked in from ${m.work_date} — forgot to check out, or working late.` })),
+  ];
 
   const checkedIn = todayAtt.filter((a) => a.check_in_time && !a.check_out_time).length;
   const remote = emps.filter((e) => e.employment_type === "remote").length;
@@ -132,29 +142,19 @@ export default async function AdminDashboard() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Alerts feed</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Attendance alerts · live</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {(alerts ?? []).length === 0 && <p className="text-caption text-text-secondary">No alerts. All clear.</p>}
-            {(alerts ?? []).map((al: any) => {
-              const danger = al.type.includes("missed");
-              const label =
-                al.type === "missed_checkin" ? "Missed check-in" :
-                al.type === "missed_checkout" ? "Missed checkout" :
-                al.type === "overtime_warning" ? "Overtime" :
-                al.type === "late_arrival" ? "Late arrival" : al.type.replace(/_/g, " ");
-              return (
-                <div key={al.id} className="flex gap-3">
-                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${danger ? "bg-danger" : "bg-warning"}`} />
-                  <div className="min-w-0">
-                    <div className={`text-caption font-semibold ${danger ? "text-danger" : "text-warning"}`}>{label}</div>
-                    <div className="text-caption text-text-secondary">{al.message}</div>
-                    <div className="text-[11px] text-text-secondary/70">
-                      {new Date(al.triggered_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  </div>
+            {liveAlerts.length === 0 && <p className="text-caption text-text-secondary">No alerts. Everyone is on track.</p>}
+            {liveAlerts.slice(0, 12).map((al) => (
+              <div key={al.key} className="flex gap-3">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${al.danger ? "bg-danger" : "bg-warning"}`} />
+                <div className="min-w-0">
+                  <div className={`text-caption font-semibold ${al.danger ? "text-danger" : "text-warning"}`}>{al.label}</div>
+                  <div className="text-caption text-text-secondary">{al.message}</div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
+            {liveAlerts.length > 12 && <p className="text-caption text-text-secondary">+{liveAlerts.length - 12} more</p>}
           </CardContent>
         </Card>
       </div>
