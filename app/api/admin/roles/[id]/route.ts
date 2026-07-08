@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 
 // Update a role's name/description/reason and REPLACE its permission grants (roles.manage; RLS too).
 // System roles: grants + text are editable (the owner tunes defaults), key/base/is_system are not.
@@ -47,10 +48,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // Delete a CUSTOM role with no users assigned.
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasPermP(me, PERM.rolesManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   const { data: role } = await supabase.from("app_roles").select("is_system").eq("id", params.id).single();

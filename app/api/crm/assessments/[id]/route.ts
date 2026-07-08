@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth";
 import { canSeeCrm, isBdLead, isSuperAdminRole, isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 import { updateAssessment, dismissActivity, restoreActivity } from "@/lib/services/crm-activity";
 import { CRM_DOCS_BUCKET } from "@/lib/services/dev-profiles";
 
@@ -27,11 +28,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   // Hard delete is super-admin only; a BD dismisses instead (RLS super_delete also enforces).
   if (!isSuperAdminRole(me.role)) return NextResponse.json({ error: "Only a super admin can delete a record" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   const { data: docs } = await supabase.from("assessment_documents").select("file_path").eq("assessment_id", params.id);

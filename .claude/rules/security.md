@@ -7,6 +7,12 @@ Enforced by `.claude/hooks/block-secret-writes.mjs` and the `security-reviewer` 
   `*.pem`, `*.key`, or **`CREDENTIALS.md`** (local-only, git-ignored).
 - Configuration comes from env vars. The service-role key is **server-only** (`lib/supabase/admin.ts`,
   route handlers, scripts) — never import it into a client component.
+- **`DANGER_PASSWORD`** (server-only, optional) is the platform "danger password": a second factor on
+  **super-admin hard deletes**. Every DELETE route for crucial data calls `requireDangerForSuper(req,
+  role)` from `lib/danger.ts` (constant-time compare; `403 {danger:true}` when missing/wrong). Inactive
+  until set (opt-in), gates super admins only. **Any NEW super-admin hard-delete route must call the
+  guard** — the client wrapper (`DangerFetchInstaller`) already prompts+retries for every fetch, so the
+  server guard is the one thing to remember. See DECISIONS #98.
 
 ## Auth & RLS (defense in depth)
 - Enforce access in **three** layers: middleware (route gating), **Supabase RLS** (DB), and UI (hide controls). Never rely on UI alone.

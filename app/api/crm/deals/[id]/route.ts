@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isSuperAdminRole, isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 import { updateDeal } from "@/lib/services/crm-deals";
 import { CRM_DOCS_BUCKET } from "@/lib/services/dev-profiles";
 
@@ -20,10 +21,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasPermP(me, PERM.dealsManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   // Collect the deal's document paths first (row cascade won't remove the storage objects).

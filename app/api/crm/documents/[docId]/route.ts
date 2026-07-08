@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isAdminRole, canSeeCrm, isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 import { CRM_DOCS_BUCKET, setPrimaryDocument, setDocumentNote, softDeleteDocument } from "@/lib/services/dev-profiles";
 
 // Owner BD (or admin/BD-Lead): mark a resume primary / set a purpose note / SOFT-delete a document.
@@ -27,10 +28,11 @@ export async function PATCH(req: Request, { params }: { params: { docId: string 
 }
 
 // Delete a document (admin/super-admin only) — removes the storage object too.
-export async function DELETE(_req: Request, { params }: { params: { docId: string } }) {
+export async function DELETE(req: Request, { params }: { params: { docId: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasPermP(me, PERM.crmProfilesManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.docId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   const { data: doc } = await supabase

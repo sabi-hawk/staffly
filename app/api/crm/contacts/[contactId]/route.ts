@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { canSeeCrm, isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 import { updateLeadContact, deleteLeadContact } from "@/lib/services/lead-contacts";
 
 // Update / delete a lead contact. RLS (lead_contacts_scoped) enforces ownership of the parent lead.
@@ -18,10 +19,11 @@ export async function PATCH(req: Request, { params }: { params: { contactId: str
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { contactId: string } }) {
+export async function DELETE(req: Request, { params }: { params: { contactId: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!canSeeCrm(me)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.contactId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   try {
     await deleteLeadContact(createClient(), params.contactId);

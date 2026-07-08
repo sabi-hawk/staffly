@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isAdminRole, isUuid } from "@/lib/crm/access";
+import { requireDangerForSuper } from "@/lib/danger";
 import { CRM_DOCS_BUCKET } from "@/lib/services/dev-profiles";
 import { safeDownloadName, streamCrmDownload } from "@/lib/crm/doc-download";
 
@@ -25,10 +26,11 @@ export async function GET(_req: Request, { params }: { params: { docId: string }
   return streamCrmDownload(doc.file_path, safeDownloadName(doc.label ?? null, doc.file_name));
 }
 
-export async function DELETE(_req: Request, { params }: { params: { docId: string } }) {
+export async function DELETE(req: Request, { params }: { params: { docId: string } }) {
   const me = await getCurrentProfile();
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasPermP(me, PERM.dealsManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const gate = requireDangerForSuper(req, me.role); if (gate) return gate;
   if (!isUuid(params.docId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const supabase = createClient();
   const { data: doc } = await supabase.from("deal_documents").select("id, file_path").eq("id", params.docId).single();

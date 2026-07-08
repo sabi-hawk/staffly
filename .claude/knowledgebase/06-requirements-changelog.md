@@ -449,6 +449,18 @@ FloatSelect on Radix Select so the list anchors BELOW the trigger (unchanged opt
 Profile Stack is now a real dropdown matching the others, with an "Add a new stack" action (created on
 save). Profile banner status uses StatusPill so "Active" is capitalised and sleek. Shipped same day.
 
+## 2026-07-08 — Platform danger password on super-admin hard deletes (owner)
+Owner: "define in the ENV a platform-wide password so that even if someone had my own account's email
+and password, they still couldn't delete something crucial." Chosen scope (owner): **all super-admin
+hard deletes**. Implemented as a second secret `DANGER_PASSWORD`: when set, every super-admin DELETE
+route requires the correct danger password (server guard `requireDangerForSuper`, constant-time compare,
+sent via `x-danger-password`). A universal client `fetch` wrapper (`DangerFetchInstaller`, mounted once
+in the app shell) transparently prompts for the password on the server's `403 {danger:true}` signal and
+retries — so every existing and future delete is gated with no per-button wiring. Opt-in by config: the
+gate is inactive until `DANGER_PASSWORD` is set (no lockout on deploy). The payroll draft-line delete is
+excluded (a draft-composition edit, not crucial-data destruction). **Owner action: set `DANGER_PASSWORD`
+in the environment to turn the protection on.** See DECISIONS #98.
+
 ## 2026-07-08 — BD dismiss-not-delete for CRM activity records (owner)
 A BD must not be able to permanently DELETE interviews/assessments (or leads). They may only
 **dismiss** a record, which crosses it out (strikethrough) but keeps it for audit. Only a
