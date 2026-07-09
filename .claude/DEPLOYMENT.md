@@ -20,7 +20,10 @@ Postgres DB — this is standard and good practice):
 2. Point local `APP_ENV=production` (see below) and run **`npm run db:migrate`** to apply the schema.
    (The runner now prints `Target: PRODUCTION DB (host)` so you can confirm before it runs.)
 3. Run **`npm run storage:setup`** to create the `avatars` + `crm-docs` buckets on prod.
-4. Create your super-admin (and any admin) accounts — via Supabase Auth, or a small one-off script.
+4. Create your super-admin (+ admin) accounts: **`npm run create:admins`** (respects `APP_ENV`, loads NO
+   dummy data — just the two admin logins). Override the super admin, e.g.:
+   `npm run create:admins -- --super-email you@softonoma.com --super-password 'Strong#Pass1' --super-name 'Your Name'`.
+   Then sign in, change the password, and add everyone else from the app (People → Users).
    **Do NOT run `npm run seed:test` against prod** — it's dummy data and is blocked when
    `APP_ENV=production` (override only with `--force-prod`, which you shouldn't).
 
