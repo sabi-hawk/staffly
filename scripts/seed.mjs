@@ -8,6 +8,13 @@ import { createClient } from "@supabase/supabase-js";
 import { dbUrl, loadEnv, ROOT } from "./lib/env.mjs";
 
 loadEnv();
+// SAFETY: this loads DUMMY/demo data. Never let it run against the PRODUCTION database. Requires
+// APP_ENV=development (the default). Override only with an explicit --force-prod (don't).
+if (process.env.NEXT_PUBLIC_APP_ENV === "production" && !process.argv.includes("--force-prod")) {
+  console.error("✋ Refusing to seed DUMMY data into the PRODUCTION database (APP_ENV=production).");
+  console.error("   Run against the dev DB (APP_ENV=development), or pass --force-prod if you truly mean it.");
+  process.exit(1);
+}
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const admin = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });

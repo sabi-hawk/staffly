@@ -5,6 +5,15 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-09 — Local DEV/PROD database toggle (owner)
+Owner is splitting into two Supabase projects: keep the current one as DEV (dummy data), a new empty one
+as PROD (real users, deployed at portal.softonoma.com). Added a local `APP_ENV=development|production`
+toggle: `.env.local` holds both credential sets as `DEV_`/`PROD_`-prefixed vars; a resolver
+(`scripts/lib/env.mjs → resolveEnv`, invoked by `loadEnv` and `next.config.mjs`) copies the chosen set
+into the plain names the app/scripts read. A top-bar **Dev DB / Prod DB badge** (local-only, hidden on
+Vercel) shows which database you're on; `seed:test` refuses to run on prod; `db:migrate` prints the
+target env+host. Backward compatible (plain names still work). Full setup in `.claude/DEPLOYMENT.md`.
+
 ## 2026-07-08 — Disable Vercel crons for Hobby deploy; live attendance alerts instead (owner)
 Vercel Hobby only allows daily crons, but the missed-checkin/checkout scans need ~15-min. Disabled the
 crons (`vercel.json` → `"crons": []`) so it deploys on Hobby. No functionality lost: the admin dashboard

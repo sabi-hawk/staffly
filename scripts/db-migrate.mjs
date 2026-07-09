@@ -9,10 +9,11 @@ import { dbUrl, ROOT } from "./lib/env.mjs";
 const MIGRATIONS_DIR = path.join(ROOT, "supabase", "migrations");
 
 async function main() {
-  const client = new pg.Client({
-    connectionString: dbUrl(),
-    ssl: { rejectUnauthorized: false },
-  });
+  const url = dbUrl();
+  const host = (() => { try { return new URL(url).host; } catch { return "?"; } })();
+  const env = process.env.NEXT_PUBLIC_APP_ENV || "development";
+  console.log(`Target: ${env.toUpperCase()} DB  (${host})`);
+  const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
   await client.connect();
   console.log("Connected to cloud DB.");
 

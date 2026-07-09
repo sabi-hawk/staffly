@@ -3,6 +3,7 @@ import { LogOut, Menu, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MyNotificationsBell } from "./my-notifications-bell";
+import { EnvBadge } from "./env-badge";
 
 export function Topbar({
   title,
@@ -39,6 +40,7 @@ export function Topbar({
         <Menu className="size-5" />
       </button>
       <h1 className="text-h2 text-text-primary">{title}</h1>
+      <EnvBadge />
       <div className="ml-auto flex items-center gap-3">
         <button
           onClick={() => window.dispatchEvent(new Event("open-command-palette"))}

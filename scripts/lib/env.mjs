@@ -26,7 +26,31 @@ export function loadEnv() {
       if (!(key in process.env)) process.env[key] = val;
     }
   }
+  resolveEnv();
   return process.env;
+}
+
+// The four connection vars the app + scripts read. When DEV_/PROD_-prefixed copies exist, APP_ENV
+// selects which set fills them — so LOCALLY you flip one variable to point at the dummy DB or the real
+// prod DB. On Vercel you just set the plain names (no prefixes) and this stays a no-op.
+const CONN_VARS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_DB_URL",
+];
+
+/** Resolve APP_ENV → copy the DEV_/PROD_ set into the plain names. Returns "development" | "production". */
+export function resolveEnv() {
+  const appEnv = String(process.env.APP_ENV || "development").toLowerCase() === "production"
+    ? "production" : "development";
+  const prefix = appEnv === "production" ? "PROD_" : "DEV_";
+  for (const name of CONN_VARS) {
+    const picked = process.env[prefix + name];
+    if (picked) process.env[name] = picked; // the selected set wins over any plain value
+  }
+  process.env.NEXT_PUBLIC_APP_ENV = appEnv;
+  return appEnv;
 }
 
 // Prefer the working session-pooler URL; fall back to the direct DATABASE_URL.
