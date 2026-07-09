@@ -15,17 +15,26 @@ Postgres DB — this is standard and good practice):
 > Free projects pause after ~1 week idle — just un-pause from the dashboard. That's the only real Free
 > caveat; fine for this.
 
-### One-time setup of the PROD project
-1. Create the new Supabase project. Note its URL, anon key, service-role key, and session-pooler DB URL.
-2. Point local `APP_ENV=production` (see below) and run **`npm run db:migrate`** to apply the schema.
-   (The runner now prints `Target: PRODUCTION DB (host)` so you can confirm before it runs.)
-3. Run **`npm run storage:setup`** to create the `avatars` + `crm-docs` buckets on prod.
-4. Create your super-admin (+ admin) accounts: **`npm run create:admins`** (respects `APP_ENV`, loads NO
-   dummy data — just the two admin logins). Override the super admin, e.g.:
-   `npm run create:admins -- --super-email you@softonoma.com --super-password 'Strong#Pass1' --super-name 'Your Name'`.
-   Then sign in, change the password, and add everyone else from the app (People → Users).
-   **Do NOT run `npm run seed:test` against prod** — it's dummy data and is blocked when
-   `APP_ENV=production` (override only with `--force-prod`, which you shouldn't).
+### Production bootstrap checklist (one-time, from local with `APP_ENV=production`)
+Set `.env.local`'s `PROD_*` vars + `APP_ENV=production`, restart nothing (scripts read env fresh), then:
+1. **Get the prod DB URL right.** In Supabase → prod project → **Settings → Database → Connection string →
+   Session pooler** (NOT "Direct connection" — that's IPv6-only; use **Session pooler** for IPv4), copy
+   the URI, put your prod DB password in it (URL-encode specials, `@`→`%40`) → that's `PROD_SUPABASE_DB_URL`.
+   **The pooler host is region-specific** — if prod is in a different region than dev, the host differs
+   (e.g. dev `aws-1-ap-southeast-1`, prod `aws-1-ap-northeast-2`). Verify:
+   `node --input-type=module -e "import('./scripts/lib/env.mjs').then(async m=>{m.loadEnv();const pg=(await import('pg')).default;const c=new pg.Client({connectionString:process.env.SUPABASE_DB_URL,ssl:{rejectUnauthorized:false}});try{await c.connect();console.log('OK');await c.end()}catch(e){console.log('FAIL',e.message)}})"`
+2. **`npm run db:migrate`** → applies the schema (prints `Target: PRODUCTION DB (host)` first).
+3. **`npm run storage:setup`** → creates the `avatars` + `crm-docs` buckets.
+4. **`npm run create:admins`** → the super-admin + HR admin logins (no dummy data). Override the super
+   admin: `npm run create:admins -- --super-email you@softonoma.com --super-password 'Strong#Pass1' --super-name 'Your Name'`.
+5. **`npm run create:team`** → the real Softonoma team (accounts + profiles + shifts + role flags, NO
+   attendance/leave/CRM/payroll/PII). `-- --no-founders` to skip the two founder super-admins. Idempotent.
+6. Sign in at `portal.softonoma.com`, have everyone change their password, then manage users from the app
+   (People → Users). **Never run `npm run seed:test` against prod** (dummy data; it's blocked when
+   `APP_ENV=production`).
+7. **Point Vercel at prod:** set the **plain** var names to the PROD project (+ `CRON_SECRET`, later
+   `RESEND_API_KEY`) and redeploy.
+8. Flip local back: `APP_ENV=development` (+ restart `npm run dev`).
 
 ## Local toggle — `.env.local`
 The app + scripts read four connection vars: `NEXT_PUBLIC_SUPABASE_URL`,

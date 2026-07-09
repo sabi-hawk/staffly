@@ -13,6 +13,7 @@
     "db:migrate": "node scripts/db-migrate.mjs",
     "storage:setup": "node scripts/setup-storage.mjs",
     "create:admins": "node scripts/create-admins.mjs",
+    "create:team": "node scripts/create-team.mjs",
     "seed:test": "node scripts/seed.mjs",
     "simulate": "node scripts/simulate.mjs",
     "test": "vitest run",
