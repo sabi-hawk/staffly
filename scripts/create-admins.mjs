@@ -11,15 +11,15 @@ import { createClient } from "@supabase/supabase-js";
 import { dbUrl, loadEnv } from "./lib/env.mjs";
 
 loadEnv();
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!URL || !SERVICE) {
+if (!SUPA_URL || !SERVICE) {
   console.error("Missing NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY. Set APP_ENV + the DEV_/PROD_ vars.");
   process.exit(1);
 }
 const env = process.env.NEXT_PUBLIC_APP_ENV || "development";
-const host = (() => { try { return new URL(URL).host; } catch { return URL; } })();
-const supa = createClient(URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });
+const host = (() => { try { return new URL(SUPA_URL).host; } catch { return SUPA_URL; } })();
+const supa = createClient(SUPA_URL, SERVICE, { auth: { autoRefreshToken: false, persistSession: false } });
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d; };
 const accounts = [
