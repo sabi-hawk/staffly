@@ -5,6 +5,13 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-10 — Delete a lead (owner)
+Leads could only be dismissed via status; there was no way to hard-delete a whole lead thread. Added a
+**Delete** button on each lead card (Leads tab) for super_admin OR `crm.records.delete` holders (partners),
+with a confirm dialog. New DELETE `app/api/crm/leads/[id]` cascades the lead's interviews, assessments,
+contacts, alerts & documents (storage cleaned up); any **deal keeps its record** (lead_id set null). RLS
+already allowed it (0053). Shipped 2026-07-10.
+
 ## 2026-07-10 — Partner roles (owner)
 Take the co-founders (Ali Ahmad, Sabahat Atique) OFF super_admin onto a limited **Partner (Developer)**
 role, and add a **Partner (BD)** role for the owner's BD brother **Mohiudin Ghazi** — security: a partner

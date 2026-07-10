@@ -5,8 +5,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { NativeSelect } from "@/components/ui/field";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { LEAD_STATUS_META, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 
 const needsReason = (s: string) => (LEAD_REASON_STATUSES as readonly string[]).includes(s);
@@ -16,16 +17,31 @@ export function LeadCardActions({
   company,
   status,
   feedback,
+  canDelete = false,
 }: {
   leadId: string;
   company: string;
   status: string;
   feedback: string | null;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null); // a chosen status awaiting confirm/reason
   const [reason, setReason] = useState(feedback ?? "");
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  async function del() {
+    setBusy(true);
+    const res = await fetch(`/api/crm/leads/${leadId}`, { method: "DELETE" });
+    setBusy(false);
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Failed" }));
+      return toast.error(error ?? "Could not delete the lead");
+    }
+    toast.success(`Deleted: ${company}`);
+    router.refresh();
+  }
 
   async function save(next: string, note?: string) {
     setBusy(true);
@@ -74,6 +90,26 @@ export function LeadCardActions({
       >
         <Pencil className="size-3.5" /> Edit
       </Link>
+
+      {canDelete && (
+        <button
+          onClick={() => setConfirmDelete(true)}
+          disabled={busy}
+          title="Delete lead"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-caption text-text-secondary hover:bg-danger/10 hover:text-danger hover:border-danger/40"
+        >
+          <Trash2 className="size-3.5" /> Delete
+        </button>
+      )}
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete the “${company}” lead?`}
+        description="This permanently removes the lead and all its interviews, assessments, contacts and documents. Any deal keeps its record. This cannot be undone."
+        confirmLabel="Delete lead"
+        tone="danger"
+        onConfirm={async () => { await del(); }}
+      />
 
       {pending && (
         <div className="mt-1 flex w-full items-center gap-2">

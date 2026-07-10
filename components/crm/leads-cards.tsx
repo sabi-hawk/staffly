@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
+import { isSuperAdminRole } from "@/lib/crm/access";
 import { bdOptions, type Opt } from "@/lib/crm/options";
 import { CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   // The Owner filter only makes sense when you can see more than your own leads (owner ask,
   // 2026-07-07): BD Lead + admin/super get it; a plain BD's grid is already scoped to self.
   const canFilterOwner = hasPermP(me, PERM.crmLeadsAll);
+  const canDeleteLead = isSuperAdminRole(me?.role) || hasPermP(me, PERM.crmRecordsDelete);
   const bds = canFilterOwner ? await bdOptions(supabase) : [];
   let closedCount = 0;
   if (!hasPermP(me, PERM.crmLeadsClosed)) {
@@ -172,7 +174,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
               )}
 
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-                <LeadCardActions leadId={l.id} company={l.company} status={l.status} feedback={l.feedback} />
+                <LeadCardActions leadId={l.id} company={l.company} status={l.status} feedback={l.feedback} canDelete={canDeleteLead} />
                 <div className="flex items-center gap-2">
                   <CopyButton text={leadShareText(l)} title="Copy lead details" />
                   <BdAvatar fullName={l.owner?.full_name} />
