@@ -71,9 +71,23 @@ export default async function ProductDocPage() {
           <li>Employee management, attendance oversight, leave approvals, reports, activity log, announcements.</li>
           <li><strong>Cannot see:</strong> payroll/salary/compensation, deal details/financials, login-event audit, CNIC/bank PII.</li>
         </ul>
-        <h3>Super-admin (founders)</h3>
+        <h3>Partner (Developer) &amp; Partner (BD)</h3>
         <ul>
-          <li>Full superset: payroll, company settings, <strong>deals (name, financials, assignments)</strong>, all audit, this product doc.</li>
+          <li>The founder-partners run the <strong>CRM</strong> (leads, interviews, assessments) with the power to
+            update and <strong>hard-delete/restore</strong> records (the `crm.records.delete` permission), but
+            deliberately <strong>without super-admin</strong> — so a session left open never exposes deals or
+            financials. <strong>No</strong> check-in/leave/summary duties, and <strong>no</strong> payroll,
+            compensation, deals, settings, roles, or user management.</li>
+          <li><strong>Partner (Developer)</strong> = full CRM visibility (all BDs&apos; leads/profiles + analytics).
+            <strong>Partner (BD)</strong> = the same as a BD Lead (adds/edits across the pipeline) minus the
+            attendance/holiday duties.</li>
+          <li>Partners keep base role <strong>employee</strong> (flagged as partner) so they appear in People and are
+            <strong>payable via compensation categories</strong> (amount + note), with no base salary and no shift.
+            They&apos;re <strong>highlighted</strong> in the Employees list.</li>
+        </ul>
+        <h3>Super-admin (dedicated account)</h3>
+        <ul>
+          <li>Full superset: payroll, company settings, <strong>deals (name, financials, assignments)</strong>, all audit, this product doc. Kept as a <strong>separate</strong> account (not the partners) for security.</li>
         </ul>
       </Section>
 

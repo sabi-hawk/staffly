@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isSuperAdminRole } from "@/lib/crm/access";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,7 @@ type SP = { page?: string; pageSize?: string; status?: string; priority?: string
 export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
   const me = await getCurrentProfile();
-  const isSuper = isSuperAdminRole(me?.role);
+  const canManage = isSuperAdminRole(me?.role) || (!!me && hasPermP(me, PERM.crmRecordsDelete));
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const today = companyToday();
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
@@ -87,7 +89,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
                 <TD className={overdue ? "font-medium text-danger" : "text-text-secondary"}>{as.deadline ? formatCrmDate(as.deadline) : "—"}{overdue ? " · overdue" : ""}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.created_at)}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.updated_at)}</TD>
-                <TD className="no-underline"><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} copyText={assessmentShareText(as)} dismissed={!!as.dismissed_at} canManage={isSuper} /></TD>
+                <TD className="no-underline"><ActivityRowActions kind="assessments" id={as.id} leadId={as.lead_id} copyText={assessmentShareText(as)} dismissed={!!as.dismissed_at} canManage={canManage} /></TD>
               </TR>
             );
           })}

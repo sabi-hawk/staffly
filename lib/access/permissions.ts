@@ -43,6 +43,7 @@ export const PERM = {
   crmContacts: "crm.contacts",
   crmCalendarView: "crm.calendar.view",
   crmAnalyticsView: "crm.analytics.view",
+  crmRecordsDelete: "crm.records.delete",
   dealsView: "deals.view",
   dealsManage: "deals.manage",
   dealsDirectory: "deals.directory",

@@ -359,6 +359,11 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0053_partner_roles.sql` — **partner roles**: `profiles.is_partner` (flag, highlighted in Employees);
+  new permission **`crm.records.delete`**; two system app_roles **`partner_dev` (Partner (Developer))** +
+  **`partner_bd` (Partner (BD))** (base_role `employee`, CRM reach, no attendance/leave/finance/deals) with
+  grants + `reason`. The 0049 interviews/assessments `*_super_delete` RLS + `crm_guard_undismiss` restore
+  guard change from super-only to **`auth_role()='super_admin' OR auth_has_perm('crm.records.delete')`**.
 - `0052_attendance_corrections.sql` — **timesheet correction requests**: `attendance_correction_requests`
   (employee_id, attendance_id NULL, work_date, requested_check_in/out, kind, reason, status, reviewed_by/at,
   decision_note). RLS: employee reads/inserts OWN pending only + withdraws own; admin/HR

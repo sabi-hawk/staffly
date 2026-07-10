@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { todayAttendance } from "@/lib/services/attendance";
 import { myProfilesWithCounts } from "@/lib/services/bd-jobs";
 import { companyToday } from "@/lib/time";
@@ -17,6 +18,7 @@ import { formatHours } from "@/lib/utils";
 // attendance summary (admin-toggleable) lives on the Attendance tab instead.
 export default async function EmployeeDashboard() {
   const profile = (await getCurrentProfile())!;
+  const canAttend = hasPermP(profile, PERM.attendanceSelf); // partners have no attendance duties
   const supabase = createClient();
   const today = companyToday();
   const todayData = await todayAttendance(supabase, profile.id);
@@ -65,10 +67,12 @@ export default async function EmployeeDashboard() {
         <p className="text-caption text-text-secondary">Here's your day at a glance.</p>
       </div>
 
-      <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />
+      {/* Attendance widgets only for people with attendance duties — partners (no attendance.self) skip
+          check-in / the daily summary entirely. */}
+      {canAttend && <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />}
 
       {/* One consolidated "Today's summary": BDs get job counts + notes; everyone else just notes. */}
-      {(jobProfiles.length > 0 || !!todayRow?.check_in_time) && (
+      {canAttend && (jobProfiles.length > 0 || !!todayRow?.check_in_time) && (
         <DailyReport
           profiles={jobProfiles}
           workDate={today}
@@ -102,6 +106,7 @@ export default async function EmployeeDashboard() {
         </Card>
       )}
 
+      {canAttend && (
       <Card>
         <CardHeader>
           <CardTitle>Recent days</CardTitle>
@@ -145,6 +150,7 @@ export default async function EmployeeDashboard() {
           </Table>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

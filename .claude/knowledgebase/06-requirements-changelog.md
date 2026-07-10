@@ -5,6 +5,17 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-10 — Partner roles (owner)
+Take the co-founders (Ali Ahmad, Sabahat Atique) OFF super_admin onto a limited **Partner (Developer)**
+role, and add a **Partner (BD)** role for the owner's BD brother **Mohiudin Ghazi** — security: a partner
+leaving the portal open must not expose deals/financials. Both roles: CRM visibility + hard-delete/restore
+of interviews & assessments (a new `crm.records.delete` perm; the 0049 super-only gate widens to "super OR
+crm.records.delete"), but **no** attendance/leave/summary duties and **no** finance/deals/settings/roles.
+Partners keep base role `employee` (+ `is_partner`, no shift/salary) so they appear in People and are
+**payable via compensation categories** (amount + note); the Employees list highlights them (Partner badge).
+Dashboard hides check-in for them; middleware blocks /attendance & /leaves. `super_admin` stays a dedicated
+`super.admin@` account. Migration 0053 + `scripts/create-partners.mjs`. Shipped 2026-07-10. See DECISIONS #102.
+
 ## 2026-07-09 — Local DEV/PROD database toggle (owner)
 Owner is splitting into two Supabase projects: keep the current one as DEV (dummy data), a new empty one
 as PROD (real users, deployed at portal.softonoma.com). Added a local `APP_ENV=development|production`

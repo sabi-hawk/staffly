@@ -151,6 +151,23 @@ async function main() {
   check("super_admin: hard-delete interview → allowed", (supDelete.data?.length ?? 0) === 1 && gone);
   await pgc.query(`delete from interviews where id=$1`, [dIv]); // best-effort cleanup
 
+  // ── partner CRM delete (0053): crm.records.delete lets a NON-super hard-delete an interview; a plain
+  //    BD still cannot. Temporarily make the test employee a Partner (Developer), then reset.
+  const PARTNER_ID = "00000000-0000-0000-0000-000000000099"; // test.employee
+  await pgc.query(`update profiles set app_role_id=(select id from app_roles where key='partner_dev') where id=$1`, [PARTNER_ID]);
+  const pIv = (await pgc.query(`insert into interviews (company, owner_bd_id, status) values ('__RLS_PARTNER__', $1, 'pending') returning id`, [EMP2])).rows[0].id;
+  const partner = await asUser("test.employee@softonoma.com", "Softonoma@9999");
+  const pDel = await partner.from("interviews").delete().eq("id", pIv).select("id");
+  const pGone = (await pgc.query(`select 1 from interviews where id=$1`, [pIv])).rowCount === 0;
+  check("partner (crm.records.delete): hard-delete interview → allowed", (pDel.data?.length ?? 0) === 1 && pGone);
+  const bdIv2 = (await pgc.query(`insert into interviews (company, owner_bd_id, status) values ('__RLS_PARTNER__', $1, 'pending') returning id`, [EMP2])).rows[0].id;
+  const shaizaBd2 = await asUser(SHAIZA_EMAIL, SHAIZA_PW);
+  await shaizaBd2.from("interviews").delete().eq("id", bdIv2);
+  const bdStill = (await pgc.query(`select 1 from interviews where id=$1`, [bdIv2])).rowCount === 1;
+  check("plain BD: hard-delete interview → still blocked (partner-only)", bdStill);
+  await pgc.query(`update profiles set app_role_id=(select id from app_roles where key='employee') where id=$1`, [PARTNER_ID]);
+  await pgc.query(`delete from interviews where company='__RLS_PARTNER__'`);
+
   // ── BD job applications (0050): save_job_counts (definer, ownership-checked) + owner-scoped reads.
   const jwd = (await pgc.query(`select company_today()::text d`)).rows[0].d;
   const myProf = (await pgc.query(`select id from dev_profiles where owner_bd_id=$1 and status='active' limit 1`, [EMP2])).rows[0]?.id;

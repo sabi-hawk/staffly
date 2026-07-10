@@ -21,6 +21,9 @@ const ROUTE_PERMS: [string, string][] = [
   ["/crm/deals", PERM.dealsView],
   ["/crm/analytics", PERM.crmAnalyticsView],
   ["/crm/calendar", PERM.crmCalendarView],
+  // self attendance/leaves: hidden from partners (no attendance.self/leaves.self) — block direct URLs too
+  ["/attendance", PERM.attendanceSelf],
+  ["/leaves", PERM.leavesSelf],
 ];
 
 /** Refreshes the Supabase session cookie and enforces auth + role gating. */

@@ -20,3 +20,15 @@ if (fs.existsSync(file)) {
     if (!(key in process.env)) process.env[key] = val;
   }
 }
+
+// Apply the DEV_/PROD_ toggle (mirror scripts/lib/env.mjs resolveEnv) so the plain connection vars the
+// tests read are filled from the selected set. APP_ENV defaults to development for the test suite.
+{
+  const appEnv = String(process.env.APP_ENV || "development").toLowerCase() === "production" ? "production" : "development";
+  const prefix = appEnv === "production" ? "PROD_" : "DEV_";
+  for (const name of ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_DB_URL"]) {
+    const picked = process.env[prefix + name];
+    if (picked) process.env[name] = picked;
+  }
+  process.env.NEXT_PUBLIC_APP_ENV = appEnv;
+}

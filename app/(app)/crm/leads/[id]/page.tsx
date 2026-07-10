@@ -94,7 +94,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
             developers={developers}
             interviews={interviews}
             assessments={assessments}
-            canManage={isSuperAdminRole(me.role)}
+            canManage={isSuperAdminRole(me.role) || hasPermP(me, PERM.crmRecordsDelete)}
             initialEdit={initialEdit as { kind: "interviews" | "assessments"; id: string } | null}
           />
         </CardContent>

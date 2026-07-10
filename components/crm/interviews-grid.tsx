@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { isSuperAdminRole } from "@/lib/crm/access";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,7 @@ type SP = { page?: string; pageSize?: string; status?: string; round?: string; o
 export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
   const me = await getCurrentProfile();
-  const isSuper = isSuperAdminRole(me?.role);
+  const canManage = isSuperAdminRole(me?.role) || (!!me && hasPermP(me, PERM.crmRecordsDelete));
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
 
@@ -84,7 +85,7 @@ export async function InterviewsGrid({ searchParams }: { searchParams: SP }) {
               <TD className="text-text-secondary">{formatCrmDatetime(iv.interview_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.created_at)}</TD>
               <TD className="text-text-secondary">{formatCrmDate(iv.updated_at)}</TD>
-              <TD className="no-underline"><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} copyText={interviewShareText(iv)} dismissed={!!iv.dismissed_at} canManage={isSuper} /></TD>
+              <TD className="no-underline"><ActivityRowActions kind="interviews" id={iv.id} leadId={iv.lead_id} copyText={interviewShareText(iv)} dismissed={!!iv.dismissed_at} canManage={canManage} /></TD>
             </TR>
           ))}
           {list.length === 0 && <TR><TD colSpan={10} className="py-6 text-center text-text-secondary">No interviews match.</TD></TR>}

@@ -42,13 +42,14 @@ export default async function EmployeesPage({
           </THead>
           <TBody>
             {(people ?? []).map((p) => (
-              <TR key={p.id} className="cursor-pointer">
+              <TR key={p.id} className={`cursor-pointer ${p.is_partner ? "bg-brand-primary/[0.06]" : ""}`}>
                 <TD className="tabular text-text-secondary">{formatCode(p.employee_code)}</TD>
                 <TD>
                   <Link href={`/admin/employees/${p.id}`} className="flex items-center gap-2.5 font-medium text-text-primary hover:text-brand-primary">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={avatarUrl(p.avatar_url, p.gender)} alt="" className="h-7 w-7 rounded-full object-cover" />
                     {p.full_name}
+                    {p.is_partner && <Badge tone="brand" className="ml-1">Partner</Badge>}
                   </Link>
                 </TD>
                 <TD>{(p as any).app_roles?.name ?? p.role.replace("_", " ")}</TD>
