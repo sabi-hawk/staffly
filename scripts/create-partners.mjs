@@ -65,6 +65,12 @@ async function main() {
     // partners have no attendance obligation and no base salary
     await client.query(`delete from shifts where employee_id = $1`, [p.id]);
     await client.query(`delete from salary_structures where employee_id = $1`, [p.id]);
+    // mirror the password into employee_credentials so a super-admin can view/copy it on the profile
+    await client.query(
+      `insert into employee_credentials (employee_id, portal_password) values ($1, $2)
+       on conflict (employee_id) do update set portal_password = excluded.portal_password`,
+      [p.id, p.password]
+    );
     console.log(`   ${action.padEnd(8)} ${p.email.padEnd(34)} ${p.app_role}`);
   }
 

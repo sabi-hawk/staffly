@@ -74,10 +74,16 @@ export function CredentialsCard({
         <div><span className="text-text-secondary">Username:</span> <span className="font-medium tabular">{username ?? "—"}</span></div>
         <div className="flex items-center gap-2">
           <span className="text-text-secondary">Password:</span>
-          <span className="font-medium tabular">{password ? (show ? password : "•".repeat(Math.min(password.length, 12))) : "—"}</span>
-          <button onClick={() => setShow((s) => !s)} className="text-text-secondary hover:text-brand-primary" aria-label="Toggle password">
-            {show ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-          </button>
+          {password ? (
+            <>
+              <span className="font-medium tabular">{show ? password : "•".repeat(Math.min(password.length, 12))}</span>
+              <button onClick={() => setShow((s) => !s)} className="text-text-secondary hover:text-brand-primary" aria-label="Toggle password">
+                {show ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              </button>
+            </>
+          ) : (
+            <span className="text-caption text-text-secondary">Not stored — use <button onClick={() => setEditing(true)} className="font-medium text-brand-primary hover:underline">Edit</button> to set one.</span>
+          )}
         </div>
       </div>
       <div className="flex gap-2">

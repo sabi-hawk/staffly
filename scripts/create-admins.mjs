@@ -86,6 +86,12 @@ async function main() {
         [id, a.role, a.full_name, a.role, a.email]
       );
     }
+    // mirror the password into employee_credentials so a super-admin can view/copy it on the profile
+    await client.query(
+      `insert into employee_credentials (employee_id, portal_password) values ($1, $2)
+       on conflict (employee_id) do update set portal_password = excluded.portal_password`,
+      [id, a.password]
+    );
     console.log(`   ${action.padEnd(8)} ${a.email.padEnd(34)} ${a.role}`);
   }
 

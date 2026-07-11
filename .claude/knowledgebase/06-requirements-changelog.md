@@ -592,3 +592,14 @@ Built two connected pieces (migration `0055`):
 Hardening: the payslip line insert now throws on error (was silently swallowed — this masked a
 not-null issue where deduction lines lacked the new `is_commission` field; PostgREST bulk insert nulls
 absent keys rather than applying the column default).
+
+## 2026-07-12 — Fix: super-admin couldn't view prod employees' passwords (owner)
+On prod the profile page showed Password: — (eye/copy did nothing) because the account scripts set the
+Supabase Auth password but never mirrored it into `employee_credentials` (which is what the super-admin
+view reads). The seed did store it, so dev worked but prod didn't. Fixed all three bootstrap scripts
+(`create:team`, `create:admins`, `create:partners`) to upsert `employee_credentials.portal_password`
+alongside the auth user. Credentials card now shows a clear "Not stored — use Edit to set one" hint
+(with an Edit shortcut) instead of a dead dash when no password is stored. **Owner action: re-run the
+scripts on prod** (`APP_ENV=production npm run create:admins|create:team|create:partners`) to backfill;
+the `pw()` defaults equal the originally-assigned passwords, so this is a no-op for anyone who hasn't
+changed theirs. Ask anyone who already changed their password to use Edit instead.

@@ -85,6 +85,12 @@ async function main() {
        p.employment_type, p.position, p.department, p.phone ?? null, p.joining_date ?? null, !!p.is_developer, !!p.is_bd_lead]
     );
     await client.query(`update profiles set app_role_id = (select id from app_roles where key = $2) where id = $1`, [p.id, appRoleKey(p)]);
+    // mirror the password into employee_credentials so a super-admin can view/copy it on the profile
+    await client.query(
+      `insert into employee_credentials (employee_id, portal_password) values ($1, $2)
+       on conflict (employee_id) do update set portal_password = excluded.portal_password`,
+      [p.id, p.password]
+    );
     if (p.shift) {
       await client.query(`delete from shifts where employee_id = $1`, [p.id]);
       await client.query(
