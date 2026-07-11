@@ -140,7 +140,7 @@ export default async function ProductDocPage() {
         <ul>
           <li>Net = <strong>base salary + additions − deductions</strong>. Additions come from each employee&apos;s recurring compensation categories (e.g. fuel allowance) and BD commissions.</li>
           <li>Deductions include unpaid leave and <strong>missing days</strong> (a scheduled working day with no attendance and no approved leave), each priced at base ÷ working-days, with the exact dates shown on the payslip so HR can fix and regenerate.</li>
-          <li>A run is a draft until <strong>finalised</strong>, then <strong>marked paid</strong> (with a paid date and receiving account). Payslips print or save as PDF.</li>
+          <li>A run is a draft until <strong>finalised</strong>, then <strong>marked paid</strong> (with a paid date and receiving account). A finalised run can be <strong>reopened</strong> back to draft to fix a mistake, then finalised again. Payslips print or save as PDF; the <strong>base salary</strong> leads the particulars, additions follow.</li>
         </ul>
       </Section>
 

@@ -21,10 +21,13 @@ export default async function PayslipPage({ params }: { params: { runId: string 
   if (!run) return <p className="text-text-secondary">Payslip not found.</p>;
   const { data: emp } = await supabase.from("profiles").select("*").eq("id", run.employee_id).single();
   const { data: priv } = await supabase.from("employee_private").select("*").eq("employee_id", run.employee_id).maybeSingle();
-  const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", params.runId).order("kind");
+  const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", params.runId).order("created_at");
   const { data: company } = await supabase.from("company_settings").select("company_name").eq("id", 1).maybeSingle();
 
-  const particulars = (lines ?? []).filter((l) => l.kind !== "deduction");
+  // Base salary always leads the particulars column; additions (allowances, commission) follow it.
+  const particulars = (lines ?? [])
+    .filter((l) => l.kind !== "deduction")
+    .sort((a, b) => (a.kind === "base" ? 0 : 1) - (b.kind === "base" ? 0 : 1));
   const deductions = (lines ?? []).filter((l) => l.kind === "deduction");
   const grossPay = particulars.reduce((s, l) => s + Number(l.amount), 0);
   const start = new Date(run.period_start);

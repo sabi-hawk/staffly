@@ -552,3 +552,23 @@ clearing/altering `dismissed_at` (so BD can dismiss but never restore); dismisse
 struck-through; row actions show Dismiss (BD) vs Restore+Delete (super). Leads already dismiss via
 `status='dismissed'`; this adds the same soft-hide to the two activity records and removes the BD
 hard-delete. See DECISIONS.md.
+
+## 2026-07-12 — Payroll usability: reopen finalised, base-first, company name, zero-prefix (owner)
+Owner feedback after the first live payroll run:
+1. **Reopen a finalised payslip.** Finalise was one-way; a mistaken finalise (or a late correction)
+   trapped the run. Added `reopenPayroll` + `POST /api/payroll/[id]/reopen` (payroll.manage) and a
+   **Reopen** action (confirm dialog) on finalised rows → back to draft, payment status kept, then
+   finalise again.
+2. **Base salary leads the particulars.** The payslip sorted lines by `kind`, so "addition" (e.g. Fuel)
+   sorted before "base". Now base is forced first, additions follow (payslip page sort).
+3. **Company name "Your Company" → "Softonoma".** Prod was bootstrapped clean and still carried the
+   template default. Company name is fixed branding (not UI-editable), so migration `0054` sets the row
+   to 'Softonoma' and changes the column default. **Owner action: run `npm run db:migrate` on prod.**
+4. **Zero-prefix number bug.** The base-salary field pre-filled "0", so typing 20000 gave "020000".
+   It now shows empty when the value is 0 (Number("")→0 on save). Reported recurring; this was the one
+   remaining `String(x ?? 0)` numeric input.
+
+Still open (planned, awaiting owner confirm): **BD deal-commission** compensation (select a deal + a
+%/one-off; payslip shows the BD only their commission amount, admin sees the full breakdown) and
+**deal finance** (log a deal's incoming payments — weekly/bi-monthly/monthly/one-off — and total them
+per period so commission computes off actual receipts). See the plan discussed in chat.

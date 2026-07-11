@@ -36,7 +36,8 @@ export function CompensationEditor({
   const [recurring, setRecurring] = useState(true);
   const [fixedAmount, setFixedAmount] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [base, setBase] = useState(String(baseSalary ?? 0));
+  // Show an empty field (not "0") so typing a value never leaves a leading zero, e.g. "020000".
+  const [base, setBase] = useState(baseSalary ? String(baseSalary) : "");
   const [savingBase, setSavingBase] = useState(false);
 
   async function saveBase() {

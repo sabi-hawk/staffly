@@ -222,6 +222,19 @@ export async function finalisePayroll(supabase: SupabaseClient, id: string) {
   return data;
 }
 
+/** Reopen (unlock) a finalised run back to draft so its lines/amounts can be corrected. A mistaken
+ * finalise (or a late correction) shouldn't trap the payslip. Payment status is left untouched. */
+export async function reopenPayroll(supabase: SupabaseClient, id: string) {
+  const { data, error } = await supabase
+    .from("payroll_runs")
+    .update({ status: "draft", finalised_at: null })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /** Mark a run paid (or back to pending). */
 export async function setPaymentStatus(
   supabase: SupabaseClient,

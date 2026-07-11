@@ -3,9 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Trash2, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, FileText, LockOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -57,6 +58,12 @@ export function PayrollClient({
     const res = await fetch(`/api/payroll/${id}/finalise`, { method: "POST" });
     if (!res.ok) return toast.error("Finalise failed");
     toast.success("Finalised"); router.refresh();
+  }
+
+  async function reopen(id: string) {
+    const res = await fetch(`/api/payroll/${id}/reopen`, { method: "POST" });
+    if (!res.ok) return toast.error("Reopen failed");
+    toast.success("Reopened for editing"); router.refresh();
   }
 
   async function markPaid(id: string, paid_at: string, credited_account: string, status = "paid") {
@@ -129,7 +136,7 @@ export function PayrollClient({
                     key={r.id} run={r} emp={names[r.employee_id]} lines={lines} open={open}
                     savedComps={compsByEmp[r.employee_id] ?? []}
                     onToggle={() => setExpanded(open ? null : r.id)}
-                    onFinalise={() => finalise(r.id)} onMarkPaid={markPaid}
+                    onFinalise={() => finalise(r.id)} onReopen={() => reopen(r.id)} onMarkPaid={markPaid}
                     onAddLine={addLine} onRemoveLine={removeLine}
                   />
                 );
@@ -143,10 +150,11 @@ export function PayrollClient({
   );
 }
 
-function RunRow({ run, emp, lines, open, savedComps = [], onToggle, onFinalise, onMarkPaid, onAddLine, onRemoveLine }: any) {
+function RunRow({ run, emp, lines, open, savedComps = [], onToggle, onFinalise, onReopen, onMarkPaid, onAddLine, onRemoveLine }: any) {
   const [paidAt, setPaidAt] = useState("");
   const [account, setAccount] = useState(emp?.bank_account_number ? `${emp?.bank_name ?? ""} ${emp.bank_account_number}`.trim() : "");
   const [showPay, setShowPay] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
   const [nl, setNl] = useState({ label: "", amount: "", kind: "addition", description: "" });
   // occasional (non-recurring) + variable categories are the ones worth quick-adding to a run
   const pickable: SavedComp[] = (savedComps as SavedComp[]).filter((c) => !c.recurring || !c.is_fixed_amount);
@@ -177,9 +185,19 @@ function RunRow({ run, emp, lines, open, savedComps = [], onToggle, onFinalise, 
         <TD>
           <div className="flex items-center gap-1.5">
             <Link href={`/admin/payroll/payslip/${run.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" title="Payslip"><FileText className="size-4" /></Link>
-            {run.status === "draft" && <Button size="sm" variant="secondary" onClick={onFinalise}>Finalise</Button>}
+            {run.status === "draft"
+              ? <Button size="sm" variant="secondary" onClick={onFinalise}>Finalise</Button>
+              : <Button size="sm" variant="ghost" onClick={() => setConfirmReopen(true)} title="Reopen for editing"><LockOpen className="size-3.5" /> Reopen</Button>}
             <Button size="sm" onClick={() => setShowPay((s) => !s)}>{run.payment_status === "paid" ? "Edit" : "Mark paid"}</Button>
           </div>
+          <ConfirmDialog
+            open={confirmReopen}
+            onOpenChange={setConfirmReopen}
+            title="Reopen this payslip?"
+            description="It goes back to draft so you can edit its lines or regenerate it. The payment status is kept. Finalise again when you're done."
+            confirmLabel="Reopen"
+            onConfirm={async () => { await onReopen(); }}
+          />
         </TD>
       </TR>
       {showPay && (
