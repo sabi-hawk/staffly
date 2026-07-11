@@ -19,6 +19,7 @@ import { CredentialsCard } from "@/components/admin/credentials-card";
 import { ProfileFlags } from "@/components/admin/profile-flags";
 import { RoleAssign } from "@/components/admin/role-assign";
 import { CommissionEditor } from "@/components/admin/commission-editor";
+import { DealCommissionEditor } from "@/components/admin/deal-commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
 import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12, formatCrmDatetime } from "@/lib/utils";
 
@@ -53,11 +54,18 @@ export default async function EmployeeDetail({
   let comps: any[] = [];
   let priv = null;
   let policies: any[] = [];
+  let dealCommissions: any[] = [];
+  let dealOpts: { id: string; label: string }[] = [];
   if (superAdmin) {
     salary = (await supabase.from("salary_structures").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle()).data;
     comps = (await supabase.from("compensation_components").select("*").eq("employee_id", params.id).eq("is_active", true).order("created_at")).data ?? [];
     priv = (await supabase.from("employee_private").select("*").eq("employee_id", params.id).maybeSingle()).data;
     policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("created_at")).data ?? [];
+    if (isBD) {
+      dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, lead:leads(company))").eq("employee_id", params.id).order("created_at")).data ?? [];
+      const dealRows = (await supabase.from("deals").select("id, name, lead:leads(company)").order("created_at", { ascending: false })).data ?? [];
+      dealOpts = dealRows.map((d: any) => ({ id: d.id, label: d.name || d.lead?.company || "Deal" }));
+    }
   }
 
   // RBAC role assignment (users.assign_roles — super-admin by default)
@@ -140,6 +148,14 @@ export default async function EmployeeDetail({
       {superAdmin && isBD && (
         <CollapsibleCard title="Commission policy" description="Percentage commitments for this business-development employee." defaultOpen={false}>
           <CommissionEditor employeeId={p.id} policies={policies} />
+        </CollapsibleCard>
+      )}
+
+      {/* Deal commissions (BD employees, super admin only) — % of a deal's receipts or a fixed amount,
+          added to the payslip when payroll is generated. */}
+      {superAdmin && isBD && (
+        <CollapsibleCard title="Deal commissions" description="Pay this BD a % of a deal's monthly receipts (or a fixed amount). It lands on their payslip automatically." defaultOpen={false}>
+          <DealCommissionEditor employeeId={p.id} commissions={dealCommissions} deals={dealOpts} />
         </CollapsibleCard>
       )}
 

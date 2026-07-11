@@ -15,6 +15,51 @@ function sum(xs: number[]) {
   return round2(xs.reduce((a, b) => a + b, 0));
 }
 
+interface CommissionLine { label: string; amount: number; description: string }
+
+/** A BD's deal commissions for a payroll period. For a % line, the base is the SUM of that deal's
+ * payments whose billing_month falls in the period (so an Aug-received / July-billed payment counts on
+ * July's slip). A fixed line is a flat one-off. The label is BD-safe ("Commission — {company}"); the
+ * admin breakdown (rate · total received) rides in the description for the super-admin payslip view. */
+async function computeDealCommissions(
+  supabase: SupabaseClient,
+  employeeId: string,
+  from: string,
+  to: string
+): Promise<CommissionLine[]> {
+  const { data: rows } = await supabase
+    .from("deal_commissions")
+    .select("rate, fixed_amount, label, deal_id, deal:deals(name, lead:leads(company))")
+    .eq("employee_id", employeeId)
+    .eq("is_active", true);
+  if (!rows?.length) return [];
+
+  const monthStart = `${from.slice(0, 7)}-01`; // billing months are first-of-month
+  const lines: CommissionLine[] = [];
+  for (const r of rows as any[]) {
+    const company = r.deal?.name || r.deal?.lead?.company || "Deal";
+    const label = r.label || `Commission — ${company}`;
+    if (r.fixed_amount != null) {
+      lines.push({ label, amount: round2(Number(r.fixed_amount) || 0), description: `Fixed commission for ${company}` });
+      continue;
+    }
+    const { data: pays } = await supabase
+      .from("deal_payments")
+      .select("amount")
+      .eq("deal_id", r.deal_id)
+      .gte("billing_month", monthStart)
+      .lte("billing_month", to);
+    const received = sum((pays ?? []).map((p) => Number(p.amount) || 0));
+    const rate = Number(r.rate) || 0;
+    lines.push({
+      label,
+      amount: round2((rate / 100) * received),
+      description: `${rate}% of ${received.toLocaleString("en-PK")} received for ${company} (billed in period, ${(pays ?? []).length} payment(s))`,
+    });
+  }
+  return lines;
+}
+
 /** Generate (or refresh) draft payroll runs + payslip line items for all active employees. */
 export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOptions) {
   const { data: salaries, error } = await supabase
@@ -114,7 +159,13 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
     // dynamic additions = recurring compensation components
     const comps = compsRes.data;
     const additions = (comps ?? []).map((c) => ({ label: c.label, amount: round2(Number(c.amount) || 0), description: c.description }));
-    const additionsTotal = sum(additions.map((a) => a.amount));
+
+    // BD deal commissions: each is a % of the deal's receipts BILLED to this period, or a one-off fixed
+    // amount. Receipts are keyed by billing_month (which can differ from when the money physically
+    // arrived), so a payment logged in August but billed to July still counts on July's payslip.
+    const commissionLines = await computeDealCommissions(supabase, employeeId, opts.from, opts.to);
+
+    const additionsTotal = sum([...additions.map((a) => a.amount), ...commissionLines.map((c) => c.amount)]);
 
     const netPay = round2(base + additionsTotal - deductions);
 
@@ -146,12 +197,15 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
     // rebuild payslip line items for a draft run
     if (run.status === "draft") {
       await supabase.from("payslip_components").delete().eq("payroll_run_id", run.id);
-      const lines = [
-        { payroll_run_id: run.id, label: "Base salary", amount: base, kind: "base", description: null },
-        ...additions.map((a) => ({ payroll_run_id: run.id, label: a.label, amount: a.amount, kind: "addition", description: a.description })),
+      const lines: Record<string, unknown>[] = [
+        { payroll_run_id: run.id, label: "Base salary", amount: base, kind: "base", description: null, is_commission: false },
+        ...additions.map((a) => ({ payroll_run_id: run.id, label: a.label, amount: a.amount, kind: "addition", description: a.description, is_commission: false })),
+        // deal commissions: kind "addition" (so totals/gross-pay math treats them as additions) but
+        // flagged is_commission — the label is BD-safe, the admin breakdown rides in `description`.
+        ...commissionLines.map((c) => ({ payroll_run_id: run.id, label: c.label, amount: c.amount, kind: "addition", description: c.description, is_commission: true })),
       ];
       if (deductionsUnpaid > 0)
-        lines.push({ payroll_run_id: run.id, label: "Unpaid leave deduction", amount: deductionsUnpaid, kind: "deduction", description: `${unpaidDays} unpaid day(s)` });
+        lines.push({ payroll_run_id: run.id, label: "Unpaid leave deduction", amount: deductionsUnpaid, kind: "deduction", description: `${unpaidDays} unpaid day(s)`, is_commission: false });
       if (deductionsMissing > 0) {
         const shown = missingDates.slice(0, 10).map((d) => d.slice(5)).join(", ");
         const more = missingDates.length > 10 ? ` +${missingDates.length - 10} more` : "";
@@ -161,9 +215,11 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
           amount: deductionsMissing,
           kind: "deduction",
           description: `Missing record: no attendance and no approved leave on ${missingDays} day(s): ${shown}${more}. Verify/fix the day (attendance or leave) and regenerate to clear.`,
+          is_commission: false,
         });
       }
-      await supabase.from("payslip_components").insert(lines);
+      const { error: linesErr } = await supabase.from("payslip_components").insert(lines);
+      if (linesErr) throw new Error(linesErr.message);
     }
 
     runs.push(run);

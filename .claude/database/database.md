@@ -164,7 +164,16 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   benefits_total, deductions, **additions_total**, net_pay, status, **payment_status(pending|paid),
   paid_at, paid_amount, credited_account**, generated_by, finalised_at.
 - **payslip_components** *(super_admin)* — payroll_run_id, label, amount, **kind(base|addition|
-  deduction)**, description. Editable/deletable line items for a specific payslip.
+  deduction)**, description, **is_commission** (0055; flags a deal-commission line so a future
+  BD-facing payslip shows only label+amount, hiding the admin breakdown in `description`). Editable/
+  deletable line items for a specific payslip.
+- **deal_payments** *(super_admin, 0055)* — deal_id, amount (PKR received), **received_on** (when it
+  arrived), **billing_month** (first-of-month it counts toward — can differ, e.g. received Aug, billed
+  July), note, created_by, created_at (entry date). A deal's incoming-money ledger; totals per billing
+  month drive BD deal commissions. RLS super-admin only (mirrors deals).
+- **deal_commissions** *(compensation.manage, 0055)* — employee_id (the BD), deal_id, **rate** (% of
+  receipts) XOR **fixed_amount** (one-off), label, is_active. Payroll adds a commission line = rate ×
+  the deal's receipts billed to the period (or the fixed amount). CHECK enforces exactly one basis.
 - **audit_log** — actor_id/email/role, action (insert|update|delete|domain events), entity,
   entity_id, before/after jsonb, ip_address, user_agent, created_at. Written by `record_audit()`
   triggers on profiles/attendance/leave_requests/leave_balances/shifts/salary_structures/
@@ -359,6 +368,13 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0055_deal_finance_commission.sql` — **deal finance + BD commission**: `deal_payments` (receipt
+  ledger keyed to a **billing_month**, super-admin only) + `deal_commissions` (BD ↔ deal, `rate` XOR
+  `fixed_amount`, `compensation.manage`) + `payslip_components.is_commission`. Payroll adds a commission
+  line = rate × the deal's receipts billed to the period. `audit_read` extended to keep both tables in
+  the financial-only arm. See `lib/services/payroll.ts` `computeDealCommissions`.
+- `0054_company_name_softonoma.sql` — set `company_settings.company_name` to 'Softonoma' + change the
+  column default (prod was bootstrapped clean and still held the 'Your Company' placeholder).
 - `0053_partner_roles.sql` — **partner roles**: `profiles.is_partner` (flag, highlighted in Employees);
   new permission **`crm.records.delete`**; two system app_roles **`partner_dev` (Partner (Developer))** +
   **`partner_bd` (Partner (BD))** (base_role `employee`, CRM reach, no attendance/leave/finance/deals) with

@@ -118,6 +118,7 @@ export default async function ProductDocPage() {
           <li>CRM Leads is one hub keyed by company (Leads cards / Interviews / Assessments), with per-lead documents, job description, BD notes, and company contacts.</li>
           <li>Dev-profile documents (resumes/cover letters): the owning BD manages them; admins keep a recoverable history.</li>
           <li><strong>Deals are super-admin only</strong>: name, financials (salary, payment), documents, and developer assignments. Admin/HR can&apos;t see deal details; assigned developers see only the deal name.</li>
+          <li>Each deal keeps a <strong>payments-received ledger</strong> (amount, receiving date, billing month, note) so incoming money is tracked at any cadence (weekly, monthly, one-off). Monthly totals feed the assigned BD&apos;s deal commission on payroll.</li>
         </ul>
       </Section>
 
@@ -138,7 +139,8 @@ export default async function ProductDocPage() {
 
       <Section title="Payroll">
         <ul>
-          <li>Net = <strong>base salary + additions − deductions</strong>. Additions come from each employee&apos;s recurring compensation categories (e.g. fuel allowance) and BD commissions.</li>
+          <li>Net = <strong>base salary + additions − deductions</strong>. Additions come from each employee&apos;s recurring compensation categories (e.g. fuel allowance) and BD deal commissions.</li>
+          <li><strong>BD deal commissions:</strong> a BD can be paid a <strong>% of a deal&apos;s receipts</strong> (or a fixed one-off) set on their profile. Each deal keeps a <strong>payments ledger</strong>: every receipt is logged with its receiving date and the <strong>billing month</strong> it counts toward (which can differ, e.g. money that arrives in August but belongs to July still lands on July&apos;s payslip). When payroll runs, the commission = rate × the deal&apos;s receipts billed to that period. The <strong>BD sees only</strong> the deal and their commission amount; the <strong>admin sees</strong> the rate and total received.</li>
           <li>Deductions include unpaid leave and <strong>missing days</strong> (a scheduled working day with no attendance and no approved leave), each priced at base ÷ working-days, with the exact dates shown on the payslip so HR can fix and regenerate.</li>
           <li>A run is a draft until <strong>finalised</strong>, then <strong>marked paid</strong> (with a paid date and receiving account). A finalised run can be <strong>reopened</strong> back to draft to fix a mistake, then finalised again. Payslips print or save as PDF; the <strong>base salary</strong> leads the particulars, additions follow.</li>
         </ul>

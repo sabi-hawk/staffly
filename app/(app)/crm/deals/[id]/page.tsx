@@ -13,6 +13,7 @@ import { formatPKR } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { DealDevelopers } from "@/components/crm/deal-developers";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
+import { DealPayments, type DealPayment } from "@/components/crm/deal-payments";
 import { RichNoteSection } from "@/components/crm/rich-note-section";
 import { RecordHistory } from "@/components/audit/record-history";
 
@@ -31,6 +32,12 @@ export default async function DealDetail({ params }: { params: { id: string } })
 
   const { data: docRows } = await supabase.from("deal_documents").select("id, label, file_name").eq("deal_id", params.id).order("created_at");
   const docs = (docRows ?? []) as DealDoc[];
+
+  // Deal finance (super-admin only, per deal_payments RLS): the ledger of receipts by billing month.
+  const isSuper = me.role === "super_admin";
+  const payments = isSuper
+    ? ((await supabase.from("deal_payments").select("id, amount, received_on, billing_month, note, created_at").eq("deal_id", params.id).order("billing_month", { ascending: false }).order("received_on", { ascending: false })).data ?? [])
+    : [];
 
   const { data: devRows } = await supabase
     .from("deal_developers").select("developer_id, role, dev:profiles!deal_developers_developer_id_fkey(full_name)")
@@ -66,6 +73,16 @@ export default async function DealDetail({ params }: { params: { id: string } })
           </dl>
         </CardContent>
       </Card>
+
+      {isSuper && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Payments received</CardTitle>
+            <p className="text-caption text-text-secondary">Log each payment from this client against the month it counts toward. Totals per month feed the assigned BD&apos;s commission.</p>
+          </CardHeader>
+          <CardContent><DealPayments dealId={d.id} payments={payments as DealPayment[]} /></CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle>Assigned developers</CardTitle></CardHeader>

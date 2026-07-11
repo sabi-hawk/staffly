@@ -572,3 +572,23 @@ Still open (planned, awaiting owner confirm): **BD deal-commission** compensatio
 %/one-off; payslip shows the BD only their commission amount, admin sees the full breakdown) and
 **deal finance** (log a deal's incoming payments — weekly/bi-monthly/monthly/one-off — and total them
 per period so commission computes off actual receipts). See the plan discussed in chat.
+
+## 2026-07-12 — Deal finance ledger + BD deal commissions (owner)
+Owner wants BDs paid a commission on the deals they land, computed off the actual money received.
+Built two connected pieces (migration `0055`):
+1. **Deal payments ledger** (`deal_payments`, super-admin only) — on the deal detail page, log each
+   receipt with its **receiving date**, the **billing month** it counts toward (can differ, e.g. money
+   arrives 2 Aug but belongs to July), the **PKR amount** that landed, and a note (original currency,
+   e.g. "$2,000 via Wise"). Totals shown per billing month. Handles any cadence (weekly/monthly/one-off)
+   with no frequency setting — you just log what arrives.
+2. **BD deal commissions** (`deal_commissions`, compensation.manage) — on a BD's employee page, tie the
+   BD to a deal with either a **% of receipts** or a **fixed one-off**. When payroll generates for a
+   period, it adds a payslip line = rate × the deal's receipts billed to that period (or the fixed
+   amount). The draft re-totals every time a receipt is logged; Finalise locks it as that month's slip.
+   **Privacy:** the BD-facing line shows only "Commission — {Company}: amount"; the admin payslip also
+   shows the rate + total received (`payslip_components.is_commission` flags the line so a future
+   BD-facing payslip hides the breakdown). Currency: PKR-only (owner's choice; original in the note).
+
+Hardening: the payslip line insert now throws on error (was silently swallowed — this masked a
+not-null issue where deduction lines lacked the new `is_commission` field; PostgREST bulk insert nulls
+absent keys rather than applying the column default).
