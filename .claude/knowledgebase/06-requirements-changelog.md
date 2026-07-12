@@ -603,3 +603,14 @@ alongside the auth user. Credentials card now shows a clear "Not stored — use 
 scripts on prod** (`APP_ENV=production npm run create:admins|create:team|create:partners`) to backfill;
 the `pw()` defaults equal the originally-assigned passwords, so this is a no-op for anyone who hasn't
 changed theirs. Ask anyone who already changed their password to use Edit instead.
+
+## 2026-07-12 — Payroll line actions: loading states + "Add line"→"Add" (owner)
+On a payslip's expanded row, add/remove line (and finalise/mark-paid) did a fetch + full server
+refresh (~2s) with NO feedback, so it looked frozen and the owner clicked repeatedly. Fixed: the
+mutations now show a spinner and stay disabled through the whole operation. Root technique: handlers
+return success and the row calls `router.refresh()` inside `useTransition`, so `isPending` keeps the
+loader on until the fresh server data lands (not just until the fetch returns). Per-action loaders:
+Finalise/Reopen/Mark-paid, the add-line button, and each line's trash icon (spinner on the row being
+removed). Renamed "Add line" → "Add"; the Add button is now disabled until Label+Amount are filled.
+Also added the same remove-button spinners to the compensation editor, deal payments ledger, and deal
+commissions editor. No business-rule change.

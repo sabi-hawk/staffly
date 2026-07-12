@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
@@ -42,6 +42,7 @@ export function DealCommissionEditor({
   const [fixed, setFixed] = useState("");
   const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -65,8 +66,10 @@ export function DealCommissionEditor({
   }
 
   async function remove(id: string) {
+    setRemovingId(id);
     const supabase = createClient();
     const { error } = await supabase.from("deal_commissions").delete().eq("id", id);
+    setRemovingId(null);
     if (error) return toast.error(error.message);
     toast.success("Removed");
     router.refresh();
@@ -87,7 +90,9 @@ export function DealCommissionEditor({
               </div>
               <p className="text-caption text-text-secondary">Deal: {dealName(c)}</p>
             </div>
-            <button onClick={() => remove(c.id)} className="text-text-secondary hover:text-danger" aria-label="Remove"><Trash2 className="size-4" /></button>
+            <button onClick={() => remove(c.id)} disabled={removingId === c.id} className="text-text-secondary hover:text-danger disabled:opacity-40" aria-label="Remove">
+              {removingId === c.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            </button>
           </div>
         ))}
       </div>

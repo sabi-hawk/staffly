@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FloatInput } from "@/components/ui/field";
@@ -39,6 +39,7 @@ export function CompensationEditor({
   // Show an empty field (not "0") so typing a value never leaves a leading zero, e.g. "020000".
   const [base, setBase] = useState(baseSalary ? String(baseSalary) : "");
   const [savingBase, setSavingBase] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   async function saveBase() {
     setSavingBase(true);
@@ -76,8 +77,10 @@ export function CompensationEditor({
   }
 
   async function remove(id: string) {
+    setRemovingId(id);
     const supabase = createClient();
     const { error } = await supabase.from("compensation_components").delete().eq("id", id);
+    setRemovingId(null);
     if (error) return toast.error(error.message);
     toast.success("Removed");
     router.refresh();
@@ -106,7 +109,9 @@ export function CompensationEditor({
             </div>
             <div className="flex items-center gap-3">
               <span className="tabular font-semibold text-text-primary">{formatPKR(c.amount)}{c.recurring && !c.is_fixed_amount ? " (default)" : ""}</span>
-              <button onClick={() => remove(c.id)} className="text-text-secondary hover:text-danger" aria-label="Remove"><Trash2 className="size-4" /></button>
+              <button onClick={() => remove(c.id)} disabled={removingId === c.id} className="text-text-secondary hover:text-danger disabled:opacity-40" aria-label="Remove">
+                {removingId === c.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              </button>
             </div>
           </div>
         ))}

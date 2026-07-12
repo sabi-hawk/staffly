@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
@@ -37,6 +37,7 @@ export function DealPayments({ dealId, payments }: { dealId: string; payments: D
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(String);
 
@@ -69,8 +70,10 @@ export function DealPayments({ dealId, payments }: { dealId: string; payments: D
   }
 
   async function remove(id: string) {
+    setRemovingId(id);
     const supabase = createClient();
     const { error } = await supabase.from("deal_payments").delete().eq("id", id);
+    setRemovingId(null);
     if (error) return toast.error(error.message);
     toast.success("Removed");
     router.refresh();
@@ -106,7 +109,9 @@ export function DealPayments({ dealId, payments }: { dealId: string; payments: D
                 {p.note ? ` · ${p.note}` : ""}
               </p>
             </div>
-            <button onClick={() => remove(p.id)} className="text-text-secondary hover:text-danger" aria-label="Remove"><Trash2 className="size-4" /></button>
+            <button onClick={() => remove(p.id)} disabled={removingId === p.id} className="text-text-secondary hover:text-danger disabled:opacity-40" aria-label="Remove">
+              {removingId === p.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            </button>
           </div>
         ))}
       </div>
