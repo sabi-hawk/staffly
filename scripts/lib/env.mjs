@@ -40,11 +40,14 @@ const CONN_VARS = [
   "SUPABASE_DB_URL",
 ];
 
-/** Resolve APP_ENV → copy the DEV_/PROD_ set into the plain names. Returns "development" | "production". */
+/** Resolve APP_ENV → copy the DEV_/PROD_/NEWPROD_ set into the plain names.
+ * `newprod` is a transient slot used only during a prod-DB migration (stand up + verify a new Supabase
+ * project via `APP_ENV=newprod npm run db:migrate` without touching the live PROD_ keys). After cutover,
+ * rename NEWPROD_* → PROD_* and this branch is simply unused. Returns "development"|"production"|"newprod". */
 export function resolveEnv() {
-  const appEnv = String(process.env.APP_ENV || "development").toLowerCase() === "production"
-    ? "production" : "development";
-  const prefix = appEnv === "production" ? "PROD_" : "DEV_";
+  const raw = String(process.env.APP_ENV || "development").toLowerCase();
+  const appEnv = raw === "production" ? "production" : raw === "newprod" ? "newprod" : "development";
+  const prefix = appEnv === "production" ? "PROD_" : appEnv === "newprod" ? "NEWPROD_" : "DEV_";
   for (const name of CONN_VARS) {
     const picked = process.env[prefix + name];
     if (picked) process.env[name] = picked; // the selected set wins over any plain value
