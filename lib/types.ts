@@ -1,7 +1,7 @@
 // Hand-written DB types (subset) matching supabase/migrations. snake_case to mirror SQL.
 
 export type UserRole = "employee" | "admin" | "super_admin";
-export type EmploymentType = "onsite" | "remote";
+export type EmploymentType = "onsite" | "remote" | "hybrid";
 export type EmployeeStatus = "active" | "inactive";
 export type AttendanceStatus = "present" | "late" | "half_day" | "absent" | "on_leave";
 export type LeaveType = "annual" | "casual" | "unpaid";

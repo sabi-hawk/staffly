@@ -15,7 +15,7 @@ const FIELDS: { key: string; label: string; hint: string; type?: string; options
   { key: "gender", label: "Gender", hint: "Optional; shown on the employee profile.", type: "select", options: ["", "male", "female"] },
   { key: "position", label: "Designation", hint: "Job title, e.g. Software Engineer." },
   { key: "department", label: "Department", hint: "The team the employee belongs to." },
-  { key: "employment_type", label: "Work type", hint: "Whether the employee works onsite or remotely.", type: "select", options: ["onsite", "remote"] },
+  { key: "employment_type", label: "Work type", hint: "Whether the employee works onsite, remotely, or a mix (hybrid).", type: "select", options: ["onsite", "remote", "hybrid"] },
   { key: "contract_type", label: "Contract", hint: "Probation staff follow reduced leave rules until confirmed permanent.", type: "select", options: ["permanent", "probation"] },
   { key: "joining_date", label: "Joining date", hint: "First working day. Drives leave accrual and payroll.", type: "date" },
   { key: "base_salary", label: "Base salary (PKR)", hint: "Monthly base pay in PKR. Enter 0 for commission-only staff.", type: "number" },
@@ -53,9 +53,8 @@ export function AddEmployeeForm() {
             hint={f.hint}
             value={form[f.key] ?? ""}
             onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-            className="capitalize"
           >
-            {f.options!.map((o) => <option key={o} value={o}>{o || "Not set"}</option>)}
+            {f.options!.map((o) => <option key={o} value={o}>{o ? o.charAt(0).toUpperCase() + o.slice(1) : "Not set"}</option>)}
           </FloatSelect>
         ) : f.type === "date" ? (
           <DatePicker

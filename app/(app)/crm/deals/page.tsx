@@ -14,7 +14,7 @@ import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone } from "@/lib/crm/constants";
-import { formatPKR } from "@/lib/utils";
+import { formatPKR, formatCode } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string } }) {
@@ -25,7 +25,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, name, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
+    .select("id, deal_code, name, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.q) query = query.ilike("designation", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
@@ -53,11 +53,12 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
         >
         <Table>
           <THead>
-            <TR><TH>Company</TH><TH>Designation</TH><TH>Profile</TH><TH>Working dev</TH><TH>Salary</TH><TH>Joining</TH><TH>Status</TH><TH></TH></TR>
+            <TR><TH>Code</TH><TH>Company</TH><TH>Designation</TH><TH>Profile</TH><TH>Working dev</TH><TH>Salary</TH><TH>Joining</TH><TH>Status</TH><TH></TH></TR>
           </THead>
           <TBody>
             {list.map((d) => (
               <TR key={d.id}>
+                <TD className="tabular text-text-secondary">{formatCode(d.deal_code)}</TD>
                 <TD className="font-medium"><Link href={`/crm/deals/${d.id}`} className="text-text-primary hover:text-brand-primary">{d.name || d.lead?.company || "—"}</Link></TD>
                 <TD>{d.designation ?? "—"}</TD>
                 <TD>{d.profile?.name ?? "—"}</TD>
@@ -68,7 +69,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
                 <TD className="text-right"><Link href={`/crm/deals/${d.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
               </TR>
             ))}
-            {list.length === 0 && <TR><TD colSpan={8} className="py-6 text-center text-text-secondary">No deals yet.</TD></TR>}
+            {list.length === 0 && <TR><TD colSpan={9} className="py-6 text-center text-text-secondary">No deals yet.</TD></TR>}
           </TBody>
         </Table>
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />

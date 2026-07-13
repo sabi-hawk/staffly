@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, developerOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, developerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DealForm } from "@/components/crm/deal-form";
 
@@ -13,8 +13,8 @@ export default async function NewDealPage({ searchParams }: { searchParams: { le
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.dealsManage)) redirect("/dashboard");
   const supabase = createClient();
-  const [leads, profiles, developers, accounts, methods] = await Promise.all([
-    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase),
+  const [leads, profiles, developers, bds, accounts, methods] = await Promise.all([
+    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), bdOptions(supabase),
     accountOptions(supabase), methodOptions(supabase),
   ]);
 
@@ -33,7 +33,7 @@ export default async function NewDealPage({ searchParams }: { searchParams: { le
       <Card>
         <CardHeader><CardTitle>New deal</CardTitle></CardHeader>
         <CardContent>
-          <DealForm leads={leads} profiles={profiles} developers={developers} accounts={accounts} methods={methods} initial={initial} />
+          <DealForm leads={leads} profiles={profiles} developers={developers} bds={bds} accounts={accounts} methods={methods} initial={initial} />
         </CardContent>
       </Card>
     </div>

@@ -5,7 +5,10 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { Profile } from "@/lib/types";
+
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 type Field = { key: keyof Profile; label: string; type?: string; options?: string[]; hint: string };
 
@@ -20,7 +23,7 @@ const CORE: Field[] = [
   { key: "joining_date", label: "Joining date", type: "date", hint: "The date the employee started at the company." },
   { key: "position", label: "Designation", hint: "The employee's job title or designation." },
   { key: "department", label: "Department", hint: "The department or team this employee belongs to." },
-  { key: "employment_type", label: "Work type", type: "select", options: ["onsite", "remote"], hint: "Whether the employee works onsite or remotely." },
+  { key: "employment_type", label: "Work type", type: "select", options: ["onsite", "remote", "hybrid"], hint: "Whether the employee works onsite, remotely, or a mix (hybrid)." },
   { key: "contract_type", label: "Contract", type: "select", options: ["permanent", "probation"], hint: "Whether the employee is permanent or still on probation." },
   { key: "status", label: "Status", type: "select", options: ["active", "inactive"], hint: "Active employees can use the portal; inactive ones are blocked from signing in." },
 ];
@@ -57,12 +60,20 @@ export function EmployeeEditor({ profile }: { profile: Profile }) {
             hint={f.hint}
             value={form[f.key as string]}
             onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-            className="capitalize"
           >
             {f.options!.map((o) => (
-              <option key={o} value={o}>{o || "Not set"}</option>
+              <option key={o} value={o}>{o ? cap(o) : "Not set"}</option>
             ))}
           </FloatSelect>
+        ) : f.type === "date" ? (
+          <DatePicker
+            key={String(f.key)}
+            id={`emp-${String(f.key)}`}
+            label={f.label}
+            hint={f.hint}
+            value={form[f.key as string]}
+            onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))}
+          />
         ) : (
           <FloatInput
             key={String(f.key)}

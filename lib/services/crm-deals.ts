@@ -13,8 +13,8 @@ function pick(input: Record<string, unknown>, fields: string[]) {
 }
 
 const DEAL_FIELDS = [
-  "name", "lead_id", "designation", "joining_date", "dev_profile_id", "working_developer", "salary",
-  "receiving_account_id", "payment_method_id", "profile_dob", "status", "notes",
+  "name", "lead_id", "designation", "joining_date", "dev_profile_id", "working_developer", "closer_id",
+  "owner_bd_id", "salary", "receiving_account_id", "payment_method_id", "profile_dob", "status", "notes",
 ];
 const ACCOUNT_FIELDS = ["holder_name", "bank_name", "account_number", "notes", "is_active"];
 const METHOD_FIELDS = ["name", "sort_order", "is_active"];
@@ -31,7 +31,7 @@ async function upd(supabase: SupabaseClient, table: string, id: string, row: Rec
 }
 
 export async function createDeal(supabase: SupabaseClient, input: Record<string, unknown>) {
-  if (!input.lead_id) throw new Error("Select the lead this deal came from");
+  // A lead is optional — a deal can exist without a prior CRM lead (e.g. deals predating the portal).
   return ins(supabase, "deals", pick(input, DEAL_FIELDS));
 }
 export async function updateDeal(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {

@@ -14,6 +14,7 @@ export function DealForm({
   leads,
   profiles,
   developers,
+  bds = [],
   accounts,
   methods,
   initial,
@@ -22,6 +23,7 @@ export function DealForm({
   leads: Opt[];
   profiles: Opt[];
   developers: Opt[];
+  bds?: Opt[];
   accounts: Opt[];
   methods: Opt[];
   initial?: Partial<Record<string, string | null>>;
@@ -32,6 +34,8 @@ export function DealForm({
     lead_id: initial?.lead_id ?? "",
     dev_profile_id: initial?.dev_profile_id ?? "",
     working_developer: initial?.working_developer ?? "",
+    closer_id: initial?.closer_id ?? "",
+    owner_bd_id: initial?.owner_bd_id ?? "",
     designation: initial?.designation ?? "",
     joining_date: initial?.joining_date ?? "",
     salary: initial?.salary ?? "",
@@ -70,14 +74,16 @@ export function DealForm({
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <FloatInput
         id="deal-name"
-        label="Deal name"
-        hint="A recognisable name for this deal, e.g. Acme Senior FS. Shown in deal lists and reports."
+        label="Company name"
+        hint="The client company for this deal. A company can have several deals (each gets its own code)."
         value={form.name}
         onChange={(e) => set("name", e.target.value)}
       />
-      {sel("lead_id", "Lead", leads, "The CRM lead this deal was closed from. Links the deal back to its pipeline history.")}
+      {sel("closer_id", "Closer", developers, "Who closed this deal. Required in spirit — always record who landed it.")}
+      {sel("owner_bd_id", "BD owner", bds, "The BD who owns this deal (optional).")}
+      {sel("lead_id", "Lead (optional)", leads, "The CRM lead this deal came from, if any. Deals can exist without a lead.")}
       {sel("dev_profile_id", "Selected profile", profiles, "The marketing profile the client hired. Kept for reference in client-facing conversations.")}
-      {sel("working_developer", "Working developer", developers, "The employee actually doing the work, which may differ from the profile presented to the client.")}
+      {sel("working_developer", "Working developer (optional)", developers, "The employee actually doing the work, which may differ from the closer or the profile presented.")}
       <FloatInput
         id="deal-designation"
         label="Designation"
@@ -113,11 +119,10 @@ export function DealForm({
         id="deal-status"
         label="Status"
         hint="Active means the engagement is running. Ended or cancelled deals stay here for history."
-        className="capitalize"
         value={form.status}
         onChange={(e) => set("status", e.target.value)}
       >
-        {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
       </FloatSelect>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save deal" : "Create deal"}</Button>
