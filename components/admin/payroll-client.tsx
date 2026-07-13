@@ -12,6 +12,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatPKR, formatCode } from "@/lib/utils";
+import { monthBounds, MONTH_NAMES } from "@/lib/time";
 
 type Line = { id: string; label: string; amount: number; kind: string; description: string | null };
 
@@ -22,20 +23,26 @@ export function PayrollClient({
   linesByRun,
   employees,
   compsByEmp = {},
-  defaultFrom,
-  defaultTo,
+  defaultYear,
+  defaultMonth,
 }: {
   initialRuns: any[];
   linesByRun: Record<string, Line[]>;
   employees: { id: string; full_name: string; employee_code: string | null }[];
   compsByEmp?: Record<string, SavedComp[]>;
-  defaultFrom: string;
-  defaultTo: string;
+  defaultYear: number;
+  defaultMonth: number; // 1-12
 }) {
   const router = useRouter();
-  const [from, setFrom] = useState(defaultFrom);
-  const [to, setTo] = useState(defaultTo);
+  // Month-first: pick a month → the period is always the 1st to the last day. Custom range is the
+  // advanced escape hatch (mid-month joiner). Defaults to the current company month.
+  const [custom, setCustom] = useState(false);
+  const [month, setMonth] = useState(defaultMonth);
+  const [year, setYear] = useState(defaultYear);
+  const [from, setFrom] = useState(monthBounds(defaultYear, defaultMonth).from);
+  const [to, setTo] = useState(monthBounds(defaultYear, defaultMonth).to);
   const [busy, setBusy] = useState(false);
+  const yearOptions = [defaultYear - 1, defaultYear, defaultYear + 1];
   const [empFilter, setEmpFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -46,16 +53,23 @@ export function PayrollClient({
   const names = Object.fromEntries(employees.map((e) => [e.id, e]));
 
   async function generate() {
+    const period = custom ? { from, to } : monthBounds(year, month);
     setBusy(true);
     const res = await fetch("/api/payroll/generate", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ from, to }),
+      body: JSON.stringify(period),
     });
     const json = await res.json();
     setBusy(false);
     if (!res.ok) return toast.error(json.error ?? "Failed");
     toast.success(`Generated ${json.runs.length} run(s)`);
     refresh();
+  }
+
+  async function deleteRun(id: string): Promise<boolean> {
+    const res = await fetch(`/api/payroll/${id}`, { method: "DELETE" });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Delete failed"); return false; }
+    toast.success("Run deleted"); return true;
   }
 
   // Mutations return success; the calling RunRow toggles its own loader and refreshes via the transition.
@@ -101,14 +115,39 @@ export function PayrollClient({
       <Card>
         <CardHeader><CardTitle>Generate payroll</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-end gap-3">
-            <DatePicker id="payroll-from" label="From" hint="Start of the payroll period." value={from} onChange={setFrom} className="w-40" />
-            <DatePicker id="payroll-to" label="To" hint="End of the payroll period." value={to} onChange={setTo} className="w-40" />
-            <Button onClick={generate} disabled={busy || isPending}>
-              {(busy || isPending) && <Loader2 className="size-4 animate-spin" />}
-              {busy ? "Generating…" : "Generate / refresh drafts"}
-            </Button>
-          </div>
+          {!custom ? (
+            <div className="flex flex-wrap items-end gap-3">
+              <FloatSelect label="Month" hint="Generates the 1st to the last day of this month for every employee with a salary." value={String(month)} onChange={(e) => setMonth(Number(e.target.value))} wrapClassName="w-44">
+                {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </FloatSelect>
+              <FloatSelect label="Year" value={String(year)} onChange={(e) => setYear(Number(e.target.value))} wrapClassName="w-28">
+                {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+              </FloatSelect>
+              <Button onClick={generate} disabled={busy || isPending}>
+                {(busy || isPending) && <Loader2 className="size-4 animate-spin" />}
+                {busy ? "Generating…" : `Generate ${MONTH_NAMES[month - 1]} ${year}`}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-end gap-3">
+              <DatePicker id="payroll-from" label="From" hint="Start of the custom period, e.g. a mid-month joiner's first day." value={from} onChange={setFrom} className="w-40" />
+              <DatePicker id="payroll-to" label="To" hint="End of the custom period." value={to} onChange={setTo} className="w-40" />
+              <Button onClick={generate} disabled={busy || isPending}>
+                {(busy || isPending) && <Loader2 className="size-4 animate-spin" />}
+                {busy ? "Generating…" : "Generate range"}
+              </Button>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { if (!custom) { const mb = monthBounds(year, month); setFrom(mb.from); setTo(mb.to); } setCustom((c) => !c); }}
+            className="mt-3 text-caption font-medium text-brand-primary hover:underline"
+          >
+            {custom ? "← Back to monthly" : "Use a custom date range (mid-month joiner, etc.)"}
+          </button>
+          <p className="mt-2 text-caption text-text-secondary">
+            Safe to repeat: Generate refreshes each employee&apos;s <strong>draft</strong> for the period and never touches a finalised one. Everyone runs the 1st to the last day of the month unless you pick a custom range.
+          </p>
         </CardContent>
       </Card>
 
@@ -143,7 +182,7 @@ export function PayrollClient({
                     refreshing={isPending}
                     onToggle={() => setExpanded(open ? null : r.id)}
                     onFinalise={() => finalise(r.id)} onReopen={() => reopen(r.id)} onMarkPaid={markPaid}
-                    onAddLine={addLine} onRemoveLine={removeLine} onRefresh={refresh}
+                    onAddLine={addLine} onRemoveLine={removeLine} onDelete={deleteRun} onRefresh={refresh}
                   />
                 );
               })}
@@ -156,11 +195,12 @@ export function PayrollClient({
   );
 }
 
-function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, onFinalise, onReopen, onMarkPaid, onAddLine, onRemoveLine, onRefresh }: any) {
+function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, onFinalise, onReopen, onMarkPaid, onAddLine, onRemoveLine, onDelete, onRefresh }: any) {
   const [paidAt, setPaidAt] = useState("");
   const [account, setAccount] = useState(emp?.bank_account_number ? `${emp?.bank_name ?? ""} ${emp.bank_account_number}`.trim() : "");
   const [showPay, setShowPay] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [nl, setNl] = useState({ label: "", amount: "", kind: "addition", description: "" });
   // per-action loaders so a click gives immediate feedback through the fetch AND the server refresh
   const [acting, setActing] = useState(false);        // finalise / reopen / mark paid
@@ -182,6 +222,7 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
     setRemovingId(lineId); const ok = await onRemoveLine(run.id, lineId); setRemovingId(null);
     if (ok) onRefresh();
   }
+  async function handleDelete() { setActing(true); const ok = await onDelete(run.id); setActing(false); if (ok) onRefresh(); }
 
   // occasional (non-recurring) + variable categories are the ones worth quick-adding to a run
   const pickable: SavedComp[] = (savedComps as SavedComp[]).filter((c) => !c.recurring || !c.is_fixed_amount);
@@ -216,6 +257,11 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
               ? <Button size="sm" variant="secondary" onClick={handleFinalise} disabled={rowBusy}>{acting ? <Loader2 className="size-3.5 animate-spin" /> : null} Finalise</Button>
               : <Button size="sm" variant="ghost" onClick={() => setConfirmReopen(true)} disabled={rowBusy} title="Reopen for editing"><LockOpen className="size-3.5" /> Reopen</Button>}
             <Button size="sm" onClick={() => setShowPay((s) => !s)} disabled={rowBusy}>{run.payment_status === "paid" ? "Edit" : "Mark paid"}</Button>
+            {run.status === "draft" && (
+              <button onClick={() => setConfirmDelete(true)} disabled={rowBusy} title="Delete this draft run" className="inline-flex text-text-secondary hover:text-danger disabled:opacity-40">
+                <Trash2 className="size-4" />
+              </button>
+            )}
           </div>
           <ConfirmDialog
             open={confirmReopen}
@@ -224,6 +270,15 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
             description="It goes back to draft so you can edit its lines or regenerate it. The payment status is kept. Finalise again when you're done."
             confirmLabel="Reopen"
             onConfirm={async () => { await handleReopen(); }}
+          />
+          <ConfirmDialog
+            open={confirmDelete}
+            onOpenChange={setConfirmDelete}
+            title={`Delete this draft run (${run.period_start} → ${run.period_end})?`}
+            description="Removes the draft payroll run and its payslip lines. You can regenerate it anytime. A finalised run can't be deleted (reopen it first)."
+            confirmLabel="Delete run"
+            tone="danger"
+            onConfirm={async () => { await handleDelete(); }}
           />
         </TD>
       </TR>

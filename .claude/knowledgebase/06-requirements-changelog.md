@@ -614,3 +614,18 @@ Finalise/Reopen/Mark-paid, the add-line button, and each line's trash icon (spin
 removed). Renamed "Add line" → "Add"; the Add button is now disabled until Label+Amount are filled.
 Also added the same remove-button spinners to the compensation editor, deal payments ledger, and deal
 commissions editor. No business-rule change.
+
+## 2026-07-13 — Month-based payroll generation + delete draft run + timezone fix (owner)
+Owner saw two runs for the same employee: `2026-06-30→2026-07-30` and `2026-07-01→2026-07-31`.
+Root cause: the default period used `new Date(y,m,1).toISOString().slice(0,10)`, which shifts the 1st/
+last day back one on a +hours runtime (Asia/Karachi), producing an off-month range; generating with the
+buggy default and again with the correct dates made two separate runs (runs are keyed by exact period).
+Fixes:
+1. **Timezone-safe month bounds** — new `monthBounds(year,month)` in `lib/time.ts` builds plain date
+   strings (no toISOString). Proven correct on a +5 runtime (Jul → 07-01/07-31, leap Feb → 02-29).
+2. **Month-first Generate UI** — pick Month + Year (defaults to the current company month) → runs the
+   1st to last day for everyone. "Use a custom date range" toggle stays for mid-month joiners. Removes
+   the confusing raw From/To default that caused the off-month runs.
+3. **Delete a draft run** — trash button on draft rows + `DELETE /api/payroll/[id]` (payroll.manage,
+   danger-guarded, draft-only; finalised must be reopened first; payslip lines cascade). Lets HR clean
+   up stray/wrong-period drafts (like the 06-30 ones).

@@ -11,6 +11,17 @@ export function companyToday(now: Date = new Date()): string {
   }).format(now);
 }
 
+/** Calendar-month bounds as plain company-local date strings. `month` is 1-12. Timezone-safe (never
+ * uses toISOString, which would shift the 1st/last day across the UTC boundary on a +hours runtime). */
+export function monthBounds(year: number, month: number): { from: string; to: string } {
+  const mm = String(month).padStart(2, "0");
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate(); // day 0 of next month = last day of this
+  return { from: `${year}-${mm}-01`, to: `${year}-${mm}-${String(lastDay).padStart(2, "0")}` };
+}
+
+/** Month names for pickers (index 0 = January). */
+export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 /** Karachi-midnight of a YYYY-MM-DD date, as a UTC ISO instant (Karachi has no DST, +05:00). */
 export function karachiMidnightISO(dateStr: string): string {
   return new Date(`${dateStr}T00:00:00+05:00`).toISOString();

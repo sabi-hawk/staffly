@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
+import { companyToday } from "@/lib/time";
 import { PayrollClient } from "@/components/admin/payroll-client";
 
 export default async function PayrollPage() {
@@ -9,9 +10,11 @@ export default async function PayrollPage() {
   if (!hasPermP(profile, PERM.payrollView)) redirect("/admin/dashboard");
 
   const supabase = createClient();
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  // Default to the CURRENT company month (Asia/Karachi) — computed from a plain date string so it never
+  // slips to the previous day on a +hours runtime (the old toISOString().slice bug → 06-30/07-30 runs).
+  const today = companyToday(); // YYYY-MM-DD
+  const defaultYear = Number(today.slice(0, 4));
+  const defaultMonth = Number(today.slice(5, 7)); // 1-12
 
   const { data: runs } = await supabase
     .from("payroll_runs").select("*").order("created_at", { ascending: false });
@@ -52,8 +55,8 @@ export default async function PayrollPage() {
         linesByRun={linesByRun}
         employees={employees}
         compsByEmp={compsByEmp}
-        defaultFrom={from}
-        defaultTo={to}
+        defaultYear={defaultYear}
+        defaultMonth={defaultMonth}
       />
     </div>
   );
