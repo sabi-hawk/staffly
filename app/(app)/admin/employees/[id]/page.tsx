@@ -187,24 +187,13 @@ export default async function EmployeeDetail({
         </div>
       </CollapsibleCard>
 
-      {/* CNIC (super admin only) — kept out of the HR-visible Details below, but surfaced prominently */}
-      {superAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>CNIC</CardTitle>
-            <CardDescription>National identity number. Sensitive PII — visible to the employee and super admin only.</CardDescription>
-          </CardHeader>
-          <CardContent><PrivateEditor employeeId={p.id} data={priv} only="cnic" /></CardContent>
-        </Card>
-      )}
-
-      {/* Editable details */}
+      {/* Editable details — CNIC is rendered inline here for a super admin (saved to employee_private) */}
       <Card>
         <CardHeader>
           <CardTitle>Details</CardTitle>
           <CardDescription>Edit profile details</CardDescription>
         </CardHeader>
-        <CardContent><EmployeeEditor profile={p} /></CardContent>
+        <CardContent><EmployeeEditor profile={p} cnic={priv?.cnic ?? null} canEditPrivate={superAdmin} /></CardContent>
       </Card>
 
       {/* Bank details (super admin only) — CNIC lives in its own card higher up */}

@@ -94,10 +94,12 @@ function Calendar({
         caption_label: "hidden",
         dropdowns: "flex items-center justify-center gap-2",
         dropdown_root: "relative inline-flex items-center",
-        dropdown: "cursor-pointer appearance-none rounded-md border border-border bg-white py-1 pl-2 pr-6 text-sm font-medium text-text-primary hover:border-brand-primary/50 focus:outline-none focus:ring-2 focus:ring-brand-primary",
-        nav: "absolute inset-x-1 top-0 z-10 flex h-8 items-center justify-between",
-        button_previous: "flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
-        button_next: "flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
+        dropdown: "relative z-20 cursor-pointer appearance-none rounded-md border border-border bg-white py-1 pl-2 pr-6 text-sm font-medium text-text-primary hover:border-brand-primary/50 focus:outline-none focus:ring-2 focus:ring-brand-primary",
+        // nav spans the caption row but must NOT eat clicks meant for the centre dropdowns — only the
+        // edge arrows are interactive, so the bar itself is pointer-events-none.
+        nav: "pointer-events-none absolute inset-x-1 top-0 z-10 flex h-8 items-center justify-between",
+        button_previous: "pointer-events-auto flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
+        button_next: "pointer-events-auto flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday: "w-9 pb-1 text-center text-[11px] font-medium uppercase text-text-secondary",
