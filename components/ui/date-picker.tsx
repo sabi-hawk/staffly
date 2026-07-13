@@ -5,7 +5,7 @@
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { DayPicker } from "react-day-picker";
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InfoHint } from "@/components/crm/info-hint";
 
@@ -64,24 +64,37 @@ function Calendar({
     ...(min ? [{ before: parseDate(min)! }] : []),
     ...(max ? [{ after: parseDate(max)! }] : []),
   ];
+  // Month + year DROPDOWNS in the caption so you can jump to a far-off year (a DOB or an old deal
+  // date) instead of clicking the month arrow dozens of times. Range: ~80 years back → 5 years ahead.
+  const now = new Date();
+  const startMonth = new Date(now.getFullYear() - 80, 0);
+  const endMonth = new Date(now.getFullYear() + 5, 11);
   return (
     <DayPicker
       mode="single"
       selected={selected}
       onSelect={onSelect}
       defaultMonth={selected}
+      captionLayout="dropdown"
+      startMonth={startMonth}
+      endMonth={endMonth}
       disabled={disabled.length ? disabled : undefined}
       showOutsideDays
       components={{
         Chevron: ({ orientation }) =>
-          orientation === "left" ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />,
+          orientation === "left" ? <ChevronLeft className="size-4" />
+          : orientation === "down" ? <ChevronDown className="pointer-events-none absolute right-1.5 size-3.5 text-text-secondary" />
+          : <ChevronRight className="size-4" />,
       }}
       classNames={{
         root: "rdp-root p-3",
         months: "relative",
         month: "space-y-3",
         month_caption: "flex h-8 items-center justify-center",
-        caption_label: "text-sm font-semibold text-text-primary",
+        caption_label: "hidden",
+        dropdowns: "flex items-center justify-center gap-2",
+        dropdown_root: "relative inline-flex items-center",
+        dropdown: "cursor-pointer appearance-none rounded-md border border-border bg-white py-1 pl-2 pr-6 text-sm font-medium text-text-primary hover:border-brand-primary/50 focus:outline-none focus:ring-2 focus:ring-brand-primary",
         nav: "absolute inset-x-1 top-0 z-10 flex h-8 items-center justify-between",
         button_previous: "flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
         button_next: "flex size-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface hover:text-text-primary",
