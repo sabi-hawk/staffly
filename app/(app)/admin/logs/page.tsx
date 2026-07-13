@@ -9,6 +9,7 @@ import { parsePaging } from "@/lib/pagination";
 import { karachiMidnightISO } from "@/lib/time";
 import type { AuditLog } from "@/lib/types";
 import { LogsTable } from "@/components/admin/logs-table";
+import { buildAuditNameMap } from "@/lib/audit/name-map";
 import { LogFilters } from "@/components/admin/log-filters";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { LoginPager } from "@/components/admin/login-pager";
@@ -40,6 +41,7 @@ export default async function LogsPage({
   if (searchParams.from) q = q.gte("created_at", karachiMidnightISO(searchParams.from));
   if (searchParams.to) q = q.lte("created_at", new Date(`${searchParams.to}T23:59:59+05:00`).toISOString());
   const { data: logs, count } = await q;
+  const nameMap = await buildAuditNameMap(supabase, (logs ?? []) as any[]);
 
   const superAdmin = hasPermP(viewer, PERM.activityViewFinancial);
   const loginPage = Math.max(1, Number(searchParams.lpage) || 1);
@@ -69,7 +71,7 @@ export default async function LogsPage({
               </div>
             }
           >
-            <LogsTable rows={(logs ?? []) as AuditLog[]} />
+            <LogsTable rows={(logs ?? []) as AuditLog[]} nameMap={nameMap} />
             <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
           </FilterShell>
         </CardContent>

@@ -81,8 +81,9 @@ export function fieldLabel(key: string): string {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Format a raw audit value for display. */
-export function formatValue(key: string, v: unknown): string {
+/** Format a raw audit value for display. `nameMap` (uuid → display name) resolves id references to
+ *  names (owner BD, closer, working developer, profile, etc.); falls back to a short id when unknown. */
+export function formatValue(key: string, v: unknown, nameMap?: Record<string, string>): string {
   if (v === null || v === undefined || v === "") return "—";
   if (/password|secret/i.test(key)) return "••••••";
   if (typeof v === "boolean") return v ? "Yes" : "No";
@@ -91,8 +92,23 @@ export function formatValue(key: string, v: unknown): string {
   if ((key.endsWith("_at") || key === "interview_at") && !isNaN(Date.parse(s))) {
     return new Date(s).toLocaleString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   }
-  if (UUID.test(s)) return `…${s.slice(-6)}`; // an id reference (name resolution is out of scope)
+  if (UUID.test(s)) return nameMap?.[s] ?? `…${s.slice(-6)}`; // resolve id references to a name when known
   return s;
+}
+
+/** Collect UUID-looking values across audit rows' before/after snapshots (to resolve them to names). */
+export function collectUuids(rows: { before?: unknown; after?: unknown }[]): string[] {
+  const set = new Set<string>();
+  for (const r of rows) {
+    for (const snap of [r.before, r.after]) {
+      if (snap && typeof snap === "object") {
+        for (const v of Object.values(snap as Record<string, unknown>)) {
+          if (typeof v === "string" && UUID.test(v)) set.add(v);
+        }
+      }
+    }
+  }
+  return Array.from(set);
 }
 
 const ACTION_VERB: Record<string, string> = {

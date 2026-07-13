@@ -629,3 +629,27 @@ Fixes:
 3. **Delete a draft run** — trash button on draft rows + `DELETE /api/payroll/[id]` (payroll.manage,
    danger-guarded, draft-only; finalised must be reopened first; payslip lines cascade). Lets HR clean
    up stray/wrong-period drafts (like the 06-30 ones).
+
+## 2026-07-13 — Deals/profiles/employee/audit batch (owner)
+A batch of owner-reported issues after starting to enter real data:
+- **DatePicker year navigation** — added month + year dropdowns (was month-arrows only), so a DOB or
+  a deal signed years back is reachable. Applies everywhere; also replaced the employee Details DOB/
+  joining native inputs with the platform DatePicker.
+- **Work type** — added **hybrid** (0056); select option labels now render capitalised (were lowercase).
+- **Deals** (0057): the CRM **lead is now optional**; "Deal name" → "Company name"; added a **Closer**
+  and optional **BD owner** field; each deal gets a unique **4-digit code** (shown on list + detail);
+  working developer clarified optional.
+- **Deal commissions for developers** — the Deal-commissions editor now shows for a BD **or** a
+  developer/deal-assigned developer (base salary + a deal cut).
+- **CRM profiles list** — **Edit + Delete** actions per row (+ `DELETE /api/crm/profiles/[id]`,
+  danger-guarded, cleans document files); profile names are now hover-highlighted links (was a
+  whole-row link with no affordance).
+- **Audit history names** — id references (owner BD, closer, working developer, profile…) now resolve
+  to **names** instead of "…024" (`buildAuditNameMap` + `formatValue(nameMap)`), on the record history
+  and the Activity Log.
+- **Employee page** — CNIC moved to its own prominent card (kept super-admin-only per the PII rule, so
+  it stays out of the HR-visible Details); "Private details" renamed **"Bank details"**; the private
+  editor now uses floating-label fields.
+- **Seed fix** — the canonical seed now clears `attendance_sessions` before `attendance` (sessions have
+  no FK cascade), so stale multi-session rows from prior runs no longer make compute_attendance_hours()
+  read total 0 on the canonical days. Fixes a date-flaky `npm run report`.

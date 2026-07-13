@@ -38,6 +38,8 @@ export default async function EmployeeDetail({
   const { data: p } = await supabase.from("profiles").select("*").eq("id", params.id).single();
   if (!p) return <p className="text-text-secondary">Employee not found.</p>;
   const isBD = (p.department ?? "").toLowerCase().includes("business");
+  // Deal commissions apply to a BD OR to a developer assigned to a deal (basic salary + a deal cut).
+  const canHaveDealCommission = isBD || !!p.is_developer || !!p.is_deal_developer;
 
   const { data: shift } = await supabase
     .from("shifts").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle();
@@ -61,10 +63,10 @@ export default async function EmployeeDetail({
     comps = (await supabase.from("compensation_components").select("*").eq("employee_id", params.id).eq("is_active", true).order("created_at")).data ?? [];
     priv = (await supabase.from("employee_private").select("*").eq("employee_id", params.id).maybeSingle()).data;
     policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("created_at")).data ?? [];
-    if (isBD) {
-      dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, lead:leads(company))").eq("employee_id", params.id).order("created_at")).data ?? [];
-      const dealRows = (await supabase.from("deals").select("id, name, lead:leads(company)").order("created_at", { ascending: false })).data ?? [];
-      dealOpts = dealRows.map((d: any) => ({ id: d.id, label: d.name || d.lead?.company || "Deal" }));
+    if (canHaveDealCommission) {
+      dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, deal_code, lead:leads(company))").eq("employee_id", params.id).order("created_at")).data ?? [];
+      const dealRows = (await supabase.from("deals").select("id, name, deal_code, lead:leads(company)").order("created_at", { ascending: false })).data ?? [];
+      dealOpts = dealRows.map((d: any) => ({ id: d.id, label: `${d.name || d.lead?.company || "Deal"} · #${d.deal_code}` }));
     }
   }
 
@@ -151,10 +153,10 @@ export default async function EmployeeDetail({
         </CollapsibleCard>
       )}
 
-      {/* Deal commissions (BD employees, super admin only) — % of a deal's receipts or a fixed amount,
-          added to the payslip when payroll is generated. */}
-      {superAdmin && isBD && (
-        <CollapsibleCard title="Deal commissions" description="Pay this BD a % of a deal's monthly receipts (or a fixed amount). It lands on their payslip automatically." defaultOpen={false}>
+      {/* Deal commissions (BD or a deal-assigned developer, super admin only) — % of a deal's receipts
+          or a fixed amount, added to the payslip when payroll is generated. */}
+      {superAdmin && canHaveDealCommission && (
+        <CollapsibleCard title="Deal commissions" description="Pay a % of a deal's monthly receipts (or a fixed amount) on top of the base salary. It lands on the payslip automatically." defaultOpen={false}>
           <DealCommissionEditor employeeId={p.id} commissions={dealCommissions} deals={dealOpts} />
         </CollapsibleCard>
       )}
@@ -185,6 +187,17 @@ export default async function EmployeeDetail({
         </div>
       </CollapsibleCard>
 
+      {/* CNIC (super admin only) — kept out of the HR-visible Details below, but surfaced prominently */}
+      {superAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>CNIC</CardTitle>
+            <CardDescription>National identity number. Sensitive PII — visible to the employee and super admin only.</CardDescription>
+          </CardHeader>
+          <CardContent><PrivateEditor employeeId={p.id} data={priv} only="cnic" /></CardContent>
+        </Card>
+      )}
+
       {/* Editable details */}
       <Card>
         <CardHeader>
@@ -194,14 +207,14 @@ export default async function EmployeeDetail({
         <CardContent><EmployeeEditor profile={p} /></CardContent>
       </Card>
 
-      {/* Private PII (super admin only) */}
+      {/* Bank details (super admin only) — CNIC lives in its own card higher up */}
       {superAdmin && (
         <Card>
           <CardHeader>
-            <CardTitle>Private details</CardTitle>
-            <CardDescription>CNIC and bank/account details. Visible to the employee and super admin only.</CardDescription>
+            <CardTitle>Bank details</CardTitle>
+            <CardDescription>Account and IBAN for salary payment. Visible to the employee and super admin only.</CardDescription>
           </CardHeader>
-          <CardContent><PrivateEditor employeeId={p.id} data={priv} /></CardContent>
+          <CardContent><PrivateEditor employeeId={p.id} data={priv} only="bank" /></CardContent>
         </Card>
       )}
     </div>

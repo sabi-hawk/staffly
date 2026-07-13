@@ -29,7 +29,7 @@ const actionTone = (a: string) =>
   a.includes("delete") ? "danger" : a.includes("insert") ? "success" : a.includes("download") ? "brand" : "warning";
 
 // Module-scope row so React keeps identity across parent re-renders (no remount on expand/collapse).
-function AuditRow({ r, expanded, onToggle }: { r: AuditLog; expanded: boolean; onToggle: () => void }) {
+function AuditRow({ r, expanded, onToggle, nameMap }: { r: AuditLog; expanded: boolean; onToggle: () => void; nameMap?: Record<string, string> }) {
   const fields = r.action === "update" ? diffFields(r.before, r.after) : [];
   const snapshot = r.action === "insert" ? r.after : r.action === "delete" ? r.before : null;
   const hasDetail = fields.length > 0 || !!snapshot;
@@ -59,8 +59,8 @@ function AuditRow({ r, expanded, onToggle }: { r: AuditLog; expanded: boolean; o
                   {fields.map((f) => (
                     <tr key={f.key} className="border-t border-border">
                       <td className="py-1 pr-3 font-medium">{fieldLabel(f.key)}</td>
-                      <td className="py-1 pr-3 text-danger">{formatValue(f.key, f.from)}</td>
-                      <td className="py-1 text-success">{formatValue(f.key, f.to)}</td>
+                      <td className="py-1 pr-3 text-danger">{formatValue(f.key, f.from, nameMap)}</td>
+                      <td className="py-1 text-success">{formatValue(f.key, f.to, nameMap)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -69,7 +69,7 @@ function AuditRow({ r, expanded, onToggle }: { r: AuditLog; expanded: boolean; o
             {snapshot && (
               <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-caption sm:grid-cols-3">
                 {snapshotFields(snapshot).map((f) => (
-                  <div key={f.key}><dt className="text-text-secondary">{fieldLabel(f.key)}</dt><dd>{formatValue(f.key, f.value)}</dd></div>
+                  <div key={f.key}><dt className="text-text-secondary">{fieldLabel(f.key)}</dt><dd>{formatValue(f.key, f.value, nameMap)}</dd></div>
                 ))}
               </dl>
             )}
@@ -80,7 +80,7 @@ function AuditRow({ r, expanded, onToggle }: { r: AuditLog; expanded: boolean; o
   );
 }
 
-export function LogsTable({ rows }: { rows: AuditLog[] }) {
+export function LogsTable({ rows, nameMap }: { rows: AuditLog[]; nameMap?: Record<string, string> }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <Table>
@@ -89,7 +89,7 @@ export function LogsTable({ rows }: { rows: AuditLog[] }) {
       </THead>
       <TBody>
         {rows.map((r) => (
-          <AuditRow key={r.id} r={r} expanded={open === r.id} onToggle={() => setOpen(open === r.id ? null : r.id)} />
+          <AuditRow key={r.id} r={r} expanded={open === r.id} onToggle={() => setOpen(open === r.id ? null : r.id)} nameMap={nameMap} />
         ))}
         {rows.length === 0 && <TR><TD colSpan={6} className="py-6 text-center text-text-secondary">No activity yet.</TD></TR>}
       </TBody>

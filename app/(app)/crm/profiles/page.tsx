@@ -8,8 +8,8 @@ import { bdOptions } from "@/lib/crm/options";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { RowLink } from "@/components/ui/row-link";
 import { StatusPill } from "@/components/crm/status-pill";
+import { ProfileRowActions } from "@/components/crm/profile-row-actions";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
@@ -81,16 +81,20 @@ export default async function CrmProfilesPage({
           </THead>
           <TBody>
             {list.map((p) => (
-              <RowLink key={p.id} href={`/crm/profiles/${p.id}`}>
+              <TR key={p.id}>
                 <TD><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
-                <TD><span className="font-medium text-text-primary">{p.name}</span></TD>
+                <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
                 <TD>{p.stack?.name ?? "—"}</TD>
                 <TD>{p.owner?.full_name ?? <span className="text-text-secondary">Unassigned</span>}</TD>
                 <TD className="text-text-secondary">{p.email ?? "—"}</TD>
                 <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
                 <TD><StatusPill status={p.status} /></TD>
-                <TD className="text-right"><ChevronRight className="ml-auto size-4 text-text-secondary" /></TD>
-              </RowLink>
+                <TD>
+                  {canManage
+                    ? <ProfileRowActions profileId={p.id} name={p.name} />
+                    : <Link href={`/crm/profiles/${p.id}`} className="flex justify-end" aria-label="Open"><ChevronRight className="size-4 text-text-secondary" /></Link>}
+                </TD>
+              </TR>
             ))}
             {list.length === 0 && <TR><TD colSpan={8} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
           </TBody>

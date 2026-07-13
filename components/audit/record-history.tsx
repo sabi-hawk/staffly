@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LogsTable } from "@/components/admin/logs-table";
+import { buildAuditNameMap } from "@/lib/audit/name-map";
 import type { AuditLog } from "@/lib/types";
 
 /** Per-record change timeline. RLS scopes visibility (super-admin all; admin/BD-Lead non-financial;
@@ -14,5 +15,6 @@ export async function RecordHistory({ entity, id, limit = 25 }: { entity: string
     .order("created_at", { ascending: false })
     .limit(limit);
   if (!data || data.length === 0) return <p className="text-caption text-text-secondary">No history yet.</p>;
-  return <LogsTable rows={data as unknown as AuditLog[]} />;
+  const nameMap = await buildAuditNameMap(supabase, data as any[]);
+  return <LogsTable rows={data as unknown as AuditLog[]} nameMap={nameMap} />;
 }

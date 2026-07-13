@@ -128,6 +128,10 @@ begin
     select * into shift from shifts s where s.employee_id = emp.id and s.is_active limit 1;
     if shift is null then continue; end if;
     exp := round(extract(epoch from (shift.end_time - shift.start_time))/3600.0, 2);
+    -- clear multi-session rows FIRST (their delete trigger recomputes/creates attendance rows), then
+    -- clear attendance, so we start from a truly clean slate. Otherwise stale sessions from prior runs
+    -- pollute compute_attendance_hours() (canonical days read total 0) or collide on re-insert.
+    delete from attendance_sessions where employee_id = emp.id;
     delete from attendance where employee_id = emp.id;
     for d in 0..89 loop
       wd := current_date - d;
