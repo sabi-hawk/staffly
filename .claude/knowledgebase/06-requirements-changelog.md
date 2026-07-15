@@ -712,3 +712,16 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
 - **Build fix (important):** the combobox had a ternary-as-statement that ESLint errors on
   (`no-unused-expressions`), which fails `next build` — so the previous two Vercel deploys (combobox +
   colour polish) had been failing. Fixed to an if/else; build now green, so this push deploys all pending.
+
+## 2026-07-15 — Loaders everywhere + LinkedIn-banned flag + profiles default Active (owner)
+- **Pagination loader**: page/rows-per-page changes now route through the shared FilterShell transition,
+  so the grid shows the same loading overlay (was silent for ~2s). Non-CRM lists get a local pending
+  spinner on the pagination bar.
+- **Document upload/delete loaders**: the documents panel wraps its router.refresh() in a transition +
+  a loading overlay, so upload/delete/primary/note/history-delete show a loader through the whole
+  operation (was a toast then a silent gap).
+- **Create forms** (profile/deal): keep the button loading through the post-save navigation (no dead gap
+  after the success toast). `loading.tsx` skeletons added for the CRM profile/deal/lead detail routes.
+- **LinkedIn banned** (0062: dev_profiles.linkedin_banned): a checkbox on the profile form, a red marker
+  in the list (independent of status), and a badge on the profile banner. Reason still goes in notes.
+- **CRM profiles list defaults to Active** (mirrors deals).

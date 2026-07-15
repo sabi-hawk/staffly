@@ -30,10 +30,12 @@ export default async function CrmProfilesPage({
   // RLS scopes the rows: admins/BD-Leads see all; a plain BD sees only profiles they own.
   let query = supabase
     .from("dev_profiles")
-    .select("id, profile_no, name, email, mobile, status, stack:dev_stacks(name, color), owner:profiles(full_name, color)", { count: "exact" });
+    .select("id, profile_no, name, email, mobile, status, linkedin_banned, stack:dev_stacks(name, color), owner:profiles(full_name, color)", { count: "exact" });
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.stack) query = query.eq("stack_id", searchParams.stack);
-  if (searchParams.status) query = query.eq("status", searchParams.status);
+  // Default to ACTIVE profiles; "all" is the explicit no-filter sentinel.
+  const statusFilter = searchParams.status ?? "active";
+  if (statusFilter !== "all") query = query.eq("status", statusFilter);
   if (searchParams.q) {
     // a purely numeric search finds the profile by its number (#14), otherwise name/email
     if (/^\d+$/.test(searchParams.q.trim())) query = query.eq("profile_no", Number(searchParams.q.trim()));
@@ -66,7 +68,7 @@ export default async function CrmProfilesPage({
                 filters={[
                   ...(canFilterOwner ? [{ key: "owner", label: "Owner", options: bds.map((b) => ({ value: b.id, label: b.label })) }] : []),
                   { key: "stack", label: "Stack", options: (stacks ?? []).map((s: any) => ({ value: s.id, label: s.name })) },
-                  { key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
+                  { key: "status", label: "Status", defaultValue: "active", options: [{ value: "all", label: "All" }, { value: "active", label: "Active" }, { value: "inactive", label: "Inactive" }] },
                 ]}
                 search={{ key: "q", placeholder: "Search name, email or #number" }}
               />

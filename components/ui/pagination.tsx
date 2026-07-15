@@ -1,8 +1,9 @@
 "use client";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NativeSelect } from "@/components/ui/field";
+import { useFilterTransition } from "@/components/crm/filter-shell";
 import { PAGE_SIZES } from "@/lib/pagination";
 
 export { PAGE_SIZES, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
@@ -17,9 +18,12 @@ export function Pagination({
   page: number;
   pageSize: number;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  // Page/size changes refetch the server component. Route through the shared FilterShell transition so
+  // the SAME loading overlay shows over the grid (was silent for a couple of seconds before). Falls back
+  // to a local transition when not inside a FilterShell.
+  const { nav, pending: isPending } = useFilterTransition();
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   function go(next: Partial<{ page: number; pageSize: number }>) {
@@ -29,14 +33,14 @@ export function Pagination({
       sp.set("pageSize", String(next.pageSize));
       sp.set("page", "1");
     }
-    router.push(`${pathname}?${sp.toString()}`);
+    nav(`${pathname}?${sp.toString()}`);
   }
 
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-caption text-text-secondary">
+    <div className={cn("flex flex-wrap items-center justify-between gap-3 pt-3 text-caption text-text-secondary transition-opacity", isPending && "pointer-events-none opacity-60")}>
       <div className="flex items-center gap-2">
         <span>Rows per page</span>
         <NativeSelect
@@ -48,7 +52,8 @@ export function Pagination({
             <option key={s} value={s}>{s}</option>
           ))}
         </NativeSelect>
-        <span className="tabular">
+        <span className="flex items-center gap-1.5 tabular">
+          {isPending && <Loader2 className="size-3.5 animate-spin text-brand-primary" />}
           {from}–{to} of {total}
         </span>
       </div>

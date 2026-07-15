@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Eye, EyeOff, Copy, KeyRound, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Copy, KeyRound, Loader2, Ban } from "lucide-react";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusPill } from "@/components/crm/status-pill";
 import { ProfileRowActions } from "@/components/crm/profile-row-actions";
@@ -79,7 +79,12 @@ export function ProfilesGrid({ rows, canManage, canSeePasswords }: { rows: any[]
           {rows.map((p) => (
             <TR key={p.id}>
               <TD><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
-              <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
+              <TD>
+                <span className="inline-flex items-center gap-1.5">
+                  {p.linkedin_banned && <span title="LinkedIn banned" className="inline-flex text-danger"><Ban className="size-3.5 shrink-0" aria-label="LinkedIn banned" /></span>}
+                  <Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link>
+                </span>
+              </TD>
               <TD className="text-text-secondary">{p.email ?? "—"}</TD>
               <TD><StackBadge name={p.stack?.name} color={p.stack?.color} /></TD>
               <TD>{p.owner?.full_name ? <ColorChip label={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}</TD>

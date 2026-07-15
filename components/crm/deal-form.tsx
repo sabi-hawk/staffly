@@ -64,9 +64,9 @@ export function DealForm({
       body: JSON.stringify({ ...form, developers: workingDevs }),
     });
     const json = await res.json();
-    setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Failed to save");
+    if (!res.ok) { setBusy(false); return toast.error(json.error ?? "Failed to save"); }
     toast.success(id ? "Deal saved" : "Deal created");
+    // keep the button loading through the navigation (no dead gap after the toast)
     router.push(id ? `/crm/deals/${id}` : `/crm/deals/${json.id}`);
     router.refresh();
   }

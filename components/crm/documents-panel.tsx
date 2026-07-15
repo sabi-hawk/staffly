@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Eye, Star, Trash2, Pencil, X, Loader2 } from "lucide-react";
@@ -124,7 +124,12 @@ export function DocumentsPanel({
   isAdmin: boolean;
 }) {
   const router = useRouter();
+  // router.refresh() re-fetches this section; wrap it in a transition so a loader shows for the WHOLE
+  // operation (fetch + refetch), not just the fetch — uploads/deletes were silent for ~2s before.
+  const [pending, startTransition] = useTransition();
+  const refresh = () => startTransition(() => router.refresh());
   const [busy, setBusy] = useState(false);
+  const [mutating, setMutating] = useState(false); // a row action (delete/primary/note) is in flight
   const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState<"resume" | "cover_letter">("resume");
   const [label, setLabel] = useState("");
@@ -157,16 +162,18 @@ export function DocumentsPanel({
     setNote("");
     setIsPrimary(false);
     setFileKey((k) => k + 1);
-    router.refresh();
+    refresh();
   }
 
   async function act(id: string, body: Record<string, unknown>, ok: string) {
+    setMutating(true);
     const res = await fetch(`/api/crm/documents/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.ok) { toast.success(ok); router.refresh(); }
+    setMutating(false);
+    if (res.ok) { toast.success(ok); refresh(); }
     else { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Failed"); }
   }
   const setPrimary = (id: string) => act(id, { action: "primary" }, "Primary resume set");
@@ -175,16 +182,26 @@ export function DocumentsPanel({
 
   // Admin-only HARD delete from history (removes the storage object too).
   async function hardDelete(id: string) {
+    setMutating(true);
     const res = await fetch(`/api/crm/documents/${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success("Permanently deleted"); router.refresh(); }
+    setMutating(false);
+    if (res.ok) { toast.success("Permanently deleted"); refresh(); }
     else { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Failed"); }
   }
+
+  const loading = busy || mutating || pending;
 
   const resumes = docs.filter((d) => d.doc_type === "resume");
   const covers = docs.filter((d) => d.doc_type === "cover_letter");
 
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-start justify-center rounded-lg bg-white/60 pt-10 backdrop-blur-[1px]">
+          <Loader2 className="size-6 animate-spin text-brand-primary" aria-label="Loading" />
+        </div>
+      )}
+      <div className={loading ? "pointer-events-none opacity-50 transition-opacity" : "transition-opacity"}>
       <div className="space-y-2">
         <div className="text-caption font-medium text-text-secondary">Resumes</div>
         {resumes.length === 0 && <div className="text-caption text-text-secondary">No resumes yet.</div>}
@@ -240,8 +257,8 @@ export function DocumentsPanel({
                 <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} /> Make this the primary resume
               </label>
             ) : <span />}
-            <Button type="submit" size="sm" disabled={busy || !file}>
-              {busy ? <><Loader2 className="size-4 animate-spin" /> Uploading…</> : "Upload"}
+            <Button type="submit" size="sm" disabled={loading || !file}>
+              {busy || pending ? <><Loader2 className="size-4 animate-spin" /> Uploading…</> : "Upload"}
             </Button>
           </div>
         </form>
@@ -271,6 +288,7 @@ export function DocumentsPanel({
           ))}
         </div>
       )}
+      </div>
 
       {viewing && <ViewerModal doc={viewing} onClose={() => setViewing(null)} />}
 

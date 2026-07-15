@@ -84,6 +84,7 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
           email: p.email,
           mobile: p.mobile,
           sim_owner: p.sim_owner,
+          linkedin_banned: p.linkedin_banned,
           dob: p.dob,
           notes: p.notes,
           owner_bd_id: p.owner_bd_id,

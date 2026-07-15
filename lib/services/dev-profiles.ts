@@ -14,13 +14,14 @@ export interface DevProfileInput {
   email?: string | null;
   mobile?: string | null;
   sim_owner?: string | null;
+  linkedin_banned?: boolean;
   dob?: string | null;
   status?: "active" | "inactive";
   notes?: string | null;
 }
 
 const FIELDS: (keyof DevProfileInput)[] = [
-  "name", "stack_id", "owner_bd_id", "email", "mobile", "sim_owner", "dob", "status", "notes",
+  "name", "stack_id", "owner_bd_id", "email", "mobile", "sim_owner", "linkedin_banned", "dob", "status", "notes",
 ];
 
 function clean(input: DevProfileInput) {

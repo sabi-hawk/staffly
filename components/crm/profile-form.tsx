@@ -22,21 +22,22 @@ export function ProfileForm({
   id?: string;
   stacks: Opt[];
   owners: Opt[];
-  initial?: Partial<Record<string, string | null>>;
+  initial?: Partial<Record<string, string | boolean | null>>;
   onSaved?: () => void;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
-    name: initial?.name ?? "",
-    stack: initial?.stack ?? "", // stack NAME (pick from the datalist or type a new one)
-    owner_bd_id: initial?.owner_bd_id ?? "",
-    email: initial?.email ?? "",
-    mobile: initial?.mobile ?? "",
-    sim_owner: initial?.sim_owner ?? "",
-    dob: initial?.dob ?? "",
-    status: initial?.status ?? "active",
-    notes: initial?.notes ?? "",
+    name: (initial?.name as string) ?? "",
+    stack: (initial?.stack as string) ?? "", // stack NAME (pick from the datalist or type a new one)
+    owner_bd_id: (initial?.owner_bd_id as string) ?? "",
+    email: (initial?.email as string) ?? "",
+    mobile: (initial?.mobile as string) ?? "",
+    sim_owner: (initial?.sim_owner as string) ?? "",
+    dob: (initial?.dob as string) ?? "",
+    status: (initial?.status as string) ?? "active",
+    notes: (initial?.notes as string) ?? "",
   });
+  const [linkedinBanned, setLinkedinBanned] = useState<boolean>(!!initial?.linkedin_banned);
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
 
@@ -46,12 +47,13 @@ export function ProfileForm({
     const res = await fetch(id ? `/api/crm/profiles/${id}` : "/api/crm/profiles", {
       method: id ? "PATCH" : "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, linkedin_banned: linkedinBanned }),
     });
     const json = await res.json();
-    setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Failed to save");
+    if (!res.ok) { setBusy(false); return toast.error(json.error ?? "Failed to save"); }
     toast.success(id ? "Profile saved" : "Profile created");
+    // Keep the button in its loading state through the navigation/refresh (the form unmounts on
+    // navigate) so there's no dead gap between the toast and the page actually loading.
     if (onSaved) {
       onSaved();
       router.refresh();
@@ -125,11 +127,17 @@ export function ProfileForm({
       <FloatInput
         id="profile-notes"
         label="Notes"
-        hint="Internal warnings or context for BDs, e.g. LinkedIn banned. Shown only here, never on the profile banner."
+        hint="Internal warnings or context for BDs. Shown only here, never on the profile banner."
         value={form.notes}
         onChange={(e) => set("notes", e.target.value)}
         wrapClassName="sm:col-span-2"
       />
+      <label className="flex items-center gap-2 self-center rounded-md border border-border px-3 py-2 text-sm text-text-primary">
+        <input type="checkbox" checked={linkedinBanned} onChange={(e) => setLinkedinBanned(e.target.checked)} />
+        <span>LinkedIn banned
+          <span className="block text-caption text-text-secondary">Flags a red marker in the list, even while the profile is active.</span>
+        </span>
+      </label>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save profile" : "Create profile"}</Button>
       </div>

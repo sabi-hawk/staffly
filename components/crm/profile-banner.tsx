@@ -3,7 +3,7 @@
 // "Edit profile" card; click Edit on the banner and the fields become editable, like interviews).
 // Internal notes are deliberately NOT shown here; they live in the edit form only.
 import { useState } from "react";
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Ban } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusPill } from "@/components/crm/status-pill";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export function ProfileBanner({
 }: {
   profile: {
     id: string; profile_no: number; name: string; status: string;
-    email: string | null; mobile: string | null; sim_owner?: string | null; dob: string | null; notes: string | null;
+    email: string | null; mobile: string | null; sim_owner?: string | null; linkedin_banned?: boolean | null; dob: string | null; notes: string | null;
     owner_bd_id: string | null; stack_name: string | null;
   };
   stackName: string;
@@ -38,6 +38,11 @@ export function ProfileBanner({
           {profile.name} · {stackName}
         </CardTitle>
         <span className="flex items-center gap-2">
+          {profile.linkedin_banned && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-danger/40 bg-danger/10 px-2 py-0.5 text-[11px] font-medium text-danger">
+              <Ban className="size-3" /> LinkedIn banned
+            </span>
+          )}
           <StatusPill status={profile.status} />
           {canEdit && (
             <Button size="sm" variant="outline" onClick={() => setEditing((e) => !e)} aria-label={editing ? "Cancel editing" : "Edit profile"}>
@@ -59,6 +64,7 @@ export function ProfileBanner({
               email: profile.email,
               mobile: profile.mobile,
               sim_owner: profile.sim_owner,
+              linkedin_banned: profile.linkedin_banned,
               dob: profile.dob,
               status: profile.status,
               notes: profile.notes,
