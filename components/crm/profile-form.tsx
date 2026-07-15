@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { FloatInput, FloatSelect, FloatTextarea } from "@/components/ui/field";
 import { StackField } from "@/components/crm/stack-field";
 import { DatePicker } from "@/components/ui/date-picker";
 import type { Opt } from "@/lib/crm/options";
@@ -124,20 +124,21 @@ export function ProfileForm({
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </FloatSelect>
-      <FloatInput
+      <label className="flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm text-text-primary">
+        <input type="checkbox" checked={linkedinBanned} onChange={(e) => setLinkedinBanned(e.target.checked)} />
+        <span className="flex items-center gap-1.5">LinkedIn banned
+          <span className="text-caption text-text-secondary">(red marker in the list, even if active)</span>
+        </span>
+      </label>
+      <FloatTextarea
         id="profile-notes"
         label="Notes"
         hint="Internal warnings or context for BDs. Shown only here, never on the profile banner."
+        rows={3}
         value={form.notes}
         onChange={(e) => set("notes", e.target.value)}
-        wrapClassName="sm:col-span-2"
+        wrapClassName="sm:col-span-2 lg:col-span-3"
       />
-      <label className="flex items-center gap-2 self-center rounded-md border border-border px-3 py-2 text-sm text-text-primary">
-        <input type="checkbox" checked={linkedinBanned} onChange={(e) => setLinkedinBanned(e.target.checked)} />
-        <span>LinkedIn banned
-          <span className="block text-caption text-text-secondary">Flags a red marker in the list, even while the profile is active.</span>
-        </span>
-      </label>
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save profile" : "Create profile"}</Button>
       </div>
