@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { fileTooLargeMessage, uploadErrorMessage } from "@/lib/upload";
 import { Download, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { FileInput } from "@/components/ui/file-input";
@@ -18,6 +19,8 @@ export function LeadDocuments({ leadId, docs }: { leadId: string; docs: Doc[] })
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   async function upload(f: File) {
+    const tooBig = fileTooLargeMessage(f);
+    if (tooBig) { setFile(null); setFileKey((k) => k + 1); return toast.error(tooBig); }
     setBusy(true);
     const fd = new FormData();
     fd.append("file", f);
@@ -27,8 +30,8 @@ export function LeadDocuments({ leadId, docs }: { leadId: string; docs: Doc[] })
     setBusy(false);
     setFile(null);
     setFileKey((k) => k + 1);
+    if (!res.ok) return toast.error(await uploadErrorMessage(res));
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) return toast.error(json.error ?? "Upload failed");
     if (json.doc) setList((l) => [json.doc, ...l]); // optimistic — show without waiting for a refetch
     toast.success("Resume attached");
     router.refresh();

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { FileInput } from "@/components/ui/file-input";
 import { FloatSelect } from "@/components/ui/field";
+import { fileTooLargeMessage, uploadErrorMessage } from "@/lib/upload";
 
 export type AssessmentDoc = {
   id: string;
@@ -26,14 +27,15 @@ export function AssessmentDocs({ assessmentId, docs }: { assessmentId: string; d
   async function upload(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return toast.error("Choose a file");
+    const tooBig = fileTooLargeMessage(file);
+    if (tooBig) return toast.error(tooBig);
     setBusy(true);
     const fd = new FormData();
     fd.set("file", file);
     fd.set("doc_type", docType);
     const res = await fetch(`/api/crm/assessments/${assessmentId}/documents`, { method: "POST", body: fd });
-    const json = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Upload failed");
+    if (!res.ok) return toast.error(await uploadErrorMessage(res));
     toast.success("Uploaded");
     setFile(null);
     setFileKey((k) => k + 1);

@@ -41,7 +41,7 @@ export function Combobox({
   function toggle(v: string) {
     if (multiple) {
       const set = new Set(selected);
-      set.has(v) ? set.delete(v) : set.add(v);
+      if (set.has(v)) set.delete(v); else set.add(v);
       onChange(Array.from(set));
     } else {
       onChange(v === value ? "" : v);

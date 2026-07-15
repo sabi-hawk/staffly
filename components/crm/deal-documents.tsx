@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput } from "@/components/ui/field";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { FileInput } from "@/components/ui/file-input";
+import { fileTooLargeMessage, uploadErrorMessage } from "@/lib/upload";
 
 export type DealDoc = { id: string; label: string | null; file_name: string | null };
 
@@ -21,14 +22,15 @@ export function DealDocuments({ dealId, docs }: { dealId: string; docs: DealDoc[
   async function upload(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return toast.error("Choose a file");
+    const tooBig = fileTooLargeMessage(file);
+    if (tooBig) return toast.error(tooBig);
     setBusy(true);
     const fd = new FormData();
     fd.set("file", file);
     fd.set("label", label);
     const res = await fetch(`/api/crm/deals/${dealId}/documents`, { method: "POST", body: fd });
-    const json = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Upload failed");
+    if (!res.ok) return toast.error(await uploadErrorMessage(res));
     toast.success("Uploaded");
     setFile(null);
     setLabel("");

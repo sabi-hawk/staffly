@@ -703,3 +703,12 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
   name (+ dot) so all deals on the same profile read at a glance.
 - **Closer/developer colours** (0061): developers now get a colour too, shown on the closer + working-dev
   chips and the closer/dev comboboxes.
+
+## 2026-07-15 — Upload size error message + build fix (owner)
+- Uploads (resumes/docs) go through a Next.js route = a Vercel function with a ~4.5 MB body cap; an
+  oversized file is rejected by the PLATFORM (413, non-JSON), so the toast was a generic "Upload failed".
+  Added a client-side size check (max 4 MB) with a clear message + explicit 413 handling, across the
+  profile/deal/lead/assessment document uploaders (`lib/upload.ts`). A "max 4 MB" hint on the form.
+- **Build fix (important):** the combobox had a ternary-as-statement that ESLint errors on
+  (`no-unused-expressions`), which fails `next build` — so the previous two Vercel deploys (combobox +
+  colour polish) had been failing. Fixed to an if/else; build now green, so this push deploys all pending.

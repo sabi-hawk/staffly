@@ -8,6 +8,7 @@ import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
 import { FileInput } from "@/components/ui/file-input";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { formatCrmDate } from "@/lib/utils";
+import { fileTooLargeMessage, uploadErrorMessage, MAX_UPLOAD_MB } from "@/lib/upload";
 
 export type Doc = {
   id: string;
@@ -138,6 +139,8 @@ export function DocumentsPanel({
   async function upload(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return toast.error("Choose a file");
+    const tooBig = fileTooLargeMessage(file);
+    if (tooBig) return toast.error(tooBig);
     setBusy(true);
     const fd = new FormData();
     fd.set("file", file);
@@ -146,9 +149,8 @@ export function DocumentsPanel({
     fd.set("note", note);
     fd.set("is_primary", String(isPrimary));
     const res = await fetch(`/api/crm/profiles/${profileId}/documents`, { method: "POST", body: fd });
-    const json = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Upload failed");
+    if (!res.ok) return toast.error(await uploadErrorMessage(res));
     toast.success("Uploaded");
     setFile(null);
     setLabel("");
@@ -205,6 +207,7 @@ export function DocumentsPanel({
             accept=".pdf,.doc,.docx,image/png,image/jpeg,image/webp"
             className="h-11"
           />
+          <p className="text-caption text-text-secondary">PDF, DOC/DOCX or image · max {MAX_UPLOAD_MB} MB.</p>
           <div className="grid gap-3 sm:grid-cols-3">
             <FloatSelect
               id="crm-doc-type"
