@@ -693,3 +693,13 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
   the multi list (chips). Removed the now-redundant "Assigned developers" section (the form handles it;
   closer is its own field). Options (`crmProfileOptions`/`developerOptions`/`bdOptions`) now carry
   sublabel + colour.
+
+## 2026-07-15 — CRM colour polish + deals default + profile/closer colours (owner)
+- **Deals list defaults to Active** (status filter defaultValue + an explicit "all" sentinel).
+- **Sleeker colour chip** (`ColorChip`: rounded-full pill, 11px, soft tint) — used for stack, owner BD,
+  closer, and working-dev chips across the grids + deal detail.
+- **Fresher modern palette** (0061, replaces the 0059 set) re-assigned to stacks + BDs.
+- **Profile colours** (0061: dev_profiles.color, trigger + backfill): the deals grid tints the profile
+  name (+ dot) so all deals on the same profile read at a glance.
+- **Closer/developer colours** (0061): developers now get a colour too, shown on the closer + working-dev
+  chips and the closer/dev comboboxes.

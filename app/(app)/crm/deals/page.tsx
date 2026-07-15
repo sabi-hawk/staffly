@@ -22,8 +22,10 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, salary, currency, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
-  if (searchParams.status) query = query.eq("status", searchParams.status);
+    .select("id, deal_code, name, salary, currency, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
+  // Default to ACTIVE deals; "all" is the explicit no-filter sentinel.
+  const statusFilter = searchParams.status ?? "active";
+  if (statusFilter !== "all") query = query.eq("status", statusFilter);
   if (searchParams.q) query = query.ilike("name", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
   // working devs (multi) = the `developer` rows of deal_developers, shown as chips
@@ -46,7 +48,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
           toolbar={
             <div className="mb-4">
               <CrmFilterBar
-                filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
+                filters={[{ key: "status", label: "Status", defaultValue: "active", options: [{ value: "all", label: "All" }, { value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
                 search={{ key: "q", placeholder: "Search company" }}
               />
             </div>

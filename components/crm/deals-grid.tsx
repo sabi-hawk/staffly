@@ -6,7 +6,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatMoney, formatCode } from "@/lib/utils";
-import { ColoredName, ProfileCell } from "@/components/crm/crm-cells";
+import { ColorChip, ProfileCell } from "@/components/crm/crm-cells";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function DealsGrid({ rows }: { rows: any[] }) {
@@ -43,17 +43,12 @@ export function DealsGrid({ rows }: { rows: any[] }) {
                   <Link href={`/crm/deals/${d.id}`} className="text-text-primary hover:text-brand-primary">{d.name || d.lead?.company || "—"}</Link>
                 </TD>
                 <TD><ProfileCell p={d.profile ? { ...d.profile } : null} href={d.profile ? `/crm/profiles/${d.profile.id}` : undefined} /></TD>
-                <TD><ColoredName name={d.closer?.full_name} color={d.closer?.color} /></TD>
+                <TD><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></TD>
                 <TD>
                   {devs.length === 0
                     ? <span className="text-text-secondary">—</span>
                     : <span className="flex flex-wrap gap-1">
-                        {devs.map((w) => (
-                          <span key={w.id} className="inline-flex items-center rounded-md border px-1.5 py-0.5 text-caption font-medium"
-                            style={{ color: w.color || "#475569", borderColor: `${w.color || "#475569"}55`, backgroundColor: `${w.color || "#475569"}12` }}>
-                            {w.full_name}
-                          </span>
-                        ))}
+                        {devs.map((w) => <ColorChip key={w.id} label={w.full_name} color={w.color} />)}
                       </span>}
                 </TD>
                 {showSalary && <TD className="tabular">{formatMoney(d.salary, d.currency)}</TD>}

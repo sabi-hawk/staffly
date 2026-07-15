@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatMoney, formatCode } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
-import { ColoredName } from "@/components/crm/crm-cells";
+import { ColoredName, ColorChip } from "@/components/crm/crm-cells";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
 import { DealPayments, type DealPayment } from "@/components/crm/deal-payments";
 import { RichNoteSection } from "@/components/crm/rich-note-section";
@@ -25,7 +25,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
 
   const { data: deal } = await supabase
     .from("deals")
-    .select("*, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name), closer:profiles!deals_closer_id_fkey(full_name), owner_bd:profiles!deals_owner_bd_id_fkey(full_name), account:receiving_accounts(holder_name), method:payment_methods(name)")
+    .select("*, lead:leads(company), profile:dev_profiles(name, color), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), account:receiving_accounts(holder_name), method:payment_methods(name)")
     .eq("id", params.id)
     .single();
   if (!deal) notFound();
@@ -68,10 +68,10 @@ export default async function DealDetail({ params }: { params: { id: string } })
         </CardHeader>
         <CardContent>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
-            <div><dt className="text-caption text-text-secondary">Closer</dt><dd>{d.closer?.full_name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">BD owner</dt><dd>{d.owner_bd?.full_name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile?.name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Working developers</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? "—" : workingDevs.map((w: any) => <ColoredName key={w.developer_id} name={w.dev?.full_name} color={w.dev?.color} />).reduce((acc: any, el: any, i: number) => i === 0 ? [el] : [...acc, <span key={`c${i}`}>, </span>, el], [])}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Closer</dt><dd><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></dd></div>
+            <div><dt className="text-caption text-text-secondary">BD owner</dt><dd><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></dd></div>
+            <div><dt className="text-caption text-text-secondary">Profile</dt><dd><ColoredName name={d.profile?.name} color={d.profile?.color} className="font-medium" /></dd></div>
+            <div><dt className="text-caption text-text-secondary">Working developers</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? <span className="text-text-secondary">—</span> : workingDevs.map((w: any) => <ColorChip key={w.developer_id} label={w.dev?.full_name} color={w.dev?.color} />)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{formatMoney(d.salary, d.currency)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account?.holder_name ?? "—"}</dd></div>

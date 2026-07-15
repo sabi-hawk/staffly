@@ -6,7 +6,7 @@ import { Eye, EyeOff, Copy, KeyRound, Loader2 } from "lucide-react";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusPill } from "@/components/crm/status-pill";
 import { ProfileRowActions } from "@/components/crm/profile-row-actions";
-import { ColoredName, StackBadge } from "@/components/crm/crm-cells";
+import { ColorChip, StackBadge } from "@/components/crm/crm-cells";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -82,7 +82,7 @@ export function ProfilesGrid({ rows, canManage, canSeePasswords }: { rows: any[]
               <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
               <TD className="text-text-secondary">{p.email ?? "—"}</TD>
               <TD><StackBadge name={p.stack?.name} color={p.stack?.color} /></TD>
-              <TD>{p.owner?.full_name ? <ColoredName name={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}</TD>
+              <TD>{p.owner?.full_name ? <ColorChip label={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}</TD>
               <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
               {canSeePasswords && showPw && <TD><PasswordCell profileId={p.id} /></TD>}
               <TD><StatusPill status={p.status} /></TD>
