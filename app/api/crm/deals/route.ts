@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
-import { isSuperAdminRole } from "@/lib/crm/access";
-import { createDeal } from "@/lib/services/crm-deals";
+import { createDeal, setDealWorkingDevelopers } from "@/lib/services/crm-deals";
 
 // Deals are admin/super-admin only.
 export async function POST(req: Request) {
@@ -11,7 +10,10 @@ export async function POST(req: Request) {
   if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasPermP(me, PERM.dealsManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
-    const id = await createDeal(createClient(), await req.json());
+    const supabase = createClient();
+    const body = await req.json();
+    const id = await createDeal(supabase, body);
+    if (Array.isArray(body.developers)) await setDealWorkingDevelopers(supabase, id, body.developers);
     return NextResponse.json({ id });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });

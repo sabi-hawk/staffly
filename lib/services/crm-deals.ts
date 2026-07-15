@@ -34,6 +34,15 @@ export async function createDeal(supabase: SupabaseClient, input: Record<string,
   // A lead is optional — a deal can exist without a prior CRM lead (e.g. deals predating the portal).
   return ins(supabase, "deals", pick(input, DEAL_FIELDS));
 }
+
+/** Set a deal's WORKING developers (multi) — the `developer` rows of deal_developers, preserving any
+ * `closer` rows. Reuses setDealDevelopers so the is_deal_developer flag logic stays in one place. */
+export async function setDealWorkingDevelopers(supabase: SupabaseClient, dealId: string, developerIds: string[]) {
+  const { data: existing } = await supabase.from("deal_developers").select("developer_id, role").eq("deal_id", dealId);
+  const closers = (existing ?? []).filter((a) => a.role === "closer").map((a) => ({ developer_id: a.developer_id as string, role: "closer" as const }));
+  const devs = (developerIds ?? []).filter(Boolean).map((id) => ({ developer_id: id, role: "developer" as const }));
+  await setDealDevelopers(supabase, dealId, [...closers, ...devs]);
+}
 export async function updateDeal(supabase: SupabaseClient, id: string, input: Record<string, unknown>) {
   return upd(supabase, "deals", id, pick(input, DEAL_FIELDS));
 }

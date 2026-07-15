@@ -2,22 +2,24 @@
 // RLS scopes profiles to what the caller may see.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type Opt = { id: string; label: string };
+export type Opt = { id: string; label: string; sublabel?: string; color?: string };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function crmProfileOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  // "#14 Ali Ahmad · Backend · ali@x.com" — number + name + stack + email is the full identity, so two
+  // Rich two-line card in the combobox: "#14 Ali Ahmad · Backend" with the email underneath, so two
   // profiles that share a name/stack are still distinguishable by email (0043 + owner 2026-07-15).
-  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, stack:dev_stacks(name)").order("profile_no");
+  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, stack:dev_stacks(name, color)").order("profile_no");
   return (data ?? []).map((p: any) => ({
     id: p.id,
-    label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}${p.email ? ` · ${p.email}` : ""}`,
+    label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}`,
+    sublabel: p.email ?? undefined,
+    color: p.stack?.color ?? undefined,
   }));
 }
 
 export async function developerOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  const { data } = await supabase.from("profiles").select("id, full_name").eq("is_developer", true).order("full_name");
-  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name }));
+  const { data } = await supabase.from("profiles").select("id, full_name, position, color").eq("is_developer", true).order("full_name");
+  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
 }
 
 export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
@@ -25,10 +27,10 @@ export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
   // — they own deals/profiles like a BD Lead.
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, app_roles!profiles_app_role_id_fkey!inner(key)")
+    .select("id, full_name, color, app_roles!profiles_app_role_id_fkey!inner(key)")
     .in("app_roles.key", ["bd", "bd_lead", "partner_bd"])
     .order("full_name");
-  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name }));
+  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, color: p.color ?? undefined }));
 }
 
 export async function leadOptions(supabase: SupabaseClient): Promise<Opt[]> {

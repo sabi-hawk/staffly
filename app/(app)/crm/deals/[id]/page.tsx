@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
 import { formatMoney, formatCode } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
-import { DealDevelopers } from "@/components/crm/deal-developers";
+import { ColoredName } from "@/components/crm/crm-cells";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
 import { DealPayments, type DealPayment } from "@/components/crm/deal-payments";
 import { RichNoteSection } from "@/components/crm/rich-note-section";
@@ -40,9 +40,11 @@ export default async function DealDetail({ params }: { params: { id: string } })
     : [];
 
   const { data: devRows } = await supabase
-    .from("deal_developers").select("developer_id, role, dev:profiles!deal_developers_developer_id_fkey(full_name)")
+    .from("deal_developers").select("developer_id, role, dev:profiles!deal_developers_developer_id_fkey(full_name, color)")
     .eq("deal_id", params.id);
-  const assignments = (devRows ?? []).map((r: any) => ({ developer_id: r.developer_id, role: r.role }));
+  // working developers (multi) come from the `developer` rows of deal_developers
+  const workingDevs = (devRows ?? []).filter((r: any) => r.role === "developer");
+  const workingDevIds = workingDevs.map((r: any) => r.developer_id);
 
   const [leads, profiles, developers, bds, accounts, methods] = await Promise.all([
     leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), bdOptions(supabase),
@@ -69,7 +71,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             <div><dt className="text-caption text-text-secondary">Closer</dt><dd>{d.closer?.full_name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">BD owner</dt><dd>{d.owner_bd?.full_name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile?.name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Working developer</dt><dd>{d.dev?.full_name ?? "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Working developers</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? "—" : workingDevs.map((w: any) => <ColoredName key={w.developer_id} name={w.dev?.full_name} color={w.dev?.color} />).reduce((acc: any, el: any, i: number) => i === 0 ? [el] : [...acc, <span key={`c${i}`}>, </span>, el], [])}</dd></div>
             <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{formatMoney(d.salary, d.currency)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account?.holder_name ?? "—"}</dd></div>
@@ -88,11 +90,6 @@ export default async function DealDetail({ params }: { params: { id: string } })
           <CardContent><DealPayments dealId={d.id} payments={payments as DealPayment[]} /></CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader><CardTitle>Assigned developers</CardTitle></CardHeader>
-        <CardContent><DealDevelopers dealId={d.id} developers={developers} initial={assignments} /></CardContent>
-      </Card>
 
       <Card>
         <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
@@ -119,6 +116,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             bds={bds}
             accounts={accounts}
             methods={methods}
+            initialDevelopers={workingDevIds}
             initial={{
               name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
               closer_id: d.closer_id, owner_bd_id: d.owner_bd_id, currency: d.currency,

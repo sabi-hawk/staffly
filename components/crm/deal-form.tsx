@@ -5,8 +5,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Combobox } from "@/components/ui/combobox";
 import { CURRENCIES } from "@/lib/utils";
 import type { Opt } from "@/lib/crm/options";
+
+const toOpts = (arr: Opt[]) => arr.map((o) => ({ value: o.id, label: o.label, sublabel: o.sublabel, color: o.color }));
 
 const STATUSES = ["active", "ended", "cancelled"];
 
@@ -19,6 +22,7 @@ export function DealForm({
   accounts,
   methods,
   initial,
+  initialDevelopers = [],
 }: {
   id?: string;
   leads: Opt[];
@@ -28,8 +32,10 @@ export function DealForm({
   accounts: Opt[];
   methods: Opt[];
   initial?: Partial<Record<string, string | null>>;
+  initialDevelopers?: string[];
 }) {
   const router = useRouter();
+  const [workingDevs, setWorkingDevs] = useState<string[]>(initialDevelopers);
   const [form, setForm] = useState<Record<string, string>>({
     name: initial?.name ?? "",
     lead_id: initial?.lead_id ?? "",
@@ -55,7 +61,7 @@ export function DealForm({
     const res = await fetch(id ? `/api/crm/deals/${id}` : "/api/crm/deals", {
       method: id ? "PATCH" : "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, developers: workingDevs }),
     });
     const json = await res.json();
     setBusy(false);
@@ -65,12 +71,6 @@ export function DealForm({
     router.refresh();
   }
 
-  const sel = (k: string, label: string, opts: Opt[], hint: string, first = "Not set") => (
-    <FloatSelect id={`deal-${k}`} label={label} hint={hint} value={form[k]} onChange={(e) => set(k, e.target.value)}>
-      <option value="">{first}</option>
-      {opts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-    </FloatSelect>
-  );
   const Divider = ({ title }: { title: string }) => (
     <div className="col-span-full mt-2 flex items-center gap-3">
       <span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">{title}</span>
@@ -126,14 +126,14 @@ export function DealForm({
 
       {/* ── People (internal) ────────────────────────────────────────────────── */}
       <Divider title="People" />
-      {sel("dev_profile_id", "Selected profile", profiles, "The marketing profile the client hired (number · name · stack · email).")}
-      {sel("closer_id", "Closer", developers, "Who closed this deal. Always record who landed it.")}
-      {sel("owner_bd_id", "BD owner", bds, "The BD who owns this deal (optional).")}
-      {sel("working_developer", "Working developer (optional)", developers, "The employee actually doing the work, which may differ from the closer or the profile presented.")}
+      <Combobox id="deal-dev_profile_id" label="Selected profile" hint="The marketing profile the client hired. Search by number, name, stack or email." options={toOpts(profiles)} value={form.dev_profile_id} onChange={(v) => set("dev_profile_id", v)} searchPlaceholder="Search profiles…" />
+      <Combobox id="deal-closer_id" label="Closer" hint="Who closed this deal. Always record who landed it." options={toOpts(developers)} value={form.closer_id} onChange={(v) => set("closer_id", v)} searchPlaceholder="Search people…" />
+      <Combobox id="deal-owner_bd_id" label="BD owner (optional)" hint="The BD who owns this deal." options={toOpts(bds)} value={form.owner_bd_id} onChange={(v) => set("owner_bd_id", v)} searchPlaceholder="Search BDs…" />
+      <Combobox id="deal-working_developers" label="Working developers (optional)" hint="Everyone doing the work on this deal — pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
 
       {/* ── Other ────────────────────────────────────────────────────────────── */}
       <Divider title="Other" />
-      {sel("lead_id", "Lead (optional)", leads, "The CRM lead this deal came from, if any. Deals can exist without a lead.")}
+      <Combobox id="deal-lead_id" label="Lead (optional)" hint="The CRM lead this deal came from, if any. Deals can exist without a lead." options={toOpts(leads)} value={form.lead_id} onChange={(v) => set("lead_id", v)} searchPlaceholder="Search leads…" />
       <DatePicker
         id="deal-profile_dob"
         label="Profile DOB"

@@ -682,3 +682,14 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
   (only for viewers who may see them) and per-row **eye (reveal) + copy**, fetched lazily via the route.
 - **Role descriptions** enriched on the Roles page: each system role now explains what it does, what it
   hides, and the benefit (0060 updates app_roles.description; the page already shows description + reason).
+
+## 2026-07-15 — Searchable combobox: multi working developers + rich profile picker (owner)
+- New reusable `components/ui/combobox.tsx` (single/multi, searchable, two-line rich options + colour
+  dot), floating-label via FloatShell.
+- Deal form now uses it for **Selected profile** (rich: #num · name · stack, email underneath),
+  **Closer**, **BD owner** (colour dot), **Lead**, and **Working developers (multi-select)**.
+- Working developers are saved to `deal_developers` (role='developer') via `setDealWorkingDevelopers`
+  (preserves closer rows, reuses the is_deal_developer flag logic). The deals grid + deal detail read
+  the multi list (chips). Removed the now-redundant "Assigned developers" section (the form handles it;
+  closer is its own field). Options (`crmProfileOptions`/`developerOptions`/`bdOptions`) now carry
+  sublabel + colour.

@@ -22,14 +22,14 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, salary, currency, status, working_developer, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), dev:profiles!deals_working_developer_fkey(full_name, color)", { count: "exact" });
+    .select("id, deal_code, name, salary, currency, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.q) query = query.ilike("name", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
-  // working devs as chips — the single working_developer for now (multi-dev is managed on the detail page)
+  // working devs (multi) = the `developer` rows of deal_developers, shown as chips
   const list = (rows ?? []).map((d: any) => ({
     ...d,
-    developers: d.dev ? [{ id: d.working_developer, full_name: d.dev.full_name, color: d.dev.color }] : [],
+    developers: (d.deal_developers ?? []).filter((a: any) => a.role === "developer").map((a: any) => ({ id: a.dev?.id, full_name: a.dev?.full_name, color: a.dev?.color })),
   }));
 
   return (

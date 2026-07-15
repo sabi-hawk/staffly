@@ -5,7 +5,7 @@ import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isSuperAdminRole, isUuid } from "@/lib/crm/access";
 import { requireDangerForSuper } from "@/lib/danger";
-import { updateDeal } from "@/lib/services/crm-deals";
+import { updateDeal, setDealWorkingDevelopers } from "@/lib/services/crm-deals";
 import { CRM_DOCS_BUCKET } from "@/lib/services/dev-profiles";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -14,7 +14,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!hasPermP(me, PERM.dealsManage)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   try {
-    await updateDeal(createClient(), params.id, await req.json());
+    const supabase = createClient();
+    const body = await req.json();
+    await updateDeal(supabase, params.id, body);
+    if (Array.isArray(body.developers)) await setDealWorkingDevelopers(supabase, params.id, body.developers);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
