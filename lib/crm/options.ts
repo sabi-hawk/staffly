@@ -20,11 +20,12 @@ export async function developerOptions(supabase: SupabaseClient): Promise<Opt[]>
 }
 
 export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  // RBAC is the truth for "who is a BD", not the free-text department field.
+  // RBAC is the truth for "who is a BD", not the free-text department field. A Partner (BD) counts too
+  // — they own deals/profiles like a BD Lead.
   const { data } = await supabase
     .from("profiles")
     .select("id, full_name, app_roles!profiles_app_role_id_fkey!inner(key)")
-    .in("app_roles.key", ["bd", "bd_lead"])
+    .in("app_roles.key", ["bd", "bd_lead", "partner_bd"])
     .order("full_name");
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name }));
 }
