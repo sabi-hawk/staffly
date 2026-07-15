@@ -6,11 +6,15 @@ import { requestCorrection, decideCorrection } from "@/lib/services/attendance-c
 
 const ymd = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 // build a date range covering exactly `n` weekdays, starting at the next Monday ≥21 days out
+// A range spanning exactly `n` WORKING days from ~3 weeks out. Excludes weekends AND the seeded
+// Independence Day holiday (Aug 14) — otherwise, when the window crosses 14 Aug, the leave's holiday-
+// aware day count is one short of `n` and the overflow split is off by one.
 function weekdayRange(n: number) {
   const d = new Date(); d.setDate(d.getDate() + 21);
-  while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
+  const isHoliday = (x: Date) => x.getMonth() === 7 && x.getDate() === 14; // Aug 14 (seed.sql)
+  while (d.getDay() !== 1 || isHoliday(d)) d.setDate(d.getDate() + 1);
   let count = 0; const cur = new Date(d); let last = new Date(d);
-  while (count < n) { const dow = cur.getDay(); if (dow !== 0 && dow !== 6) { count++; last = new Date(cur); } cur.setDate(cur.getDate() + 1); }
+  while (count < n) { const dow = cur.getDay(); if (dow !== 0 && dow !== 6 && !isHoliday(cur)) { count++; last = new Date(cur); } cur.setDate(cur.getDate() + 1); }
   return { start: ymd(d), end: ymd(last) };
 }
 import { scanMissedCheckin, scanMissedCheckout } from "@/lib/services/crons";
@@ -200,9 +204,10 @@ describe("§14.4 integration flows (cloud)", () => {
       const soon = new Date(); soon.setDate(soon.getDate() + 3);
       const a = await requestLeave(admin, AREEBA, { type: "annual", start_date: ymd(soon), end_date: ymd(soon), reason: "INT-DDEV annual" });
       expect(a.requests[0].status).toBe("pending");
-      // two casual requests in the same month are allowed (our 1/month cap doesn't apply) — both pending
-      const d1 = new Date(); d1.setDate(12);
-      const d2 = new Date(); d2.setDate(18);
+      // two casual requests, both distinct from the annual date above (avoid an overlap when today+3
+      // happens to equal a fixed day-of-month) — the 1/month cap doesn't apply to a deal dev.
+      const d1 = new Date(soon); d1.setDate(soon.getDate() + 4);
+      const d2 = new Date(soon); d2.setDate(soon.getDate() + 8);
       const c1 = await requestLeave(admin, AREEBA, { type: "casual", start_date: ymd(d1), end_date: ymd(d1), reason: "INT-DDEV c1" });
       const c2 = await requestLeave(admin, AREEBA, { type: "casual", start_date: ymd(d2), end_date: ymd(d2), reason: "INT-DDEV c2" });
       expect(c1.requests[0].status).toBe("pending");

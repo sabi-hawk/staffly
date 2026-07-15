@@ -659,3 +659,17 @@ Deals can be priced in different currencies (some PKR, some USD/EUR/AUD). Added 
 text + check for PKR/USD/EUR/GBP/AUD/CAD/AED, default PKR) + a Currency select on the deal form; the
 salary field is now "Salary / amount" and the amount shows with its currency on the list + detail
 (`formatMoney`). Receipts logged in the payments ledger stay PKR (what actually landed) as before.
+
+## 2026-07-15 — CRM colours, richer grids, SIM owner, deal-form rework (owner)
+- **BD + stack colours** (0059): profiles.color + dev_stacks.color, auto-assigned from a curated palette
+  (triggers on new BD/stack; backfilled). BD names + stack badges render in their colour across the
+  profiles/deals grids so the same person/stack reads at a glance. (A recolour config panel is a
+  follow-up; defaults are auto-assigned for now.)
+- **dev_profiles.sim_owner** (0059) — free-text "who owns the SIM" on the profile form + banner.
+- **Deal form** reworked into DEAL / PEOPLE / OTHER sections; Amount+Currency merged into one control;
+  Payment method + Receiving account removed; profile options show email.
+- **Deals grid**: removed Designation + Joining columns; order = Code, Company, Profile (rich card),
+  Closer, Working devs (chips), Salary (HIDDEN by default, "Show salary" toggle), Status.
+- **Profiles grid**: reordered to Name, Email, Stack (colour badge), Owner BD (coloured), Mobile, Status.
+- Test hardening: two leave integration tests were date-fragile (a today+3/day-18 collision, and a range
+  crossing the seeded 14 Aug holiday) — made both date-robust. Unrelated to the feature work.

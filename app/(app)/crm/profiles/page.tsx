@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusPill } from "@/components/crm/status-pill";
 import { ProfileRowActions } from "@/components/crm/profile-row-actions";
+import { ColoredName, StackBadge } from "@/components/crm/crm-cells";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
@@ -32,7 +33,7 @@ export default async function CrmProfilesPage({
   // RLS scopes the rows: admins/BD-Leads see all; a plain BD sees only profiles they own.
   let query = supabase
     .from("dev_profiles")
-    .select("id, profile_no, name, email, mobile, status, stack:dev_stacks(name), owner:profiles(full_name)", { count: "exact" });
+    .select("id, profile_no, name, email, mobile, status, stack:dev_stacks(name, color), owner:profiles(full_name, color)", { count: "exact" });
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.stack) query = query.eq("stack_id", searchParams.stack);
   if (searchParams.status) query = query.eq("status", searchParams.status);
@@ -77,16 +78,16 @@ export default async function CrmProfilesPage({
         >
         <Table>
           <THead>
-            <TR><TH>#</TH><TH>Name</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Email</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
+            <TR><TH>#</TH><TH>Name</TH><TH>Email</TH><TH>Stack</TH><TH>Owner (BD)</TH><TH>Mobile</TH><TH>Status</TH><TH></TH></TR>
           </THead>
           <TBody>
             {list.map((p) => (
               <TR key={p.id}>
                 <TD><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
                 <TD><Link href={`/crm/profiles/${p.id}`} className="font-medium text-text-primary hover:text-brand-primary">{p.name}</Link></TD>
-                <TD>{p.stack?.name ?? "—"}</TD>
-                <TD>{p.owner?.full_name ?? <span className="text-text-secondary">Unassigned</span>}</TD>
                 <TD className="text-text-secondary">{p.email ?? "—"}</TD>
+                <TD><StackBadge name={p.stack?.name} color={p.stack?.color} /></TD>
+                <TD>{p.owner?.full_name ? <ColoredName name={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}</TD>
                 <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
                 <TD><StatusPill status={p.status} /></TD>
                 <TD>

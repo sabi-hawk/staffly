@@ -7,14 +7,11 @@ import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
+import { DealsGrid } from "@/components/crm/deals-grid";
 import { parsePaging } from "@/lib/pagination";
-import { labelize, statusTone } from "@/lib/crm/constants";
-import { formatMoney, formatCode } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string } }) {
@@ -25,11 +22,15 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, designation, salary, currency, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
+    .select("id, deal_code, name, salary, currency, status, working_developer, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), dev:profiles!deals_working_developer_fkey(full_name, color)", { count: "exact" });
   if (searchParams.status) query = query.eq("status", searchParams.status);
-  if (searchParams.q) query = query.ilike("designation", `%${searchParams.q}%`);
+  if (searchParams.q) query = query.ilike("name", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
-  const list = (rows ?? []) as any[];
+  // working devs as chips — the single working_developer for now (multi-dev is managed on the detail page)
+  const list = (rows ?? []).map((d: any) => ({
+    ...d,
+    developers: d.dev ? [{ id: d.working_developer, full_name: d.dev.full_name, color: d.dev.color }] : [],
+  }));
 
   return (
     <Card>
@@ -46,32 +47,12 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
             <div className="mb-4">
               <CrmFilterBar
                 filters={[{ key: "status", label: "Status", options: [{ value: "active", label: "Active" }, { value: "ended", label: "Ended" }, { value: "cancelled", label: "Cancelled" }] }]}
-                search={{ key: "q", placeholder: "Search designation" }}
+                search={{ key: "q", placeholder: "Search company" }}
               />
             </div>
           }
         >
-        <Table>
-          <THead>
-            <TR><TH>Code</TH><TH>Company</TH><TH>Designation</TH><TH>Profile</TH><TH>Working dev</TH><TH>Salary</TH><TH>Joining</TH><TH>Status</TH><TH></TH></TR>
-          </THead>
-          <TBody>
-            {list.map((d) => (
-              <TR key={d.id}>
-                <TD className="tabular text-text-secondary">{formatCode(d.deal_code)}</TD>
-                <TD className="font-medium"><Link href={`/crm/deals/${d.id}`} className="text-text-primary hover:text-brand-primary">{d.name || d.lead?.company || "—"}</Link></TD>
-                <TD>{d.designation ?? "—"}</TD>
-                <TD>{d.profile?.name ?? "—"}</TD>
-                <TD>{d.dev?.full_name ?? "—"}</TD>
-                <TD>{formatMoney(d.salary, d.currency)}</TD>
-                <TD>{d.joining_date ?? "—"}</TD>
-                <TD><Badge tone={statusTone(d.status)}>{labelize(d.status)}</Badge></TD>
-                <TD className="text-right"><Link href={`/crm/deals/${d.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
-              </TR>
-            ))}
-            {list.length === 0 && <TR><TD colSpan={9} className="py-6 text-center text-text-secondary">No deals yet.</TD></TR>}
-          </TBody>
-        </Table>
+        <DealsGrid rows={list} />
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
         </FilterShell>
       </CardContent>

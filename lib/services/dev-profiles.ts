@@ -13,13 +13,14 @@ export interface DevProfileInput {
   owner_bd_id?: string | null;
   email?: string | null;
   mobile?: string | null;
+  sim_owner?: string | null;
   dob?: string | null;
   status?: "active" | "inactive";
   notes?: string | null;
 }
 
 const FIELDS: (keyof DevProfileInput)[] = [
-  "name", "stack_id", "owner_bd_id", "email", "mobile", "dob", "status", "notes",
+  "name", "stack_id", "owner_bd_id", "email", "mobile", "sim_owner", "dob", "status", "notes",
 ];
 
 function clean(input: DevProfileInput) {

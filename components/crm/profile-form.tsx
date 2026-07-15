@@ -32,6 +32,7 @@ export function ProfileForm({
     owner_bd_id: initial?.owner_bd_id ?? "",
     email: initial?.email ?? "",
     mobile: initial?.mobile ?? "",
+    sim_owner: initial?.sim_owner ?? "",
     dob: initial?.dob ?? "",
     status: initial?.status ?? "active",
     notes: initial?.notes ?? "",
@@ -95,6 +96,13 @@ export function ProfileForm({
         hint="The phone number clients or recruiters may be given for this profile."
         value={form.mobile}
         onChange={(e) => set("mobile", e.target.value)}
+      />
+      <FloatInput
+        id="profile-sim_owner"
+        label="SIM owner"
+        hint="Whose name the SIM for that mobile number is registered under. Can be anyone, including a non-employee."
+        value={form.sim_owner}
+        onChange={(e) => set("sim_owner", e.target.value)}
       />
       <DatePicker
         id="profile-dob"

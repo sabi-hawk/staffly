@@ -19,7 +19,7 @@ export function ProfileBanner({
 }: {
   profile: {
     id: string; profile_no: number; name: string; status: string;
-    email: string | null; mobile: string | null; dob: string | null; notes: string | null;
+    email: string | null; mobile: string | null; sim_owner?: string | null; dob: string | null; notes: string | null;
     owner_bd_id: string | null; stack_name: string | null;
   };
   stackName: string;
@@ -58,6 +58,7 @@ export function ProfileBanner({
               owner_bd_id: profile.owner_bd_id,
               email: profile.email,
               mobile: profile.mobile,
+              sim_owner: profile.sim_owner,
               dob: profile.dob,
               status: profile.status,
               notes: profile.notes,
@@ -69,6 +70,7 @@ export function ProfileBanner({
             <div><dt className="text-caption text-text-secondary">Owner (BD)</dt><dd>{ownerName}</dd></div>
             <div><dt className="text-caption text-text-secondary">Email</dt><dd>{profile.email ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Mobile</dt><dd>{profile.mobile ?? "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">SIM owner</dt><dd>{profile.sim_owner ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Date of birth</dt><dd>{profile.dob ?? "—"}</dd></div>
           </dl>
         )}
