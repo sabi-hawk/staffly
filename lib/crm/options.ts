@@ -6,11 +6,12 @@ export type Opt = { id: string; label: string };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function crmProfileOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  // "#14 Ali Ahmad · Backend" — the number + name + stack is the full memorable identity (0043)
-  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, stack:dev_stacks(name)").order("profile_no");
+  // "#14 Ali Ahmad · Backend · ali@x.com" — number + name + stack + email is the full identity, so two
+  // profiles that share a name/stack are still distinguishable by email (0043 + owner 2026-07-15).
+  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, stack:dev_stacks(name)").order("profile_no");
   return (data ?? []).map((p: any) => ({
     id: p.id,
-    label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}`,
+    label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}${p.email ? ` · ${p.email}` : ""}`,
   }));
 }
 

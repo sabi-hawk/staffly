@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { CURRENCIES } from "@/lib/utils";
 import type { Opt } from "@/lib/crm/options";
@@ -71,9 +71,17 @@ export function DealForm({
       {opts.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
     </FloatSelect>
   );
+  const Divider = ({ title }: { title: string }) => (
+    <div className="col-span-full mt-2 flex items-center gap-3">
+      <span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">{title}</span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
 
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* ── The deal (client-facing) ─────────────────────────────────────────── */}
+      <Divider title="Deal" />
       <FloatInput
         id="deal-name"
         label="Company name"
@@ -81,11 +89,6 @@ export function DealForm({
         value={form.name}
         onChange={(e) => set("name", e.target.value)}
       />
-      {sel("closer_id", "Closer", developers, "Who closed this deal. Required in spirit — always record who landed it.")}
-      {sel("owner_bd_id", "BD owner", bds, "The BD who owns this deal (optional).")}
-      {sel("lead_id", "Lead (optional)", leads, "The CRM lead this deal came from, if any. Deals can exist without a lead.")}
-      {sel("dev_profile_id", "Selected profile", profiles, "The marketing profile the client hired. Kept for reference in client-facing conversations.")}
-      {sel("working_developer", "Working developer (optional)", developers, "The employee actually doing the work, which may differ from the closer or the profile presented.")}
       <FloatInput
         id="deal-designation"
         label="Designation"
@@ -93,6 +96,26 @@ export function DealForm({
         value={form.designation}
         onChange={(e) => set("designation", e.target.value)}
       />
+      {/* merged amount + currency */}
+      <FloatShell label="Amount" hint="The monthly amount for this deal, in the chosen currency. Receipts you log later are still recorded in PKR (what actually landed). Super-admin only." filled htmlFor="deal-salary" className="h-10">
+        <div className="flex h-10 items-center rounded-md border border-border bg-white transition-colors focus-within:ring-2 focus-within:ring-brand-primary">
+          <select
+            aria-label="Currency"
+            value={form.currency}
+            onChange={(e) => set("currency", e.target.value)}
+            className="h-full appearance-none rounded-l-md border-r border-border bg-surface/60 pl-2.5 pr-6 text-sm font-medium text-text-primary focus:outline-none"
+          >
+            {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input
+            id="deal-salary"
+            type="number"
+            value={form.salary}
+            onChange={(e) => set("salary", e.target.value)}
+            className="h-full w-full flex-1 rounded-r-md bg-transparent px-3 text-sm text-text-primary focus:outline-none"
+          />
+        </div>
+      </FloatShell>
       <DatePicker
         id="deal-joining_date"
         label="Joining date"
@@ -100,25 +123,17 @@ export function DealForm({
         value={form.joining_date}
         onChange={(v) => set("joining_date", v)}
       />
-      <FloatSelect
-        id="deal-currency"
-        label="Currency"
-        hint="The currency this deal is priced in. Receipts you log later are still recorded in PKR (what actually landed)."
-        value={form.currency}
-        onChange={(e) => set("currency", e.target.value)}
-      >
-        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-      </FloatSelect>
-      <FloatInput
-        id="deal-salary"
-        label="Salary / amount"
-        hint="The monthly amount for this deal, in the currency selected. Deal financials are visible to super admins only."
-        type="number"
-        value={form.salary}
-        onChange={(e) => set("salary", e.target.value)}
-      />
-      {sel("receiving_account_id", "Receiving account", accounts, "The account where the client's payments for this deal arrive.")}
-      {sel("payment_method_id", "Payment method", methods, "How the client pays for this deal, e.g. Wise or Payoneer.")}
+
+      {/* ── People (internal) ────────────────────────────────────────────────── */}
+      <Divider title="People" />
+      {sel("dev_profile_id", "Selected profile", profiles, "The marketing profile the client hired (number · name · stack · email).")}
+      {sel("closer_id", "Closer", developers, "Who closed this deal. Always record who landed it.")}
+      {sel("owner_bd_id", "BD owner", bds, "The BD who owns this deal (optional).")}
+      {sel("working_developer", "Working developer (optional)", developers, "The employee actually doing the work, which may differ from the closer or the profile presented.")}
+
+      {/* ── Other ────────────────────────────────────────────────────────────── */}
+      <Divider title="Other" />
+      {sel("lead_id", "Lead (optional)", leads, "The CRM lead this deal came from, if any. Deals can exist without a lead.")}
       <DatePicker
         id="deal-profile_dob"
         label="Profile DOB"
