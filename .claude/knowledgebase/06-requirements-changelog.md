@@ -673,3 +673,12 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
 - **Profiles grid**: reordered to Name, Email, Stack (colour badge), Owner BD (coloured), Mobile, Status.
 - Test hardening: two leave integration tests were date-fragile (a today+3/day-18 collision, and a range
   crossing the seeded 14 Aug holiday) — made both date-robust. Unrelated to the feature work.
+
+## 2026-07-15 — Profile password access + role descriptions (owner)
+- **Profile account passwords** are now hidden from BDs and the BD-Lead (dropped the
+  `dev_secrets_owner_read` RLS + the route's owner/bd-lead bypass). Only `crm.profiles.password` holders
+  see them: **super-admin, admin, and Partner (BD)** (the trusted exception, granted the perm). 0060.
+- **CRM profiles grid** gains a **Password column, hidden by default**, with a "Show passwords" toggle
+  (only for viewers who may see them) and per-row **eye (reveal) + copy**, fetched lazily via the route.
+- **Role descriptions** enriched on the Roles page: each system role now explains what it does, what it
+  hides, and the benefit (0060 updates app_roles.description; the page already shows description + reason).

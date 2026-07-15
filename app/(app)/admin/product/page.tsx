@@ -160,6 +160,7 @@ export default async function ProductDocPage() {
           <li>Salary / payroll / compensation / payslips / login-events = <strong>super-admin only</strong>.</li>
           <li>Deal details/financials = <strong>super-admin only</strong>.</li>
           <li>CNIC / bank live in a separate private table (self or super-admin).</li>
+          <li>A CRM profile&apos;s <strong>account password</strong> is visible only to <strong>super-admin</strong>, <strong>admin</strong>, and <strong>Partner (BD)</strong> — hidden from BDs and the BD-Lead. In the profiles list it&apos;s a hidden column you switch on, with per-row reveal / copy.</li>
           <li>Every rule is enforced in three layers: middleware, Supabase RLS, and the UI.</li>
         </ul>
       </Section>
