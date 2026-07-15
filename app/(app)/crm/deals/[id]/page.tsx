@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, developerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, developerOptions, peopleOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
@@ -46,8 +46,8 @@ export default async function DealDetail({ params }: { params: { id: string } })
   const workingDevs = (devRows ?? []).filter((r: any) => r.role === "developer");
   const workingDevIds = workingDevs.map((r: any) => r.developer_id);
 
-  const [leads, profiles, developers, bds, accounts, methods] = await Promise.all([
-    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), bdOptions(supabase),
+  const [leads, profiles, developers, people, bds, accounts, methods] = await Promise.all([
+    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), peopleOptions(supabase), bdOptions(supabase),
     accountOptions(supabase), methodOptions(supabase),
   ]);
 
@@ -113,6 +113,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             leads={leads}
             profiles={profiles}
             developers={developers}
+            people={people}
             bds={bds}
             accounts={accounts}
             methods={methods}

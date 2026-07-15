@@ -18,6 +18,7 @@ export function DealForm({
   leads,
   profiles,
   developers,
+  people = [],
   bds = [],
   accounts,
   methods,
@@ -28,6 +29,7 @@ export function DealForm({
   leads: Opt[];
   profiles: Opt[];
   developers: Opt[];
+  people?: Opt[];
   bds?: Opt[];
   accounts: Opt[];
   methods: Opt[];
@@ -127,7 +129,7 @@ export function DealForm({
       {/* ── People (internal) ────────────────────────────────────────────────── */}
       <Divider title="People" />
       <Combobox id="deal-dev_profile_id" label="Selected profile" hint="The marketing profile the client hired. Search by number, name, stack or email." options={toOpts(profiles)} value={form.dev_profile_id} onChange={(v) => set("dev_profile_id", v)} searchPlaceholder="Search profiles…" />
-      <Combobox id="deal-closer_id" label="Closer" hint="Who closed this deal. Always record who landed it." options={toOpts(developers)} value={form.closer_id} onChange={(v) => set("closer_id", v)} searchPlaceholder="Search people…" />
+      <Combobox id="deal-closer_id" label="Closer" hint="Who closed this deal — can be anyone (a BD, a developer, anyone), not just an engineer." options={toOpts(people.length ? people : developers)} value={form.closer_id} onChange={(v) => set("closer_id", v)} searchPlaceholder="Search people…" />
       <Combobox id="deal-owner_bd_id" label="BD owner (optional)" hint="The BD who owns this deal." options={toOpts(bds)} value={form.owner_bd_id} onChange={(v) => set("owner_bd_id", v)} searchPlaceholder="Search BDs…" />
       <Combobox id="deal-working_developers" label="Working developers (optional)" hint="Everyone doing the work on this deal — pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
 

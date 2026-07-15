@@ -725,3 +725,9 @@ salary field is now "Salary / amount" and the amount shows with its currency on 
 - **LinkedIn banned** (0062: dev_profiles.linkedin_banned): a checkbox on the profile form, a red marker
   in the list (independent of status), and a badge on the profile banner. Reason still goes in notes.
 - **CRM profiles list defaults to Active** (mirrors deals).
+
+## 2026-07-15 — Closer can be anyone, not just developers (owner)
+The deal Closer picker used `developerOptions` (is_developer only), so a BD who closed a deal couldn't
+be selected. A closer can be anyone. Added `peopleOptions` (all active profiles, excl. the super-admin
+service account) and used it for the Closer field; Working developers stays developers-only. No DB
+restriction existed on `deals.closer_id` — this was purely the form's dropdown.
