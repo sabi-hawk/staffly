@@ -3,10 +3,10 @@
 // on Reveal/Copy. Whether a password EXISTS is shown clearly (dots vs "Not set"). Admins can edit it
 // (behind an Edit action; empty is allowed = no password); a BD who owns the profile can only
 // reveal/copy it (to log in as that persona). RLS also enforces read/write access.
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Eye, EyeOff, Copy, Pencil, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Copy, Pencil, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FloatInput } from "@/components/ui/field";
@@ -25,7 +25,10 @@ export function PasswordPanel({
   const [value, setValue] = useState(""); // real plaintext (loaded on reveal or typed while editing)
   const [reveal, setReveal] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState(false);
+  // which async action is in flight ("reveal"|"copy"|"edit"|"save"), + the refresh transition after save.
+  const [busy, setBusy] = useState<null | "reveal" | "copy" | "edit" | "save">(null);
+  const [pending, startTransition] = useTransition();
+  const anyBusy = busy !== null || pending;
 
   async function fetchValue() {
     const res = await fetch(`/api/crm/profiles/${profileId}/password`);
@@ -37,37 +40,48 @@ export function PasswordPanel({
   }
 
   async function toggleReveal() {
-    if (!reveal && !loaded && hasPassword && !(await fetchValue())) return;
+    if (!reveal && !loaded && hasPassword) {
+      setBusy("reveal"); const ok = await fetchValue(); setBusy(null);
+      if (!ok) return;
+    }
     setReveal((r) => !r);
   }
 
   async function copy() {
-    if (!loaded && hasPassword && !(await fetchValue())) return;
+    if (!loaded && hasPassword) {
+      setBusy("copy"); const ok = await fetchValue(); setBusy(null);
+      if (!ok) return;
+    }
     await navigator.clipboard.writeText(value);
     toast.success("Copied");
   }
 
   async function startEdit() {
     // preload the current value so the admin can tweak it (they can reveal it anyway)
-    if (hasPassword && !loaded && !(await fetchValue())) return;
+    if (hasPassword && !loaded) {
+      setBusy("edit"); const ok = await fetchValue(); setBusy(null);
+      if (!ok) return;
+    }
     setEditing(true);
   }
 
   async function save() {
-    setBusy(true);
+    setBusy("save");
     const res = await fetch(`/api/crm/profiles/${profileId}/password`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ password: value }),
     });
-    const json = await res.json();
-    setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Failed");
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) { setBusy(null); return toast.error(json.error ?? "Failed"); }
     toast.success(value.trim() ? "Password saved" : "Password cleared");
     setEditing(false);
     setLoaded(true);
-    router.refresh();
+    setBusy(null);
+    startTransition(() => router.refresh()); // keeps a pending state through the refetch
   }
+
+  const spin = <Loader2 className="size-4 animate-spin" />;
 
   // ── Edit mode (admins only) ──────────────────────────────────────────────
   if (editing) {
@@ -84,11 +98,11 @@ export function PasswordPanel({
           className="font-mono"
           autoFocus
         />
-        <Button type="button" variant="outline" size="sm" onClick={() => setReveal((r) => !r)}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setReveal((r) => !r)} disabled={anyBusy}>
           {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}{reveal ? "Hide" : "Show"}
         </Button>
-        <Button type="button" size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(false); setReveal(false); }} disabled={busy}>Cancel</Button>
+        <Button type="button" size="sm" onClick={save} disabled={anyBusy}>{busy === "save" || pending ? <>{spin} Saving…</> : "Save"}</Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(false); setReveal(false); }} disabled={anyBusy}>Cancel</Button>
       </div>
     );
   }
@@ -110,15 +124,17 @@ export function PasswordPanel({
 
       {hasPassword && (
         <>
-          <Button type="button" variant="outline" size="sm" onClick={toggleReveal}>
-            {reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}{reveal ? "Hide" : "Reveal"}
+          <Button type="button" variant="outline" size="sm" onClick={toggleReveal} disabled={anyBusy}>
+            {busy === "reveal" ? spin : reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}{reveal ? "Hide" : "Reveal"}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={copy}><Copy className="size-4" /> Copy</Button>
+          <Button type="button" variant="outline" size="sm" onClick={copy} disabled={anyBusy}>
+            {busy === "copy" ? spin : <Copy className="size-4" />} Copy
+          </Button>
         </>
       )}
       {canEdit && (
-        <Button type="button" variant={hasPassword ? "outline" : "default"} size="sm" onClick={startEdit}>
-          {hasPassword ? <><Pencil className="size-3.5" /> Edit</> : <><KeyRound className="size-4" /> Set password</>}
+        <Button type="button" variant={hasPassword ? "outline" : "default"} size="sm" onClick={startEdit} disabled={anyBusy}>
+          {busy === "edit" ? <>{spin} Loading…</> : hasPassword ? <><Pencil className="size-3.5" /> Edit</> : <><KeyRound className="size-4" /> Set password</>}
         </Button>
       )}
     </div>
