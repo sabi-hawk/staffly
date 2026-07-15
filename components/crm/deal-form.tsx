@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
+import { CURRENCIES } from "@/lib/utils";
 import type { Opt } from "@/lib/crm/options";
 
 const STATUSES = ["active", "ended", "cancelled"];
@@ -36,6 +37,7 @@ export function DealForm({
     working_developer: initial?.working_developer ?? "",
     closer_id: initial?.closer_id ?? "",
     owner_bd_id: initial?.owner_bd_id ?? "",
+    currency: initial?.currency ?? "PKR",
     designation: initial?.designation ?? "",
     joining_date: initial?.joining_date ?? "",
     salary: initial?.salary ?? "",
@@ -98,10 +100,19 @@ export function DealForm({
         value={form.joining_date}
         onChange={(v) => set("joining_date", v)}
       />
+      <FloatSelect
+        id="deal-currency"
+        label="Currency"
+        hint="The currency this deal is priced in. Receipts you log later are still recorded in PKR (what actually landed)."
+        value={form.currency}
+        onChange={(e) => set("currency", e.target.value)}
+      >
+        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+      </FloatSelect>
       <FloatInput
         id="deal-salary"
-        label="Salary (PKR)"
-        hint="The monthly amount for this deal in PKR. Deal financials are visible to super admins only."
+        label="Salary / amount"
+        hint="The monthly amount for this deal, in the currency selected. Deal financials are visible to super admins only."
         type="number"
         value={form.salary}
         onChange={(e) => set("salary", e.target.value)}

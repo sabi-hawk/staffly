@@ -24,6 +24,20 @@ export function formatPKR(n: number | null | undefined): string {
   }).format(n);
 }
 
+/** Currencies a deal can be priced in (contract amount). Receipts are still logged in PKR. */
+export const CURRENCIES = ["PKR", "USD", "EUR", "GBP", "AUD", "CAD", "AED"] as const;
+
+/** Format an amount with an explicit currency code, e.g. "$2,000" / "PKR 560,000". Falls back to PKR. */
+export function formatMoney(n: number | null | undefined, currency?: string | null): string {
+  if (n == null) return "—";
+  const cur = (currency || "PKR").toUpperCase();
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
+  } catch {
+    return `${cur} ${Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  }
+}
+
 /** Resolve an avatar URL: uploaded image, else a gender-based default. */
 export function avatarUrl(
   url: string | null | undefined,

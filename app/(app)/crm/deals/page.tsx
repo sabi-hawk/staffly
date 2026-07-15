@@ -14,7 +14,7 @@ import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { parsePaging } from "@/lib/pagination";
 import { labelize, statusTone } from "@/lib/crm/constants";
-import { formatPKR, formatCode } from "@/lib/utils";
+import { formatMoney, formatCode } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string } }) {
@@ -25,7 +25,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, designation, salary, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
+    .select("id, deal_code, name, designation, salary, currency, status, joining_date, lead:leads(company), profile:dev_profiles(name), dev:profiles!deals_working_developer_fkey(full_name)", { count: "exact" });
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.q) query = query.ilike("designation", `%${searchParams.q}%`);
   const { data: rows, count } = await query.order("created_at", { ascending: false }).range(from, to);
@@ -63,7 +63,7 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
                 <TD>{d.designation ?? "—"}</TD>
                 <TD>{d.profile?.name ?? "—"}</TD>
                 <TD>{d.dev?.full_name ?? "—"}</TD>
-                <TD>{d.salary != null ? formatPKR(d.salary) : "—"}</TD>
+                <TD>{formatMoney(d.salary, d.currency)}</TD>
                 <TD>{d.joining_date ?? "—"}</TD>
                 <TD><Badge tone={statusTone(d.status)}>{labelize(d.status)}</Badge></TD>
                 <TD className="text-right"><Link href={`/crm/deals/${d.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>

@@ -9,7 +9,7 @@ import { leadOptions, crmProfileOptions, developerOptions, bdOptions, accountOpt
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone } from "@/lib/crm/constants";
-import { formatPKR, formatCode } from "@/lib/utils";
+import { formatMoney, formatCode } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { DealDevelopers } from "@/components/crm/deal-developers";
 import { DealDocuments, type DealDoc } from "@/components/crm/deal-documents";
@@ -70,7 +70,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             <div><dt className="text-caption text-text-secondary">BD owner</dt><dd>{d.owner_bd?.full_name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile?.name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Working developer</dt><dd>{d.dev?.full_name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{d.salary != null ? formatPKR(d.salary) : "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{formatMoney(d.salary, d.currency)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account?.holder_name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Payment method</dt><dd>{d.method?.name ?? "—"}</dd></div>
@@ -121,7 +121,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             methods={methods}
             initial={{
               name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
-              closer_id: d.closer_id, owner_bd_id: d.owner_bd_id,
+              closer_id: d.closer_id, owner_bd_id: d.owner_bd_id, currency: d.currency,
               designation: d.designation, joining_date: d.joining_date, salary: d.salary != null ? String(d.salary) : "",
               receiving_account_id: d.receiving_account_id, payment_method_id: d.payment_method_id,
               profile_dob: d.profile_dob, status: d.status,

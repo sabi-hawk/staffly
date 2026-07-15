@@ -653,3 +653,9 @@ A batch of owner-reported issues after starting to enter real data:
 - **Seed fix** — the canonical seed now clears `attendance_sessions` before `attendance` (sessions have
   no FK cascade), so stale multi-session rows from prior runs no longer make compute_attendance_hours()
   read total 0 on the canonical days. Fixes a date-flaky `npm run report`.
+
+## 2026-07-15 — Deal currency (owner)
+Deals can be priced in different currencies (some PKR, some USD/EUR/AUD). Added `deals.currency` (0058,
+text + check for PKR/USD/EUR/GBP/AUD/CAD/AED, default PKR) + a Currency select on the deal form; the
+salary field is now "Salary / amount" and the amount shows with its currency on the list + detail
+(`formatMoney`). Receipts logged in the payments ledger stay PKR (what actually landed) as before.
