@@ -221,6 +221,7 @@ export interface CommissionPolicy {
   label: string;
   rate: number;
   description: string | null;
+  effective_date: string | null;
   created_at: string;
 }
 

@@ -53,6 +53,7 @@ const FIELD_LABELS: Record<string, string> = {
   is_designer: "Designer",
   camera: "Camera",
   category_id: "Category",
+  effective_date: "Effective from",
   engagement_type: "Engagement type",
   rate_type: "Rate basis",
   hours: "Hours per week",
