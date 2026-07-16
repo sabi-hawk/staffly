@@ -1,5 +1,5 @@
 // Formatted, Slack-friendly text for sharing a lead / interview / assessment (copy-to-clipboard).
-import { labelize } from "@/lib/crm/constants";
+import { labelize, cameraLabel } from "@/lib/crm/constants";
 import { formatCrmDate, formatCrmDatetime } from "@/lib/utils";
 
 // Structural param types — the joined shapes these formatters actually read (grids pass supersets).
@@ -12,6 +12,7 @@ type ShareAssessment = {
   status: string; company?: string | null; job_title?: string | null; priority?: string | null;
   duration?: string | null; entry_date?: string | null; deadline?: string | null;
   created_at?: string; updated_at?: string; budget?: string | null; job_post_url?: string | null;
+  camera?: string | null; category?: { name?: string | null } | null;
 };
 type ShareLead = {
   company: string; role?: string | null; status: string; budget?: string | null;
@@ -39,6 +40,8 @@ export function leadShareText(l: ShareLead): string {
   });
   const asLines = (l.assessments ?? []).map((as) => {
     const bits = [
+      as.category?.name ?? null,
+      as.camera ? cameraLabel(as.camera) : null,
       as.entry_date ? `received ${formatCrmDate(as.entry_date)}` : null,
       as.deadline ? `deadline ${formatCrmDate(as.deadline)}` : null,
     ].filter(Boolean).join(" · ");
@@ -81,6 +84,8 @@ export function assessmentShareText(as: ShareAssessment): string {
     `Assessment — ${as.company ?? "—"}`,
     line("Job", as.job_title),
     line("Status", labelize(as.status)),
+    line("Category", as.category?.name),
+    line("Camera", as.camera ? cameraLabel(as.camera) : null),
     line("Priority", as.priority),
     line("Duration", as.duration),
     line("Received", as.entry_date ? formatCrmDate(as.entry_date) : null),
