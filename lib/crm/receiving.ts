@@ -12,6 +12,13 @@ export const RECEIVING_TYPES = [
 export const receivingTypeLabel = (t: string | null | undefined) =>
   RECEIVING_TYPES.find((x) => x.value === t)?.label ?? "Bank transfer";
 
+// Common Pakistani banks — presets for the Bank name picker (user can still type any other).
+export const PK_BANKS = [
+  "Meezan Bank", "Faysal Bank", "HBL", "UBL", "MCB Bank", "Allied Bank", "Bank Alfalah",
+  "Standard Chartered", "Askari Bank", "JS Bank", "Soneri Bank", "Bank of Punjab", "Habib Metro Bank",
+  "Dubai Islamic Bank", "BankIslami", "Al Baraka Bank", "National Bank of Pakistan", "Bank Al Habib",
+];
+
 // The fields that matter per type — drives which inputs the settings form shows.
 export const RECEIVING_FIELDS: Record<string, string[]> = {
   bank: ["bank_name", "account_number", "iban", "swift_code", "branch_code", "branch_address"],
