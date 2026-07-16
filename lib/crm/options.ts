@@ -8,12 +8,13 @@ export type Opt = { id: string; label: string; sublabel?: string; color?: string
 export async function crmProfileOptions(supabase: SupabaseClient): Promise<Opt[]> {
   // Rich two-line card in the combobox: "#14 Ali Ahmad · Backend" with the email underneath, so two
   // profiles that share a name/stack are still distinguishable by email (0043 + owner 2026-07-15).
-  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, stack:dev_stacks(name, color)").order("profile_no");
+  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, color, stack:dev_stacks(name)").order("profile_no");
   return (data ?? []).map((p: any) => ({
     id: p.id,
     label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}`,
     sublabel: p.email ?? undefined,
-    color: p.stack?.color ?? undefined,
+    // colour by the PROFILE (each is distinct), not the stack (same-stack profiles would share a colour)
+    color: p.color ?? undefined,
   }));
 }
 

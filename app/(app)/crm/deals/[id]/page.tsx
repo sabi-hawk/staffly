@@ -70,7 +70,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
             <div><dt className="text-caption text-text-secondary">Closer</dt><dd><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></dd></div>
             <div><dt className="text-caption text-text-secondary">BD owner</dt><dd><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></dd></div>
-            <div><dt className="text-caption text-text-secondary">Profile</dt><dd><ColoredName name={d.profile?.name} color={d.profile?.color} className="font-medium" /></dd></div>
+            <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile ? <Link href={`/crm/profiles/${d.dev_profile_id}`}><ColorChip label={d.profile.name} color={d.profile.color} /></Link> : <span className="text-text-secondary">—</span>}</dd></div>
             <div><dt className="text-caption text-text-secondary">Working developers</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? <span className="text-text-secondary">—</span> : workingDevs.map((w: any) => <ColorChip key={w.developer_id} label={w.dev?.full_name} color={w.dev?.color} />)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{formatMoney(d.salary, d.currency)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
