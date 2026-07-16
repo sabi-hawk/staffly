@@ -368,6 +368,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0068_deal_secondary_bd.sql` — `deals.secondary_owner_bd_id` (FK → profiles, on delete set null). A deal
+  can have TWO BD owners: primary (`owner_bd_id`) + secondary. The secondary is typically the BD-Lead who
+  trained the primary and earns a commission on the deal too. Both are paid via their own per-employee
+  `deal_commissions` row (each carries its own rate). The deals BD-owner filter matches primary OR secondary.
 - `0067_profile_is_designer.sql` — `profiles.is_designer` (flag). A designer can be assigned to a deal
   as a working member: the deal Working-members picker shows `is_developer OR is_designer`. Kept separate
   from `is_developer` (which still gates the interview/assessment "given by" picker). Also whitelisted in

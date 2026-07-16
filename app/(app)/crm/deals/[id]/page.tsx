@@ -25,7 +25,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
 
   const { data: deal } = await supabase
     .from("deals")
-    .select("*, lead:leads(company), profile:dev_profiles(name, color), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), account:receiving_accounts(holder_name), method:payment_methods(name)")
+    .select("*, lead:leads(company), profile:dev_profiles(name, color), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), account:receiving_accounts(holder_name), method:payment_methods(name)")
     .eq("id", params.id)
     .single();
   if (!deal) notFound();
@@ -69,7 +69,8 @@ export default async function DealDetail({ params }: { params: { id: string } })
         <CardContent>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
             <div><dt className="text-caption text-text-secondary">Closer</dt><dd><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></dd></div>
-            <div><dt className="text-caption text-text-secondary">BD owner</dt><dd><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></dd></div>
+            <div><dt className="text-caption text-text-secondary">BD owner{d.secondary_owner_bd ? " (primary)" : ""}</dt><dd><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></dd></div>
+            {d.secondary_owner_bd && <div><dt className="text-caption text-text-secondary">BD owner (secondary)</dt><dd><ColorChip label={d.secondary_owner_bd.full_name} color={d.secondary_owner_bd.color} /></dd></div>}
             <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile ? <Link href={`/crm/profiles/${d.dev_profile_id}`}><ColorChip label={d.profile.name} color={d.profile.color} /></Link> : <span className="text-text-secondary">—</span>}</dd></div>
             <div><dt className="text-caption text-text-secondary">Working members</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? <span className="text-text-secondary">—</span> : workingDevs.map((w: any) => <ColorChip key={w.developer_id} label={w.dev?.full_name} color={w.dev?.color} />)}</dd></div>
             <div><dt className="text-caption text-text-secondary">Engagement</dt><dd>{engagementLabel(d.engagement_type)}{d.hours ? ` · ${d.hours} h/wk` : ""}</dd></div>
@@ -121,7 +122,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             initialDevelopers={workingDevIds}
             initial={{
               name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
-              closer_id: d.closer_id, owner_bd_id: d.owner_bd_id, currency: d.currency,
+              closer_id: d.closer_id, owner_bd_id: d.owner_bd_id, secondary_owner_bd_id: d.secondary_owner_bd_id, currency: d.currency,
               engagement_type: d.engagement_type, rate_type: d.rate_type, hours: d.hours != null ? String(d.hours) : "",
               designation: d.designation, joining_date: d.joining_date, salary: d.salary != null ? String(d.salary) : "",
               receiving_account_id: d.receiving_account_id, payment_method_id: d.payment_method_id,

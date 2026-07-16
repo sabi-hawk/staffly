@@ -47,6 +47,7 @@ export function DealForm({
     working_developer: initial?.working_developer ?? "",
     closer_id: initial?.closer_id ?? "",
     owner_bd_id: initial?.owner_bd_id ?? "",
+    secondary_owner_bd_id: initial?.secondary_owner_bd_id ?? "",
     currency: initial?.currency ?? "PKR",
     designation: initial?.designation ?? "",
     joining_date: initial?.joining_date ?? "",
@@ -175,7 +176,8 @@ export function DealForm({
       <Divider title="People" />
       <Combobox id="deal-dev_profile_id" label="Selected profile" hint="The marketing profile the client hired. Search by number, name, stack or email." options={toOpts(profiles)} value={form.dev_profile_id} onChange={(v) => set("dev_profile_id", v)} searchPlaceholder="Search profiles…" />
       <Combobox id="deal-closer_id" label="Closer" hint="Who closed this deal. Only people flagged 'Can be a closer' on their employee page appear here." options={toOpts(closers)} value={form.closer_id} onChange={(v) => set("closer_id", v)} searchPlaceholder="Search closers…" />
-      <Combobox id="deal-owner_bd_id" label="BD owner (optional)" hint="The BD who owns this deal." options={toOpts(bds)} value={form.owner_bd_id} onChange={(v) => set("owner_bd_id", v)} searchPlaceholder="Search BDs…" />
+      <Combobox id="deal-owner_bd_id" label="Primary BD owner (optional)" hint="The BD who directly owns this deal." options={toOpts(bds)} value={form.owner_bd_id} onChange={(v) => set("owner_bd_id", v)} searchPlaceholder="Search BDs…" />
+      <Combobox id="deal-secondary_owner_bd_id" label="Secondary BD owner (optional)" hint="A second BD who also earns on this deal, e.g. the lead who trained the primary BD. Set each one's commission % on their own employee page." options={toOpts(bds)} value={form.secondary_owner_bd_id} onChange={(v) => set("secondary_owner_bd_id", v)} searchPlaceholder="Search BDs…" />
       <Combobox id="deal-working_developers" label="Working members (optional)" hint="Everyone doing the work on this deal — developers or designers, pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
 
       {/* ── Other ────────────────────────────────────────────────────────────── */}

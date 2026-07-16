@@ -67,7 +67,10 @@ export function DealsGrid({ rows }: { rows: any[] }) {
                 </TD>
                 <TD><ProfileCell p={d.profile ? { ...d.profile } : null} href={d.profile ? `/crm/profiles/${d.profile.id}` : undefined} /></TD>
                 <TD><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></TD>
-                {cols.owner && <TD><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></TD>}
+                {cols.owner && <TD><span className="flex flex-wrap gap-1">
+                  <ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} />
+                  {d.secondary_owner_bd && <ColorChip label={d.secondary_owner_bd.full_name} color={d.secondary_owner_bd.color} />}
+                </span></TD>}
                 <TD>
                   {devs.length === 0
                     ? <span className="text-text-secondary">—</span>

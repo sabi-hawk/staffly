@@ -23,13 +23,14 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, salary, currency, rate_type, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
+    .select("id, deal_code, name, salary, currency, rate_type, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
   // Default to ACTIVE deals; "all" is the explicit no-filter sentinel.
   const statusFilter = searchParams.status ?? "active";
   if (statusFilter !== "all") query = query.eq("status", statusFilter);
   if (searchParams.closer) query = query.eq("closer_id", searchParams.closer);
   if (searchParams.profile) query = query.eq("dev_profile_id", searchParams.profile);
-  if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
+  // A BD owner filter matches EITHER the primary or the secondary owner (a lead earns on both roles).
+  if (searchParams.owner) query = query.or(`owner_bd_id.eq.${searchParams.owner},secondary_owner_bd_id.eq.${searchParams.owner}`);
   if (searchParams.q) query = query.ilike("name", `%${searchParams.q}%`);
   const [{ data: rows, count }, closers, bds, profileOpts] = await Promise.all([
     query.order("created_at", { ascending: false }).range(from, to),

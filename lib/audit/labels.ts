@@ -30,7 +30,8 @@ export const ENTITY_LABELS: Record<string, string> = {
 };
 
 const FIELD_LABELS: Record<string, string> = {
-  owner_bd_id: "Owner (BD)",
+  owner_bd_id: "BD owner (primary)",
+  secondary_owner_bd_id: "BD owner (secondary)",
   dev_profile_id: "Profile",
   lead_id: "Lead",
   job_title: "Job title",

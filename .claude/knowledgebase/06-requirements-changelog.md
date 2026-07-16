@@ -5,6 +5,19 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-16 — Deal engagement type + secondary BD owner (owner)
+Two deal asks. (1) A deal isn't always a full-time monthly hire: capture **engagement type**
+(full-time / part-time / hourly) and **rate basis** (per month / per hour) plus agreed **hours/week** —
+a full-time hire can still be billed hourly; the Amount label follows the basis. Billing metadata only
+(logged receipts stay PKR). Migration 0066. (2) Designers were missing from the deal working picker →
+new `is_designer` flag; the "Working developers" picker becomes **Working members** (developers OR
+designers). Migration 0067. (3) A deal can have **two BD owners — primary and secondary**: the primary is
+the direct BD; the secondary is typically the BD-Lead who trained the junior and, per company policy,
+earns a commission on the junior's deal too. Both get their own deal-commission % (existing per-employee
+`deal_commissions` already supports this — each BD gets their own rate). Surface the secondary owner on
+the deal form, detail banner, and list; the BD-owner filter matches primary OR secondary. Migration 0068.
+Shipped 2026-07-16.
+
 ## 2026-07-10 — Delete a lead (owner)
 Leads could only be dismissed via status; there was no way to hard-delete a whole lead thread. Added a
 **Delete** button on each lead card (Leads tab) for super_admin OR `crm.records.delete` holders (partners),
