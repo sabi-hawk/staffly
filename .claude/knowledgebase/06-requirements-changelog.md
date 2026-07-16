@@ -5,6 +5,14 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-17 — Modern dashboard time-clock hero (owner)
+Redesigned the dashboard check-in widget into a sleek branded "Time clock" hero: a brand-gradient card
+with a large styled H/M/S timer, a live date + wall-clock line, a status pill with clock wording
+(**Off the clock** / **On the clock** (green pulse when working) / **Clocked out**, replacing "Awaiting"),
+translucent session chips, and a prominent white Check-in / Check-out button with icons. Behaviour
+unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
+Shipped 2026-07-17.
+
 ## 2026-07-16 — Typed receiving accounts + on-deal selection; flag alignment (owner)
 Reworked deal payment config. A **receiving account** is now any mechanism money lands in, with a **type**
 (Bank transfer / Payoneer / Wise / Western Union / Other) that replaces the separate "payment method" —
