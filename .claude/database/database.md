@@ -375,6 +375,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
   (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
   Assessments tab (same dynamic-add pattern as Manage stacks).
+- `0071_receiving_account_types.sql` — `receiving_accounts` gains **`type`** (`bank|payoneer|wise|
+  western_union|other`, default bank) + type-specific fields: `label`, `email` (payoneer/wise), `iban`,
+  `swift_code`, `branch_code`, `branch_address` (bank), `cnic` (western_union recipient). Merges the old
+  separate `payment_methods` idea into the account's type (payment_methods table kept but no longer used by
+  the deal form). receiving_accounts stays admin/super-admin only, so the WU CNIC isn't exposed to BDs.
+- `0070_commission_policy_effective_date.sql` — `commission_policies.effective_date` (date, nullable).
 - `0068_deal_secondary_bd.sql` — `deals.secondary_owner_bd_id` (FK → profiles, on delete set null). A deal
   can have TWO BD owners: primary (`owner_bd_id`) + secondary. The secondary is typically the BD-Lead who
   trained the primary and earns a commission on the deal too. Both are paid via their own per-employee

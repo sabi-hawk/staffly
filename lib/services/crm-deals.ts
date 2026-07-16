@@ -17,7 +17,7 @@ const DEAL_FIELDS = [
   "owner_bd_id", "secondary_owner_bd_id", "salary", "currency", "engagement_type", "rate_type", "hours", "receiving_account_id",
   "payment_method_id", "profile_dob", "status", "notes",
 ];
-const ACCOUNT_FIELDS = ["holder_name", "bank_name", "account_number", "notes", "is_active"];
+const ACCOUNT_FIELDS = ["type", "label", "holder_name", "bank_name", "account_number", "email", "iban", "swift_code", "branch_code", "branch_address", "cnic", "notes", "is_active"];
 const METHOD_FIELDS = ["name", "sort_order", "is_active"];
 
 async function ins(supabase: SupabaseClient, table: string, row: Record<string, unknown>) {

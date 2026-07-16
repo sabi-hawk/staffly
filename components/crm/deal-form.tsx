@@ -184,6 +184,10 @@ export function DealForm({
       <Combobox id="deal-secondary_owner_bd_id" label="Secondary BD owner (optional)" hint="A second BD who also earns on this deal, e.g. the lead who trained the primary BD. Set each one's commission % on their own employee page." options={toOpts(bds)} value={form.secondary_owner_bd_id} onChange={(v) => set("secondary_owner_bd_id", v)} searchPlaceholder="Search BDs…" />
       <Combobox id="deal-working_developers" label="Working members (optional)" hint="Everyone doing the work on this deal — developers or designers, pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
 
+      {/* ── Payment ──────────────────────────────────────────────────────────── */}
+      <Divider title="Payment" />
+      <Combobox id="deal-receiving_account_id" label="Receiving account (optional)" hint="Where this deal's payment lands — a bank account, Payoneer, Wise, or Western Union. Manage the list under 'Accounts & methods'." options={toOpts(accounts)} value={form.receiving_account_id} onChange={(v) => set("receiving_account_id", v)} searchPlaceholder="Search accounts…" />
+
       {/* ── Other ────────────────────────────────────────────────────────────── */}
       <Divider title="Other" />
       <Combobox id="deal-lead_id" label="Lead (optional)" hint="The CRM lead this deal came from, if any. Deals can exist without a lead." options={toOpts(leads)} value={form.lead_id} onChange={(v) => set("lead_id", v)} searchPlaceholder="Search leads…" />

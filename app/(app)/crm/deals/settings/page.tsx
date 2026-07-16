@@ -7,16 +7,13 @@ import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DealsSettings } from "@/components/crm/deals-settings";
-import type { ReceivingAccount, PaymentMethod } from "@/lib/types";
+import type { ReceivingAccount } from "@/lib/types";
 
 export default async function DealsSettingsPage() {
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.dealsManage)) redirect("/dashboard");
   const supabase = createClient();
-  const [{ data: accounts }, { data: methods }] = await Promise.all([
-    supabase.from("receiving_accounts").select("*").order("holder_name"),
-    supabase.from("payment_methods").select("*").order("sort_order"),
-  ]);
+  const { data: accounts } = await supabase.from("receiving_accounts").select("*").order("type").order("holder_name");
 
   return (
     <div className="space-y-4">
@@ -24,9 +21,12 @@ export default async function DealsSettingsPage() {
         <ChevronLeft className="size-4" /> Back to deals
       </Link>
       <Card>
-        <CardHeader><CardTitle>Receiving accounts &amp; payment methods</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Receiving accounts</CardTitle>
+          <p className="text-caption text-text-secondary">Every account money can land in — bank, Payoneer, Wise, Western Union. Each deal picks one to record where its payment arrives.</p>
+        </CardHeader>
         <CardContent>
-          <DealsSettings accounts={(accounts ?? []) as ReceivingAccount[]} methods={(methods ?? []) as PaymentMethod[]} />
+          <DealsSettings accounts={(accounts ?? []) as ReceivingAccount[]} />
         </CardContent>
       </Card>
     </div>

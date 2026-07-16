@@ -5,6 +5,15 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-16 — Typed receiving accounts + on-deal selection; flag alignment (owner)
+Reworked deal payment config. A **receiving account** is now any mechanism money lands in, with a **type**
+(Bank transfer / Payoneer / Wise / Western Union / Other) that replaces the separate "payment method" —
+the two are merged. Adding an account shows only the fields for its type: bank → bank name, account number,
+IBAN, SWIFT, branch code, branch address; Payoneer/Wise → email; Western Union → recipient name + CNIC.
+The deals settings panel manages all of these; a deal now has a **Receiving account** picker (Payment
+section) and the banner shows the chosen account as "{Type} · {identity}". Migration 0071. Also fixed the
+Flags checkbox alignment (checkbox centered with the label, hint indented below). Shipped 2026-07-16.
+
 ## 2026-07-16 — Hide the persona Account-password section from BD/BD-Lead (owner)
 On a CRM profile detail, the "Account password" card showed for everyone (the value stayed RLS-hidden,
 but the section itself was visible and meaningless to a BD/BD-Lead). Gated the whole card on

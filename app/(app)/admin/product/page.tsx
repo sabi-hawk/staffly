@@ -125,6 +125,7 @@ export default async function ProductDocPage() {
           <li>Dev-profile documents (resumes/cover letters): the owning BD manages them; admins keep a recoverable history. Uploads are capped at 4 MB (a clear message if larger).</li>
           <li>A profile can be flagged <strong>LinkedIn banned</strong> (independent of active/inactive status) — it shows a red marker in the profiles list. Lists default to <strong>Active</strong>.</li>
           <li><strong>Deals are super-admin only</strong>: name, financials (salary, payment), documents, and developer assignments. Admin/HR can&apos;t see deal details; assigned developers see only the deal name.</li>
+          <li><strong>Receiving accounts:</strong> configure every account money can land in — <strong>bank</strong> (holder, bank, account no., IBAN, SWIFT, branch), <strong>Payoneer</strong> / <strong>Wise</strong> (email), or <strong>Western Union</strong> (recipient + CNIC). The account&apos;s type is the payment method (the two are merged). Each deal picks one <strong>Receiving account</strong> to record where its payment arrives; the banner shows it as &ldquo;Type · identity&rdquo;.</li>
           <li>Each deal keeps a <strong>payments-received ledger</strong> (amount, receiving date, billing month, note) so incoming money is tracked at any cadence (weekly, monthly, one-off). Monthly totals feed the assigned BD&apos;s deal commission on payroll.</li>
         </ul>
       </Section>

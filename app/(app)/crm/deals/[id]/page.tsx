@@ -9,6 +9,7 @@ import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOpt
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone, engagementLabel, rateSuffix } from "@/lib/crm/constants";
+import { receivingAccountLabel } from "@/lib/crm/receiving";
 import { formatMoney, formatCode } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { ColoredName, ColorChip } from "@/components/crm/crm-cells";
@@ -25,7 +26,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
 
   const { data: deal } = await supabase
     .from("deals")
-    .select("*, lead:leads(company), profile:dev_profiles(name, color), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), account:receiving_accounts(holder_name), method:payment_methods(name)")
+    .select("*, lead:leads(company), profile:dev_profiles(name, color), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), account:receiving_accounts(type, label, holder_name, bank_name, account_number, email), method:payment_methods(name)")
     .eq("id", params.id)
     .single();
   if (!deal) notFound();
@@ -76,8 +77,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             <div><dt className="text-caption text-text-secondary">Engagement</dt><dd>{engagementLabel(d.engagement_type)}{d.hours ? ` · ${d.hours} h/wk` : ""}</dd></div>
             <div><dt className="text-caption text-text-secondary">Amount</dt><dd>{d.salary != null ? `${formatMoney(d.salary, d.currency)}${rateSuffix(d.rate_type)}` : "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account?.holder_name ?? "—"}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Payment method</dt><dd>{d.method?.name ?? "—"}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account ? receivingAccountLabel(d.account) : "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Profile DOB</dt><dd>{d.profile_dob ?? "—"}</dd></div>
           </dl>
         </CardContent>

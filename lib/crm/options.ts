@@ -1,6 +1,7 @@
 // Server-side option-list fetchers for CRM forms (profiles, developers, BDs).
 // RLS scopes profiles to what the caller may see.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { receivingAccountLabel } from "@/lib/crm/receiving";
 
 export type Opt = { id: string; label: string; sublabel?: string; color?: string };
 
@@ -95,8 +96,8 @@ export async function leadCompanyOptions(supabase: SupabaseClient): Promise<{ id
 }
 
 export async function accountOptions(supabase: SupabaseClient): Promise<Opt[]> {
-  const { data } = await supabase.from("receiving_accounts").select("id, holder_name, bank_name").eq("is_active", true).order("holder_name");
-  return (data ?? []).map((a: any) => ({ id: a.id, label: a.bank_name ? `${a.holder_name} — ${a.bank_name}` : a.holder_name }));
+  const { data } = await supabase.from("receiving_accounts").select("id, type, label, holder_name, bank_name, account_number, email").eq("is_active", true).order("type").order("holder_name");
+  return (data ?? []).map((a: any) => ({ id: a.id, label: receivingAccountLabel(a) }));
 }
 
 export async function methodOptions(supabase: SupabaseClient): Promise<Opt[]> {

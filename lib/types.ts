@@ -76,9 +76,17 @@ export interface Lead {
 
 export interface ReceivingAccount {
   id: string;
+  type: "bank" | "payoneer" | "wise" | "western_union" | "other";
+  label: string | null;
   holder_name: string;
   bank_name: string | null;
   account_number: string | null;
+  email: string | null;
+  iban: string | null;
+  swift_code: string | null;
+  branch_code: string | null;
+  branch_address: string | null;
+  cnic: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;

@@ -71,6 +71,10 @@ const FIELD_LABELS: Record<string, string> = {
   account_number: "Account number",
   holder_name: "Account holder",
   bank_name: "Bank",
+  iban: "IBAN",
+  swift_code: "SWIFT / BIC",
+  branch_code: "Branch code",
+  branch_address: "Branch address",
   employee_code: "Employee code",
 };
 
