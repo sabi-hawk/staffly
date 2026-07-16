@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
+import { CompanyPicker } from "@/components/crm/company-picker";
 import { CURRENCIES } from "@/lib/utils";
 import { ENGAGEMENT_TYPES, RATE_TYPES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
@@ -23,6 +24,7 @@ export function DealForm({
   bds = [],
   accounts,
   methods,
+  companies = [],
   initial,
   initialDevelopers = [],
 }: {
@@ -34,6 +36,7 @@ export function DealForm({
   bds?: Opt[];
   accounts: Opt[];
   methods: Opt[];
+  companies?: string[];
   initial?: Partial<Record<string, string | null>>;
   initialDevelopers?: string[];
 }) {
@@ -101,12 +104,13 @@ export function DealForm({
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {/* ── The deal (client-facing) ─────────────────────────────────────────── */}
       <Divider title="Deal" />
-      <FloatInput
+      <CompanyPicker
         id="deal-name"
-        label="Company name"
-        hint="The client company for this deal. A company can have several deals (each gets its own code)."
+        label="Company"
+        hint="The client company for this deal. Pick an existing company to group this deal with its others, or type a new name. Several deals can share one company; the deals list rolls them up together."
+        companies={companies}
         value={form.name}
-        onChange={(e) => set("name", e.target.value)}
+        onChange={(v) => set("name", v)}
       />
       <FloatInput
         id="deal-designation"

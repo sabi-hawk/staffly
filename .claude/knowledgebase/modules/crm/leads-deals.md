@@ -68,3 +68,18 @@ assessments grids' **edit** action deep-links `?edit=<kind>:<id>` to open that r
   the owner/admin; both audited. UI: `/crm/leads` (pipeline + new), `/crm/leads/[id]` (info + disqualify
   + nested interviews/assessments via `lead-activity.tsx` + edit). Service/routes: `crm-activity.ts`,
   `app/api/crm/leads/*`. **Deals/accounts/payment-methods remain Plan 03.**
+
+## Recent additions (2026-07-16)
+- **Engagement type + rate basis (0066):** deals carry `engagement_type` (full_time/part_time/hourly),
+  `rate_type` (monthly/hourly — the Amount label follows it; hourly engagement locks the basis) and
+  `hours` (per-week, part-time/hourly). Billing metadata only; receipts stay PKR.
+- **Working members incl. designers (0067):** the deal "Working developers" picker became **Working
+  members** (developers OR designers via `is_designer`); `dealMemberOptions` keeps designers out of the
+  interview/assessment "given by" picker.
+- **Secondary BD owner (0068):** `deals.secondary_owner_bd_id` — primary + secondary BD; both paid via
+  their own per-employee `deal_commissions` row. The BD-owner filter matches either role.
+- **Grouped-by-company list (no migration):** `/crm/deals` rolls deals up by company name
+  (case-insensitive) into collapsible records with a count + status summary; single-deal companies
+  auto-expand. The deal form's company field is a **creatable `CompanyPicker`** (reuse an existing company
+  to group, or add a new one). Deal-level pagination dropped (fetch ≤1000, group client-side). The deal
+  row label is its `designation`.

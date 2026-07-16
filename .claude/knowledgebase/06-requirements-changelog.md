@@ -5,6 +5,17 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-16 — Deals grouped by company (owner)
+Several deals can belong to one client company. The deals list now **rolls up by company**: each company
+is a collapsible record showing its deal count (and a status summary); expand it to see all that company's
+deals in a grid. Single-deal companies auto-expand; multi-deal ones start collapsed with an Expand-all
+toggle. The deal form's "Company name" free-text became a **creatable Company picker** — choose an existing
+company (reusing its exact spelling, which is what groups the deals) or type a new one. No schema change:
+grouping is by the deal's company name (case-insensitive). Existing deals that already share a company name
+group automatically; any with inconsistent names are re-pointed by editing the deal and picking the
+canonical company. The deal's own row label is now its **designation**. Server pagination on the deals list
+was dropped in favour of client-side company grouping (early-stage volume; capped at 1000). Shipped 2026-07-16.
+
 ## 2026-07-16 — Assessment camera + configurable category (owner)
 Assessments gain two OPTIONAL fields. (1) **Camera**: with camera / without camera / not determined —
 default unset (we usually don't know up front). (2) **Category**: the kind of assessment (Coding, MCQs,

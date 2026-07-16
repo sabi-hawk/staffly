@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions, companyNameOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone, engagementLabel, rateSuffix } from "@/lib/crm/constants";
@@ -46,9 +46,9 @@ export default async function DealDetail({ params }: { params: { id: string } })
   const workingDevs = (devRows ?? []).filter((r: any) => r.role === "developer");
   const workingDevIds = workingDevs.map((r: any) => r.developer_id);
 
-  const [leads, profiles, developers, closers, bds, accounts, methods] = await Promise.all([
+  const [leads, profiles, developers, closers, bds, accounts, methods, companies] = await Promise.all([
     leadOptions(supabase), crmProfileOptions(supabase), dealMemberOptions(supabase), closerOptions(supabase), bdOptions(supabase),
-    accountOptions(supabase), methodOptions(supabase),
+    accountOptions(supabase), methodOptions(supabase), companyNameOptions(supabase),
   ]);
 
   const d = deal as any;
@@ -119,6 +119,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             bds={bds}
             accounts={accounts}
             methods={methods}
+            companies={companies}
             initialDevelopers={workingDevIds}
             initial={{
               name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,

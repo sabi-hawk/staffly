@@ -45,3 +45,10 @@ Belongs to a [lead](leads-deals.md); references a [profile](profiles.md). Access
 - **Dismiss-not-delete (0049):** same model as interviews — a BD **dismisses** (soft-hide, crossed out,
   kept for audit); only a **super admin** restores or hard-deletes (RLS `super_delete` +
   `crm_guard_undismiss` trigger; routes gate on `isSuperAdminRole`). See DECISIONS #97.
+
+## Recent additions (2026-07-16)
+- **Camera + Category (0069, both optional).** `assessments.camera` (null = not determined, `with`,
+  `without`) and `assessments.category_id` → new **`assessment_categories`** table (configurable taxonomy,
+  mirrors `dev_stacks`: name/sort_order/is_active; RLS read any-authed, write admin/super OR
+  `crm.profiles.manage`). Managed via `AssessmentCategoriesManager` ("Manage categories" on the Assessments
+  tab). Both show on the form, the grid (columns + filters), and the shared assessment text.

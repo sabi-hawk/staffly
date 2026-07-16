@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus, Settings } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
@@ -7,23 +7,20 @@ import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Pagination } from "@/components/ui/pagination";
 import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { DealsGrid } from "@/components/crm/deals-grid";
 import { closerOptions, bdOptions, crmProfileOptions } from "@/lib/crm/options";
-import { parsePaging } from "@/lib/pagination";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export default async function CrmDealsPage({ searchParams }: { searchParams: { page?: string; pageSize?: string; status?: string; q?: string; closer?: string; profile?: string; owner?: string } }) {
+export default async function CrmDealsPage({ searchParams }: { searchParams: { status?: string; q?: string; closer?: string; profile?: string; owner?: string } }) {
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.dealsView)) redirect("/dashboard");
   const supabase = createClient();
-  const { page, pageSize, from, to } = parsePaging(searchParams);
 
   let query = supabase
     .from("deals")
-    .select("id, deal_code, name, salary, currency, rate_type, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
+    .select("id, deal_code, name, designation, salary, currency, rate_type, status, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)), closer:profiles!deals_closer_id_fkey(full_name, color), owner_bd:profiles!deals_owner_bd_id_fkey(full_name, color), secondary_owner_bd:profiles!deals_secondary_owner_bd_id_fkey(full_name, color), deal_developers(role, dev:profiles!deal_developers_developer_id_fkey(id, full_name, color))", { count: "exact" });
   // Default to ACTIVE deals; "all" is the explicit no-filter sentinel.
   const statusFilter = searchParams.status ?? "active";
   if (statusFilter !== "all") query = query.eq("status", statusFilter);
@@ -32,8 +29,10 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
   // A BD owner filter matches EITHER the primary or the secondary owner (a lead earns on both roles).
   if (searchParams.owner) query = query.or(`owner_bd_id.eq.${searchParams.owner},secondary_owner_bd_id.eq.${searchParams.owner}`);
   if (searchParams.q) query = query.ilike("name", `%${searchParams.q}%`);
+  // Deals are grouped by company client-side, so fetch the whole (filtered) set rather than a deal page.
+  // Early-stage volume is small; cap defensively at 1000.
   const [{ data: rows, count }, closers, bds, profileOpts] = await Promise.all([
-    query.order("created_at", { ascending: false }).range(from, to),
+    query.order("name", { ascending: true }).order("created_at", { ascending: false }).range(0, 999),
     closerOptions(supabase), bdOptions(supabase), crmProfileOptions(supabase),
   ]);
   // working devs (multi) = the `developer` rows of deal_developers, shown as chips
@@ -68,7 +67,6 @@ export default async function CrmDealsPage({ searchParams }: { searchParams: { p
           }
         >
         <DealsGrid rows={list} />
-        <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
         </FilterShell>
       </CardContent>
     </Card>

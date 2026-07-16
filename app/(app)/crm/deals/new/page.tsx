@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions, companyNameOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DealForm } from "@/components/crm/deal-form";
 
@@ -13,9 +13,9 @@ export default async function NewDealPage({ searchParams }: { searchParams: { le
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.dealsManage)) redirect("/dashboard");
   const supabase = createClient();
-  const [leads, profiles, developers, closers, bds, accounts, methods] = await Promise.all([
+  const [leads, profiles, developers, closers, bds, accounts, methods, companies] = await Promise.all([
     leadOptions(supabase), crmProfileOptions(supabase), dealMemberOptions(supabase), closerOptions(supabase), bdOptions(supabase),
-    accountOptions(supabase), methodOptions(supabase),
+    accountOptions(supabase), methodOptions(supabase), companyNameOptions(supabase),
   ]);
 
   // Prefill from a lead when "Create deal from this lead" was used.
@@ -33,7 +33,7 @@ export default async function NewDealPage({ searchParams }: { searchParams: { le
       <Card>
         <CardHeader><CardTitle>New deal</CardTitle></CardHeader>
         <CardContent>
-          <DealForm leads={leads} profiles={profiles} developers={developers} closers={closers} bds={bds} accounts={accounts} methods={methods} initial={initial} />
+          <DealForm leads={leads} profiles={profiles} developers={developers} closers={closers} bds={bds} accounts={accounts} methods={methods} companies={companies} initial={initial} />
         </CardContent>
       </Card>
     </div>

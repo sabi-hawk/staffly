@@ -30,6 +30,18 @@ export async function dealMemberOptions(supabase: SupabaseClient): Promise<Opt[]
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
 }
 
+/** Distinct existing company names across deals — feeds the creatable Company picker so a new deal can
+ * reuse an existing company's exact spelling (that's what rolls several deals up under one company). */
+export async function companyNameOptions(supabase: SupabaseClient): Promise<string[]> {
+  const { data } = await supabase.from("deals").select("name").not("name", "is", null).order("name");
+  const seen = new Map<string, string>();
+  for (const r of (data ?? []) as any[]) {
+    const nm = (r.name ?? "").trim();
+    if (nm && !seen.has(nm.toLowerCase())) seen.set(nm.toLowerCase(), nm);
+  }
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+}
+
 /** Active assessment categories (configurable taxonomy, like dev_stacks) for the assessment form. */
 export async function assessmentCategoryOptions(supabase: SupabaseClient): Promise<Opt[]> {
   const { data } = await supabase.from("assessment_categories").select("id, name").eq("is_active", true).order("sort_order").order("name");
