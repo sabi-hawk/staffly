@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { ChevronRight, ChevronDown, SlidersHorizontal, Check, Building2 } from "lucide-react";
+import { ChevronRight, ChevronDown, ChevronLeft, SlidersHorizontal, Check, Building2 } from "lucide-react";
+import { NativeSelect } from "@/components/ui/field";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { labelize, statusTone, rateSuffix } from "@/lib/crm/constants";
@@ -58,6 +59,8 @@ function statusSummary(deals: any[]): string {
   return Object.entries(counts).map(([s, n]) => `${n} ${labelize(s).toLowerCase()}`).join(" · ");
 }
 
+const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
 function DealRows({ deals, cols }: { deals: any[]; cols: Record<string, boolean> }) {
   return (
     <Table>
@@ -108,16 +111,26 @@ export function DealsGrid({ rows }: { rows: any[] }) {
   // Single-deal companies open by default (nothing to roll up); multi-deal ones collapse to one record.
   const [open, setOpen] = useState<Set<string>>(() => new Set(groups.filter((g) => g.deals.length === 1).map((g) => g.company.toLowerCase())));
   const toggleGroup = (key: string) => setOpen((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
-  const allKeys = groups.map((g) => g.company.toLowerCase());
-  const allOpen = open.size >= groups.length;
+
+  // Paginate by COMPANY (not by deal) — a company and all its deals stay on one page.
+  const [perPage, setPerPage] = useState(10);
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(groups.length / perPage));
+  useEffect(() => { if (page > totalPages - 1) setPage(0); }, [page, totalPages]);
+  const safePage = Math.min(page, totalPages - 1);
+  const start = safePage * perPage;
+  const pageGroups = groups.slice(start, start + perPage);
+
+  const pageKeys = pageGroups.map((g) => g.company.toLowerCase());
+  const allOpen = pageKeys.every((k) => open.has(k));
 
   return (
     <>
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="text-caption text-text-secondary">{groups.length} {groups.length === 1 ? "company" : "companies"} · {rows.length} {rows.length === 1 ? "deal" : "deals"}</span>
         <div className="flex items-center gap-2">
-          {groups.some((g) => g.deals.length > 1) && (
-            <button type="button" onClick={() => setOpen(allOpen ? new Set() : new Set(allKeys))} className="rounded-md border border-border px-2.5 py-1 text-caption text-text-secondary hover:bg-surface">
+          {pageGroups.some((g) => g.deals.length > 1) && (
+            <button type="button" onClick={() => setOpen((s) => { const n = new Set(s); if (allOpen) pageKeys.forEach((k) => n.delete(k)); else pageKeys.forEach((k) => n.add(k)); return n; })} className="rounded-md border border-border px-2.5 py-1 text-caption text-text-secondary hover:bg-surface">
               {allOpen ? "Collapse all" : "Expand all"}
             </button>
           )}
@@ -127,25 +140,45 @@ export function DealsGrid({ rows }: { rows: any[] }) {
 
       {groups.length === 0 && <div className="rounded-lg border border-border py-8 text-center text-text-secondary">No deals yet.</div>}
 
-      <div className="space-y-2">
-        {groups.map((g) => {
+      <div className="space-y-1.5">
+        {pageGroups.map((g) => {
           const key = g.company.toLowerCase();
           const isOpen = open.has(key);
           const multi = g.deals.length > 1;
           return (
             <div key={key} className="overflow-hidden rounded-lg border border-border">
-              <button type="button" onClick={() => toggleGroup(key)} className="flex w-full items-center gap-3 bg-surface/40 px-3 py-2.5 text-left hover:bg-surface">
-                {isOpen ? <ChevronDown className="size-4 shrink-0 text-text-secondary" /> : <ChevronRight className="size-4 shrink-0 text-text-secondary" />}
-                <Building2 className="size-4 shrink-0 text-text-secondary" />
-                <span className="min-w-0 flex-1 truncate font-medium text-text-primary">{g.company}</span>
-                <Badge tone={multi ? "brand" : "neutral"}>{g.deals.length} {g.deals.length === 1 ? "deal" : "deals"}</Badge>
-                <span className="hidden shrink-0 text-caption text-text-secondary sm:inline">{statusSummary(g.deals)}</span>
+              <button type="button" onClick={() => toggleGroup(key)} className="group flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-surface/60">
+                {isOpen ? <ChevronDown className="size-4 shrink-0 text-text-secondary" /> : <ChevronRight className="size-4 shrink-0 text-text-secondary transition-transform group-hover:translate-x-0.5" />}
+                <Building2 className="size-3.5 shrink-0 text-text-secondary/70" />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">{g.company}</span>
+                <span className="hidden shrink-0 text-[11px] text-text-secondary/80 sm:inline">{statusSummary(g.deals)}</span>
+                <span className={`inline-flex shrink-0 items-baseline gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${multi ? "bg-brand-primary/10 text-brand-primary" : "bg-surface text-text-secondary"}`}>
+                  {g.deals.length}<span className="font-normal opacity-60">{g.deals.length === 1 ? "deal" : "deals"}</span>
+                </span>
               </button>
               {isOpen && <div className="border-t border-border p-1"><DealRows deals={g.deals} cols={cols} /></div>}
             </div>
           );
         })}
       </div>
+
+      {groups.length > perPage && (
+        <div className="mt-3 flex items-center justify-between gap-3 text-caption text-text-secondary">
+          <div className="flex items-center gap-2">
+            <span>Companies per page</span>
+            <NativeSelect value={String(perPage)} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(0); }} className="w-auto">
+              {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+            </NativeSelect>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>{start + 1}–{Math.min(start + perPage, groups.length)} of {groups.length}</span>
+            <div className="flex items-center gap-1">
+              <button type="button" disabled={safePage === 0} onClick={() => setPage(safePage - 1)} className="inline-flex size-7 items-center justify-center rounded-md border border-border hover:bg-surface disabled:opacity-40" aria-label="Previous page"><ChevronLeft className="size-4" /></button>
+              <button type="button" disabled={safePage >= totalPages - 1} onClick={() => setPage(safePage + 1)} className="inline-flex size-7 items-center justify-center rounded-md border border-border hover:bg-surface disabled:opacity-40" aria-label="Next page"><ChevronRight className="size-4" /></button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
