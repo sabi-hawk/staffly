@@ -30,6 +30,12 @@ export async function dealMemberOptions(supabase: SupabaseClient): Promise<Opt[]
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
 }
 
+/** Active assessment categories (configurable taxonomy, like dev_stacks) for the assessment form. */
+export async function assessmentCategoryOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  const { data } = await supabase.from("assessment_categories").select("id, name").eq("is_active", true).order("sort_order").order("name");
+  return (data ?? []).map((c: any) => ({ id: c.id, label: c.name }));
+}
+
 /** Every active person (any department) — a closer can be anyone who landed the deal, not just a dev. */
 export async function peopleOptions(supabase: SupabaseClient): Promise<Opt[]> {
   const { data } = await supabase

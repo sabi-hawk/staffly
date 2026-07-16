@@ -4,7 +4,7 @@ import { getCurrentProfile, hasPermP } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { isBdLead, isAdminRole, isSuperAdminRole } from "@/lib/crm/access";
 import { createClient } from "@/lib/supabase/server";
-import { crmProfileOptions, developerOptions, bdOptions } from "@/lib/crm/options";
+import { crmProfileOptions, developerOptions, bdOptions, assessmentCategoryOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { LeadDetailsCard } from "@/components/crm/lead-details-card";
 import { LeadRichSection } from "@/components/crm/lead-rich-section";
@@ -38,12 +38,13 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
     .single();
   if (!lead) notFound();
 
-  const [ivRes, asRes, profiles, developers, owners] = await Promise.all([
+  const [ivRes, asRes, profiles, developers, owners, categories] = await Promise.all([
     supabase.from("interviews").select("*").eq("lead_id", params.id).order("interview_at", { ascending: true, nullsFirst: false }),
     supabase.from("assessments").select("*").eq("lead_id", params.id).order("created_at", { ascending: true }),
     crmProfileOptions(supabase),
     developerOptions(supabase),
     bdOptions(supabase),
+    assessmentCategoryOptions(supabase),
   ]);
   const interviews = (ivRes.data ?? []) as Interview[];
   const assessments = (asRes.data ?? []) as Assessment[];
@@ -92,6 +93,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
             devProfileId={lead.dev_profile_id}
             company={lead.company}
             developers={developers}
+            categories={categories}
             interviews={interviews}
             assessments={assessments}
             canManage={isSuperAdminRole(me.role) || hasPermP(me, PERM.crmRecordsDelete)}

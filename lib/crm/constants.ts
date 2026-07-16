@@ -29,6 +29,15 @@ export const INTERVIEW_OUTCOME = ["pending", "selected", "rejected", "on_hold"] 
 
 export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancelled"] as const;
 
+// Assessment camera setting (0069) — optional; null/"" = not determined (the default, since we usually
+// don't know up front). Category is a configurable list (assessment_categories), not a fixed enum.
+export const CAMERA_OPTIONS = [
+  { value: "with", label: "With camera" },
+  { value: "without", label: "Without camera" },
+] as const;
+export const cameraLabel = (v: string | null | undefined) =>
+  v === "with" ? "With camera" : v === "without" ? "Without camera" : "Not determined";
+
 // Deal engagement + how the Amount is billed (0066). A full-time hire can still be billed hourly.
 export const ENGAGEMENT_TYPES = [
   { value: "full_time", label: "Full-time" },

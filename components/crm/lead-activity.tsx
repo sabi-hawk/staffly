@@ -18,6 +18,7 @@ export function LeadActivity({
   devProfileId,
   company,
   developers,
+  categories = [],
   interviews,
   assessments,
   canManage = false,
@@ -27,6 +28,7 @@ export function LeadActivity({
   devProfileId: string | null;
   company: string | null;
   developers: Opt[];
+  categories?: Opt[];
   interviews: Interview[];
   assessments: Assessment[];
   canManage?: boolean; // super admin: may restore + hard-delete. Others: dismiss only.
@@ -135,7 +137,7 @@ export function LeadActivity({
         </div>
         {aEdit === "new" && (
           <div className="rounded-md border border-border p-3">
-            <AssessmentForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} onDone={() => setAEdit(null)} />
+            <AssessmentForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} categories={categories} onDone={() => setAEdit(null)} />
           </div>
         )}
         <div className="space-y-2">
@@ -153,7 +155,7 @@ export function LeadActivity({
               </div>
               {aEdit === as.id && (
                 <div className="mt-3 border-t border-border pt-3">
-                  <AssessmentForm id={as.id} developers={developers} initial={as as never} onDone={() => setAEdit(null)} />
+                  <AssessmentForm id={as.id} developers={developers} categories={categories} initial={as as never} onDone={() => setAEdit(null)} />
                 </div>
               )}
             </div>

@@ -368,6 +368,13 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0069_assessment_camera_category.sql` — richer assessment metadata (both optional). New table
+  **`assessment_categories`** (configurable taxonomy, mirrors `dev_stacks`: id, name unique, sort_order,
+  is_active, timestamps; seeded Coding / MCQs / Coding + MCQs / Video introduction / Video recording /
+  Take-home project). RLS: read = any authed; write = admin/super OR `auth_has_perm('crm.profiles.manage')`.
+  `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
+  (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
+  Assessments tab (same dynamic-add pattern as Manage stacks).
 - `0068_deal_secondary_bd.sql` — `deals.secondary_owner_bd_id` (FK → profiles, on delete set null). A deal
   can have TWO BD owners: primary (`owner_bd_id`) + secondary. The secondary is typically the BD-Lead who
   trained the primary and earns a commission on the deal too. Both are paid via their own per-employee

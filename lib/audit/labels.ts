@@ -51,6 +51,8 @@ const FIELD_LABELS: Record<string, string> = {
   is_bd_lead: "BD Lead",
   is_developer: "Developer",
   is_designer: "Designer",
+  camera: "Camera",
+  category_id: "Category",
   engagement_type: "Engagement type",
   rate_type: "Rate basis",
   hours: "Hours per week",

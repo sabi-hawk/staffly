@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { ASSESSMENT_HINTS } from "@/lib/crm/field-hints";
-import { labelize, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
+import { labelize, ASSESSMENT_STATUS, PRIORITIES, DURATIONS, CAMERA_OPTIONS } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
@@ -16,6 +16,7 @@ export function AssessmentForm({
   devProfileId,
   company,
   developers,
+  categories = [],
   initial,
   onDone,
 }: {
@@ -24,6 +25,7 @@ export function AssessmentForm({
   devProfileId?: string | null;
   company?: string | null;
   developers: Opt[];
+  categories?: Opt[];
   initial?: Partial<Record<string, string | null>>;
   onDone?: () => void;
 }) {
@@ -34,6 +36,8 @@ export function AssessmentForm({
     status: initial?.status ?? "pending",
     priority: initial?.priority ?? "medium",
     duration: initial?.duration ?? "",
+    camera: initial?.camera ?? "",
+    category_id: initial?.category_id ?? "",
     entry_date: initial?.entry_date ?? (id ? "" : companyToday()), // "Received" — default today on create
     deadline: initial?.deadline ?? "",
     completion_date: initial?.completion_date ?? "",
@@ -100,6 +104,26 @@ export function AssessmentForm({
       >
         <option value="">Not set</option>
         {DURATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+      </FloatSelect>
+      <FloatSelect
+        id="assessment-category"
+        label="Category"
+        hint="The kind of assessment: Coding, MCQs, Coding + MCQs, Video introduction, etc. Optional; leave unset if unknown. Configure the list from 'Manage categories' on the Assessments tab."
+        value={form.category_id}
+        onChange={(e) => set("category_id", e.target.value)}
+      >
+        <option value="">Not set</option>
+        {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+      </FloatSelect>
+      <FloatSelect
+        id="assessment-camera"
+        label="Camera"
+        hint="Whether the assessment is taken with the camera on. Optional; leave as 'Not determined' if you don't know yet."
+        value={form.camera}
+        onChange={(e) => set("camera", e.target.value)}
+      >
+        <option value="">Not determined</option>
+        {CAMERA_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
       </FloatSelect>
       <DatePicker id="assessment-entry-date" label="Received (email date)" hint={ASSESSMENT_HINTS.received_date} value={form.entry_date} onChange={(v) => set("entry_date", v)} />
       <DatePicker id="assessment-deadline" label="Deadline" hint={ASSESSMENT_HINTS.deadline} value={form.deadline} onChange={(v) => set("deadline", v)} />

@@ -5,6 +5,14 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-16 — Assessment camera + configurable category (owner)
+Assessments gain two OPTIONAL fields. (1) **Camera**: with camera / without camera / not determined —
+default unset (we usually don't know up front). (2) **Category**: the kind of assessment (Coding, MCQs,
+Coding + MCQs, Video introduction, Video recording, …), drawn from a **configurable list** managed with the
+same dynamic add/rename/deactivate pattern as dev stacks — a new `assessment_categories` table + a "Manage
+categories" dialog on the Assessments tab (crm.profiles.manage holders). Both fields surface on the
+assessment form and the Assessments grid (columns + filters). Migration 0069. Shipped 2026-07-16.
+
 ## 2026-07-16 — Deal engagement type + secondary BD owner (owner)
 Two deal asks. (1) A deal isn't always a full-time monthly hire: capture **engagement type**
 (full-time / part-time / hourly) and **rate basis** (per month / per hour) plus agreed **hours/week** —

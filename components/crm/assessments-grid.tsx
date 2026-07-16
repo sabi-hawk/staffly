@@ -10,33 +10,39 @@ import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { ActivityRowActions } from "@/components/crm/activity-row-actions";
+import { AssessmentCategoriesManager } from "@/components/crm/assessment-categories-manager";
 import { assessmentShareText } from "@/lib/crm/share-text";
 import { parsePaging } from "@/lib/pagination";
-import { labelize, statusTone, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
+import { labelize, statusTone, cameraLabel, CAMERA_OPTIONS, ASSESSMENT_STATUS, PRIORITIES, DURATIONS } from "@/lib/crm/constants";
 import { formatCrmDate } from "@/lib/utils";
 import { companyToday, resolveRange, type RangeKey } from "@/lib/time";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SP = { page?: string; pageSize?: string; status?: string; priority?: string; duration?: string; q?: string; range?: string; from?: string; to?: string };
+type SP = { page?: string; pageSize?: string; status?: string; priority?: string; duration?: string; category?: string; camera?: string; q?: string; range?: string; from?: string; to?: string };
 
 /** Assessments tab of the CRM Leads hub — grid filtered by Received (entry_date, default last 30 days). */
 export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
   const supabase = createClient();
   const me = await getCurrentProfile();
   const canManage = isSuperAdminRole(me?.role) || (!!me && hasPermP(me, PERM.crmRecordsDelete));
+  const canConfig = !!me && hasPermP(me, PERM.crmProfilesManage);
   const { page, pageSize, from, to } = parsePaging(searchParams);
   const today = companyToday();
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
+  const { data: catRows } = await supabase.from("assessment_categories").select("id, name").eq("is_active", true).order("sort_order").order("name");
+  const categories = (catRows ?? []) as { id: string; name: string }[];
 
   let query = supabase
     .from("assessments")
     .select(
-      "id, job_title, company, status, priority, duration, deadline, entry_date, dismissed_at, budget, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name)",
+      "id, job_title, company, status, priority, duration, camera, deadline, entry_date, dismissed_at, budget, job_post_url, created_at, updated_at, lead_id, profile:dev_profiles(name), owner:profiles!assessments_owner_bd_id_fkey(full_name), category:assessment_categories(name)",
       { count: "exact" }
     );
   if (searchParams.status) query = query.eq("status", searchParams.status);
   if (searchParams.priority) query = query.eq("priority", searchParams.priority);
   if (searchParams.duration) query = query.eq("duration", searchParams.duration);
+  if (searchParams.category) query = query.eq("category_id", searchParams.category);
+  if (searchParams.camera) query = query.eq("camera", searchParams.camera);
   // strip PostgREST DSL metacharacters from q before interpolating into .or() (filter-injection guard)
   const q = searchParams.q?.replace(/[,()]/g, "").trim();
   if (q) query = query.or(`job_title.ilike.%${q}%,company.ilike.%${q}%`);
@@ -51,12 +57,17 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
     <div className="mb-4 space-y-3 rounded-lg border border-border bg-surface/40 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-caption text-text-secondary">Received {formatCrmDate(rFrom)} → {formatCrmDate(rTo)} (inclusive)</span>
-        <CrmDateFilter range={range} from={rFrom} to={rTo} />
+        <div className="flex items-center gap-2">
+          {canConfig && <AssessmentCategoriesManager />}
+          <CrmDateFilter range={range} from={rFrom} to={rTo} />
+        </div>
       </div>
       <div className="border-t border-border pt-3">
         <CrmFilterBar
           filters={[
             { key: "status", label: "Status", options: ASSESSMENT_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+            { key: "category", label: "Category", options: categories.map((c) => ({ value: c.id, label: c.name })) },
+            { key: "camera", label: "Camera", options: CAMERA_OPTIONS.map((c) => ({ value: c.value, label: c.label })) },
             { key: "priority", label: "Priority", options: PRIORITIES.map((s) => ({ value: s, label: s })) },
             { key: "duration", label: "Duration", options: DURATIONS.map((s) => ({ value: s, label: s })) },
           ]}
@@ -71,7 +82,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
       <Table>
         <THead>
           <TR>
-            <TH>Job / Company</TH><TH>BD</TH><TH>Status</TH><TH>Priority</TH><TH>Duration</TH>
+            <TH>Job / Company</TH><TH>BD</TH><TH>Status</TH><TH>Category</TH><TH>Camera</TH><TH>Priority</TH><TH>Duration</TH>
             <TH>Received</TH><TH>Deadline</TH><TH>Entry</TH><TH>Modified</TH><TH className="text-right">Actions</TH>
           </TR>
         </THead>
@@ -83,6 +94,8 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
                 <TD className="font-medium">{as.job_title || "—"}<div className="text-caption text-text-secondary">{as.company}</div></TD>
                 <TD className="text-text-secondary">{as.owner?.full_name ?? "—"}</TD>
                 <TD className="no-underline"><Badge tone={statusTone(as.status)}>{labelize(as.status)}</Badge></TD>
+                <TD>{as.category?.name ? <Badge tone="neutral">{as.category.name}</Badge> : "—"}</TD>
+                <TD className="text-text-secondary">{as.camera ? cameraLabel(as.camera) : "—"}</TD>
                 <TD className="no-underline">{as.priority ? <Badge tone={as.priority === "high" ? "danger" : "neutral"}>{as.priority}</Badge> : "—"}</TD>
                 <TD>{as.duration ?? "—"}</TD>
                 <TD className="text-text-secondary">{formatCrmDate(as.entry_date)}</TD>
@@ -93,7 +106,7 @@ export async function AssessmentsGrid({ searchParams }: { searchParams: SP }) {
               </TR>
             );
           })}
-          {list.length === 0 && <TR><TD colSpan={10} className="py-6 text-center text-text-secondary">No assessments match.</TD></TR>}
+          {list.length === 0 && <TR><TD colSpan={12} className="py-6 text-center text-text-secondary">No assessments match.</TD></TR>}
         </TBody>
       </Table>
       <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
