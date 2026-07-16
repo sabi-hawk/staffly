@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus, Loader2 } from "lucide-react";
+import { Trash2, Plus, Loader2, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
@@ -33,22 +33,36 @@ const EMPTY = {
 export function DealsSettings({ accounts }: { accounts: ReceivingAccount[] }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({ ...EMPTY });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
   const extraFields = RECEIVING_FIELDS[form.type] ?? [];
 
-  async function add() {
+  function startEdit(a: ReceivingAccount) {
+    setEditingId(a.id);
+    setForm({
+      type: a.type, label: a.label ?? "", holder_name: a.holder_name ?? "", notes: a.notes ?? "",
+      bank_name: a.bank_name ?? "", account_number: a.account_number ?? "", iban: a.iban ?? "",
+      swift_code: a.swift_code ?? "", branch_code: a.branch_code ?? "", branch_address: a.branch_address ?? "",
+      email: a.email ?? "", cnic: a.cnic ?? "",
+    });
+    if (typeof document !== "undefined") document.getElementById("ra-type")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function cancelEdit() { setEditingId(null); setForm({ ...EMPTY }); }
+
+  async function save() {
     if (!form.holder_name.trim()) return toast.error("Holder / identity name is required");
     setBusy(true);
-    const res = await fetch("/api/crm/receiving-accounts", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form),
+    const res = await fetch(editingId ? `/api/crm/receiving-accounts/${editingId}` : "/api/crm/receiving-accounts", {
+      method: editingId ? "PATCH" : "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(form),
     });
     const json = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return toast.error(json.error ?? "Failed to add");
-    toast.success("Account added");
+    if (!res.ok) return toast.error(json.error ?? "Failed to save");
+    toast.success(editingId ? "Account updated" : "Account added");
     setForm({ ...EMPTY });
+    setEditingId(null);
     router.refresh();
   }
 
@@ -75,22 +89,30 @@ export function DealsSettings({ accounts }: { accounts: ReceivingAccount[] }) {
       <div className="space-y-2">
         {accounts.length === 0 && <div className="rounded-md border border-dashed border-border py-6 text-center text-caption text-text-secondary">No receiving accounts yet. Add your bank accounts, Payoneer, Wise, or Western Union below.</div>}
         {accounts.map((a) => (
-          <div key={a.id} className="flex items-start justify-between gap-2 rounded-md border border-border px-3 py-2.5">
+          <div key={a.id} className={`flex items-start justify-between gap-2 rounded-md border px-3 py-2.5 ${editingId === a.id ? "border-brand-primary bg-brand-primary/5" : "border-border"}`}>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone="neutral">{receivingTypeLabel(a.type)}</Badge>
                 <span className="truncate font-medium text-text-primary">{a.label?.trim() || a.holder_name}</span>
+                {editingId === a.id && <span className="text-caption text-brand-primary">editing…</span>}
               </div>
               <p className="truncate text-caption text-text-secondary">{a.type === "bank" && a.bank_name ? `${a.bank_name} · ` : ""}{detailLine(a) ?? "—"}</p>
             </div>
-            <button onClick={() => remove(a.id)} disabled={removingId === a.id} className="shrink-0 text-text-secondary hover:text-danger disabled:opacity-40" aria-label="Delete">
-              {removingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button onClick={() => startEdit(a)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-text-primary" aria-label={`Edit ${a.holder_name}`}><Pencil className="size-3.5" /></button>
+              <button onClick={() => remove(a.id)} disabled={removingId === a.id} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-danger disabled:opacity-40" aria-label="Delete">
+                {removingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
       <div className="grid gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-2">
+        <div className="col-span-full flex items-center justify-between">
+          <span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">{editingId ? "Edit account" : "Add account"}</span>
+          {editingId && <button type="button" onClick={cancelEdit} className="inline-flex items-center gap-1 text-caption text-text-secondary hover:text-text-primary"><X className="size-3.5" /> Cancel</button>}
+        </div>
         <FloatSelect id="ra-type" label="Type" hint="The mechanism this account receives money through. This replaces the old separate payment method." value={form.type} onChange={(e) => set("type", e.target.value)}>
           {RECEIVING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </FloatSelect>
@@ -100,10 +122,11 @@ export function DealsSettings({ accounts }: { accounts: ReceivingAccount[] }) {
         ))}
         <FloatInput id="ra-label" label="Label (optional)" hint="A short friendly name, e.g. 'Main HBL' or 'Owner Payoneer'." value={form.label} onChange={(e) => set("label", e.target.value)} />
         <FloatInput id="ra-notes" label="Notes (optional)" hint="Anything else worth recording." wrapClassName="sm:col-span-2" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
-        <div className="sm:col-span-2">
-          <Button size="sm" disabled={busy || !form.holder_name.trim()} onClick={add}>
-            {busy ? <><Loader2 className="size-4 animate-spin" /> Adding…</> : <><Plus className="size-4" /> Add {receivingTypeLabel(form.type).toLowerCase()} account</>}
+        <div className="flex items-center gap-2 sm:col-span-2">
+          <Button size="sm" disabled={busy || !form.holder_name.trim()} onClick={save}>
+            {busy ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : editingId ? <>Save changes</> : <><Plus className="size-4" /> Add {receivingTypeLabel(form.type).toLowerCase()} account</>}
           </Button>
+          {editingId && <Button size="sm" variant="outline" onClick={cancelEdit} disabled={busy}>Cancel</Button>}
         </div>
       </div>
       <p className="text-caption text-text-secondary">Accounts added here appear in the <strong>Receiving account</strong> picker on every deal, so you can record where each deal&apos;s payment lands.</p>
