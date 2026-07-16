@@ -44,12 +44,12 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
   return (
     <div className="space-y-3">
       {FLAGS.map((f) => (
-        <label key={f.key} className="flex items-start gap-2.5">
-          <input type="checkbox" className="mt-[3px] size-4 shrink-0 accent-brand-primary" checked={flags[f.key]} onChange={(e) => setFlags((s) => ({ ...s, [f.key]: e.target.checked }))} />
-          <span>
+        <label key={f.key} className="block">
+          <span className="flex items-center gap-2.5">
+            <input type="checkbox" className="size-4 shrink-0 accent-brand-primary" checked={flags[f.key]} onChange={(e) => setFlags((s) => ({ ...s, [f.key]: e.target.checked }))} />
             <span className="text-sm font-medium text-text-primary">{f.label}</span>
-            <span className="block text-caption text-text-secondary">{f.hint}</span>
           </span>
+          <span className="mt-0.5 block pl-[1.625rem] text-caption text-text-secondary">{f.hint}</span>
         </label>
       ))}
       <Button size="sm" onClick={save} disabled={busy || pending}>{busy || pending ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : "Save flags"}</Button>
