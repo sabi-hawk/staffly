@@ -731,3 +731,15 @@ The deal Closer picker used `developerOptions` (is_developer only), so a BD who 
 be selected. A closer can be anyone. Added `peopleOptions` (all active profiles, excl. the super-admin
 service account) and used it for the Closer field; Working developers stays developers-only. No DB
 restriction existed on `deals.closer_id` — this was purely the form's dropdown.
+
+## 2026-07-16 — Distinct colours, closer eligibility flag, deals columns/filters (owner)
+- **Distinct palette + unique per category** (0063): the 0061 set had 3 near-identical purples. New
+  12-hue palette (evenly spread) + `pick_free_color(used[])` so a colour is never reused within a
+  category (dev_profiles / BD+developer profiles / stacks) until the palette is exhausted, even after a
+  delete. Re-coloured all existing.
+- **Closer eligibility** (0063: `profiles.is_closer`): the deal Closer picker now lists ONLY people
+  flagged "Can be a closer" (a checkbox in the employee Flags card) — so the HR-admin service account no
+  longer appears. Backfilled true for everyone already a closer on a deal. `closerOptions` replaces the
+  all-people list for the closer field.
+- **Deals grid**: a **Columns** menu (like a settings picker) to show/hide **Salary** and **BD owner**
+  (both hidden by default); added **Closer / BD owner / Profile** filters alongside Status + search.

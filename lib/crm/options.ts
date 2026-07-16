@@ -30,6 +30,14 @@ export async function peopleOptions(supabase: SupabaseClient): Promise<Opt[]> {
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
 }
 
+/** People eligible to be a deal CLOSER (profiles flagged is_closer). Set the flag on the employee page. */
+export async function closerOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  const { data } = await supabase
+    .from("profiles").select("id, full_name, position, color")
+    .eq("is_closer", true).eq("status", "active").order("full_name");
+  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
+}
+
 export async function bdOptions(supabase: SupabaseClient): Promise<Opt[]> {
   // RBAC is the truth for "who is a BD", not the free-text department field. A Partner (BD) counts too
   // — they own deals/profiles like a BD Lead.

@@ -1,15 +1,17 @@
 "use client";
 // Admin toggle for an employee's privileged flags. `is_deal_developer` changes their leave treatment
 // (balances hidden, requests record-only) and lets them be assigned to deals.
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const FLAGS: { key: string; label: string; hint: string }[] = [
   { key: "is_developer", label: "Developer", hint: "Assignable as the interview/assessment/deal developer." },
   { key: "is_bd_lead", label: "BD Lead", hint: "Sees & manages all BDs' CRM data." },
   { key: "is_deal_developer", label: "Deal-assigned developer", hint: "Works a client deal. Leave balances are hidden and leave requests are record-only; the client company governs their leave." },
+  { key: "is_closer", label: "Can be a closer", hint: "Eligible to be picked as the closer on a deal (appears in the deal Closer list). Tick anyone who lands deals, not just developers." },
 ];
 
 export function ProfileFlags({ employeeId, initial }: { employeeId: string; initial: Record<string, boolean> }) {
@@ -18,8 +20,10 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
     is_developer: !!initial.is_developer,
     is_bd_lead: !!initial.is_bd_lead,
     is_deal_developer: !!initial.is_deal_developer,
+    is_closer: !!initial.is_closer,
   });
   const [busy, setBusy] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   async function save() {
     setBusy(true);
@@ -29,10 +33,10 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
       body: JSON.stringify(flags),
     });
     const j = await res.json().catch(() => ({}));
-    setBusy(false);
-    if (!res.ok) return toast.error(j.error ?? "Failed to save");
+    if (!res.ok) { setBusy(false); return toast.error(j.error ?? "Failed to save"); }
     toast.success("Flags saved");
-    router.refresh();
+    setBusy(false);
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -46,7 +50,7 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
           </span>
         </label>
       ))}
-      <Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save flags"}</Button>
+      <Button size="sm" onClick={save} disabled={busy || pending}>{busy || pending ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : "Save flags"}</Button>
     </div>
   );
 }
