@@ -743,3 +743,14 @@ restriction existed on `deals.closer_id` — this was purely the form's dropdown
   all-people list for the closer field.
 - **Deals grid**: a **Columns** menu (like a settings picker) to show/hide **Salary** and **BD owner**
   (both hidden by default); added **Closer / BD owner / Profile** filters alongside Status + search.
+
+## 2026-07-16 — Deal-save stuck fix, distinct-order palette, combobox chips (owner)
+- **Deal edit "Saving…" stuck**: the edit form is on the deal page; on save it did router.push to the
+  SAME url (no unmount), so busy never reset. Now editing refreshes in place (transition) + resets busy;
+  create still holds the button through the navigation.
+- **Palette reordered for max distinctness** (0064): 0063 started red→orange→amber (similar warm tones),
+  so small categories looked alike. New order blue→red→green→orange→purple→teal→pink… so the first
+  assignments are visually far apart. Re-coloured all (verified profiles blue/red/green/orange/purple,
+  BDs green/purple/orange/lime/red).
+- **Combobox**: single-select now renders the selection as a CHIP (like multi); chips are compact with
+  padding so the floating label no longer clips their top.

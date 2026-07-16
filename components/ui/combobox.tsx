@@ -50,6 +50,17 @@ export function Combobox({
   }
 
   const filled = selected.length > 0;
+  // one chip renderer for both single and multi — a removable chip (multi) or a plain chip (single).
+  const chip = (v: string, removable: boolean) => {
+    const c = byValue[v]?.color || "#475569";
+    return (
+      <span key={v} className="inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-[3px] text-[11px] font-medium leading-none"
+        style={{ color: c, borderColor: `${c}55`, backgroundColor: `${c}12` }}>
+        <span className="truncate">{byValue[v]?.label ?? v}</span>
+        {removable && <X className="size-3 shrink-0 cursor-pointer opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); toggle(v); }} />}
+      </span>
+    );
+  };
 
   return (
     <FloatShell label={label} hint={hint} filled={filled} htmlFor={id} className="min-h-10">
@@ -57,21 +68,13 @@ export function Combobox({
         <PopoverPrimitive.Trigger
           id={id}
           className={cn(
-            "flex min-h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-white px-3 py-1.5 text-left text-sm transition-colors",
+            "flex min-h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-white px-3 py-2 text-left text-sm transition-colors",
             "hover:border-brand-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           )}
         >
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
             {selected.length === 0 && <span className="text-text-secondary/70">{placeholder}</span>}
-            {multiple
-              ? selected.map((v) => (
-                  <span key={v} className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-caption font-medium"
-                    style={{ color: byValue[v]?.color || "#475569", borderColor: `${byValue[v]?.color || "#475569"}55`, backgroundColor: `${byValue[v]?.color || "#475569"}12` }}>
-                    {byValue[v]?.label ?? v}
-                    <X className="size-3 cursor-pointer opacity-60 hover:opacity-100" onClick={(e) => { e.stopPropagation(); toggle(v); }} />
-                  </span>
-                ))
-              : selected[0] && <span className="truncate text-text-primary" style={byValue[selected[0]]?.color ? { color: byValue[selected[0]].color } : undefined}>{byValue[selected[0]]?.label ?? selected[0]}</span>}
+            {selected.map((v) => chip(v, multiple))}
           </span>
           <ChevronsUpDown className="size-4 shrink-0 text-text-secondary" />
         </PopoverPrimitive.Trigger>

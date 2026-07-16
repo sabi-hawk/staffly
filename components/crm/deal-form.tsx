@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export function DealForm({
   initialDevelopers?: string[];
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [workingDevs, setWorkingDevs] = useState<string[]>(initialDevelopers);
   const [form, setForm] = useState<Record<string, string>>({
     name: initial?.name ?? "",
@@ -68,8 +69,15 @@ export function DealForm({
     const json = await res.json();
     if (!res.ok) { setBusy(false); return toast.error(json.error ?? "Failed to save"); }
     toast.success(id ? "Deal saved" : "Deal created");
-    // keep the button loading through the navigation (no dead gap after the toast)
-    router.push(id ? `/crm/deals/${id}` : `/crm/deals/${json.id}`);
+    if (id) {
+      // editing in place (the edit form is on the deal page) — refresh, don't navigate, so the button
+      // doesn't stay stuck on "Saving…" (router.push to the same URL never unmounts the form).
+      setBusy(false);
+      startTransition(() => router.refresh());
+      return;
+    }
+    // creating — keep the button loading through the navigation to the new deal
+    router.push(`/crm/deals/${json.id}`);
     router.refresh();
   }
 
@@ -153,7 +161,7 @@ export function DealForm({
         {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
       </FloatSelect>
       <div className="sm:col-span-2 lg:col-span-3">
-        <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save deal" : "Create deal"}</Button>
+        <Button type="submit" disabled={busy || pending}>{busy || pending ? "Saving…" : id ? "Save deal" : "Create deal"}</Button>
       </div>
     </form>
   );
