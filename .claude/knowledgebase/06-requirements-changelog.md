@@ -5,6 +5,22 @@ requirement arrives, before implementing.** Never rewrite history — supersede 
 
 ---
 
+## 2026-07-16 — Hide the persona Account-password section from BD/BD-Lead (owner)
+On a CRM profile detail, the "Account password" card showed for everyone (the value stayed RLS-hidden,
+but the section itself was visible and meaningless to a BD/BD-Lead). Gated the whole card on
+`crm.profiles.password` (super/admin/partner_bd) so BD & BD-Lead don't see it at all — matching the
+profiles-grid password column. UI-only; RLS already blocked the value. Shipped 2026-07-16.
+
+## 2026-07-16 — Commission policy effective date + scoped deal-commission dropdown (owner)
+Commission policies gain an **Effective from** date (0070) so a BD's changing rate reads as a timeline
+(newest first; earlier ones kept for history). The Deal-commissions **Deal** dropdown now lists only deals
+the employee is on (primary/secondary BD owner, or a working member) with the designation in the label,
+instead of every deal. Shipped 2026-07-16.
+
+## 2026-07-16 — Deals grid pagination + sleeker count pills (owner)
+The grouped deals list paginates **by company** (10/25/50/100 per page, prev/next) so hundreds of deals
+stay manageable, and the "N deals" labels became sleek tinted pills. Shipped 2026-07-16.
+
 ## 2026-07-16 — Deals grouped by company (owner)
 Several deals can belong to one client company. The deals list now **rolls up by company**: each company
 is a collapsible record showing its deal count (and a status summary); expand it to see all that company's

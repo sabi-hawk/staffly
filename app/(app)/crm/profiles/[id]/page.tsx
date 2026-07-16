@@ -29,6 +29,9 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
 
   // The owning BD (or a BD-Lead / admin) may add, mark-primary, note, and soft-delete documents.
   const canEdit = isBdLead(me ?? { role: null }) || p.owner_bd_id === me?.id;
+  // Account-password section is for password-holders only (super/admin/partner_bd). BD & BD-Lead don't
+  // manage persona logins — the value is RLS-hidden from them anyway, so hide the whole section too.
+  const canSeePassword = !!me && hasPermP(me, PERM.crmProfilesPassword);
 
   // Active documents everyone-with-access sees; soft-deleted history is admin-only.
   const { data: docRows } = await supabase
@@ -104,13 +107,15 @@ export default async function CrmProfileDetail({ params }: { params: { id: strin
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Account password</CardTitle>
-          <CardDescription>{isAdmin ? "The login for this persona's job-application accounts." : "Reveal or copy the login for this persona; only an admin can change it."}</CardDescription>
-        </CardHeader>
-        <CardContent><PasswordPanel profileId={p.id} hasPassword={hasPassword} canEdit={isAdmin} /></CardContent>
-      </Card>{" "}
+      {canSeePassword && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Account password</CardTitle>
+            <CardDescription>{isAdmin ? "The login for this persona's job-application accounts." : "Reveal or copy the login for this persona; only an admin can change it."}</CardDescription>
+          </CardHeader>
+          <CardContent><PasswordPanel profileId={p.id} hasPassword={hasPassword} canEdit={isAdmin} /></CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle>History</CardTitle></CardHeader>
