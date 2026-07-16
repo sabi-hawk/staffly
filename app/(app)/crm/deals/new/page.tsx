@@ -5,7 +5,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, developerOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DealForm } from "@/components/crm/deal-form";
 
@@ -14,7 +14,7 @@ export default async function NewDealPage({ searchParams }: { searchParams: { le
   if (!me || !hasPermP(me, PERM.dealsManage)) redirect("/dashboard");
   const supabase = createClient();
   const [leads, profiles, developers, closers, bds, accounts, methods] = await Promise.all([
-    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), closerOptions(supabase), bdOptions(supabase),
+    leadOptions(supabase), crmProfileOptions(supabase), dealMemberOptions(supabase), closerOptions(supabase), bdOptions(supabase),
     accountOptions(supabase), methodOptions(supabase),
   ]);
 

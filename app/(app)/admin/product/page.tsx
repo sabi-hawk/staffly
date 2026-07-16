@@ -58,6 +58,7 @@ export default async function ProductDocPage() {
         <h3>Developer</h3>
         <ul>
           <li>An engineering employee flagged `is_developer`: assignable as the interview/assessment/deal developer.</li>
+          <li>A <strong>designer</strong> flagged `is_designer`: assignable to deals as a <strong>working member</strong> (design deals), appearing in the deal Working-members picker alongside developers — but not in the interview/assessment developer picker.</li>
         </ul>
         <h3>Deal-assigned developer</h3>
         <ul>
@@ -116,7 +117,8 @@ export default async function ProductDocPage() {
       <Section title="CRM & deals">
         <ul>
           <li>CRM Leads is one hub keyed by company (Leads cards / Interviews / Assessments), with per-lead documents, job description, BD notes, and company contacts.</li>
-          <li>A <strong>deal</strong> records a <strong>Closer</strong> (who landed it) and an optional <strong>BD owner</strong> and <strong>working developer</strong>; the CRM <strong>lead is optional</strong> (deals can predate the portal). Each deal has a unique <strong>4-digit code</strong>, so a company with several deals stays unambiguous, and a <strong>currency</strong> (PKR / USD / EUR / GBP / AUD / …) for its salary amount. The list has <strong>Edit</strong> and <strong>Delete</strong> per profile.</li>
+          <li>A <strong>deal</strong> records a <strong>Closer</strong> (who landed it), an optional <strong>BD owner</strong>, and one or more <strong>working members</strong> — <strong>developers or designers</strong> (a deal can be design work, not just development). The CRM <strong>lead is optional</strong> (deals can predate the portal). Each deal has a unique <strong>4-digit code</strong>, so a company with several deals stays unambiguous, and a <strong>currency</strong> (PKR / USD / EUR / GBP / AUD / …) for its amount. The list has <strong>Edit</strong> and <strong>Delete</strong> per profile.</li>
+          <li>A deal captures its <strong>engagement type</strong> (full-time, part-time, or hourly) and <strong>rate basis</strong> (per month or per hour) — so a full-time hire billed at an hourly wage, or a part-time engagement with agreed weekly hours, all read correctly. The Amount label follows the basis (&ldquo;Monthly amount&rdquo; vs &ldquo;Hourly rate&rdquo;). This is billing metadata; logged receipts (always PKR) and BD commission are unaffected.</li>
           <li>Dev-profile documents (resumes/cover letters): the owning BD manages them; admins keep a recoverable history. Uploads are capped at 4 MB (a clear message if larger).</li>
           <li>A profile can be flagged <strong>LinkedIn banned</strong> (independent of active/inactive status) — it shows a red marker in the profiles list. Lists default to <strong>Active</strong>.</li>
           <li><strong>Deals are super-admin only</strong>: name, financials (salary, payment), documents, and developer assignments. Admin/HR can&apos;t see deal details; assigned developers see only the deal name.</li>

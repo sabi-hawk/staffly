@@ -23,6 +23,13 @@ export async function developerOptions(supabase: SupabaseClient): Promise<Opt[]>
   return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
 }
 
+/** Working members for a deal — developers OR designers (a deal can be design work, not just dev). Kept
+ * separate from developerOptions so designers don't leak into the interview/assessment "given by" picker. */
+export async function dealMemberOptions(supabase: SupabaseClient): Promise<Opt[]> {
+  const { data } = await supabase.from("profiles").select("id, full_name, position, color").or("is_developer.eq.true,is_designer.eq.true").order("full_name");
+  return (data ?? []).map((p: any) => ({ id: p.id, label: p.full_name, sublabel: p.position ?? undefined, color: p.color ?? undefined }));
+}
+
 /** Every active person (any department) — a closer can be anyone who landed the deal, not just a dev. */
 export async function peopleOptions(supabase: SupabaseClient): Promise<Opt[]> {
   const { data } = await supabase

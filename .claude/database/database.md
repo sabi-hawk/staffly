@@ -368,6 +368,14 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   default true`. With `recurring` this gives three category kinds: recurring+fixed (auto-added monthly),
   recurring+variable (auto-added, amount reviewed each run), occasional (recurring=false; NOT auto-added,
   only added to a payslip when picked).
+- `0067_profile_is_designer.sql` — `profiles.is_designer` (flag). A designer can be assigned to a deal
+  as a working member: the deal Working-members picker shows `is_developer OR is_designer`. Kept separate
+  from `is_developer` (which still gates the interview/assessment "given by" picker). Also whitelisted in
+  the flags API + `canHaveDealCommission`.
+- `0066_deal_engagement.sql` — deals gain **`engagement_type`** (`full_time|part_time|hourly`),
+  **`rate_type`** (`monthly|hourly` — how the Amount is billed; a full-time hire can still be hourly),
+  **`hours`** (`numeric(6,2)`, agreed hours/week for part-time/hourly). Billing metadata only — logged
+  receipts (`deal_payments`, PKR) and BD commission are unaffected.
 - `0055_deal_finance_commission.sql` — **deal finance + BD commission**: `deal_payments` (receipt
   ledger keyed to a **billing_month**, super-admin only) + `deal_commissions` (BD ↔ deal, `rate` XOR
   `fixed_amount`, `compensation.manage`) + `payslip_components.is_commission`. Payroll adds a commission

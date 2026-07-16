@@ -28,6 +28,21 @@ export const roundLabel = (r: string) => (r === "final" ? "Final" : r);
 export const INTERVIEW_OUTCOME = ["pending", "selected", "rejected", "on_hold"] as const;
 
 export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancelled"] as const;
+
+// Deal engagement + how the Amount is billed (0066). A full-time hire can still be billed hourly.
+export const ENGAGEMENT_TYPES = [
+  { value: "full_time", label: "Full-time" },
+  { value: "part_time", label: "Part-time" },
+  { value: "hourly", label: "Hourly" },
+] as const;
+export const RATE_TYPES = [
+  { value: "monthly", label: "Per month" },
+  { value: "hourly", label: "Per hour" },
+] as const;
+export const engagementLabel = (v: string | null | undefined) =>
+  ENGAGEMENT_TYPES.find((e) => e.value === v)?.label ?? labelize(v);
+/** Short suffix for an amount given its rate_type ("/ mo" | "/ hr"). */
+export const rateSuffix = (rate: string | null | undefined) => (rate === "hourly" ? " / hr" : " / mo");
 export const PRIORITIES = ["high", "medium", "low"] as const;
 export const DURATIONS = ["15m", "30m", "45m", "1h", "1.5h", "2h", "2h+"] as const;
 

@@ -14,7 +14,8 @@ function pick(input: Record<string, unknown>, fields: string[]) {
 
 const DEAL_FIELDS = [
   "name", "lead_id", "designation", "joining_date", "dev_profile_id", "working_developer", "closer_id",
-  "owner_bd_id", "salary", "currency", "receiving_account_id", "payment_method_id", "profile_dob", "status", "notes",
+  "owner_bd_id", "salary", "currency", "engagement_type", "rate_type", "hours", "receiving_account_id",
+  "payment_method_id", "profile_dob", "status", "notes",
 ];
 const ACCOUNT_FIELDS = ["holder_name", "bank_name", "account_number", "notes", "is_active"];
 const METHOD_FIELDS = ["name", "sort_order", "is_active"];

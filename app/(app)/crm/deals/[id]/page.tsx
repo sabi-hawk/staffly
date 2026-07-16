@@ -5,10 +5,10 @@ import { getCurrentProfile } from "@/lib/auth";
 import { PERM } from "@/lib/access/permissions";
 import { hasPermP } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { leadOptions, crmProfileOptions, developerOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
+import { leadOptions, crmProfileOptions, dealMemberOptions, closerOptions, bdOptions, accountOptions, methodOptions } from "@/lib/crm/options";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { labelize, statusTone } from "@/lib/crm/constants";
+import { labelize, statusTone, engagementLabel, rateSuffix } from "@/lib/crm/constants";
 import { formatMoney, formatCode } from "@/lib/utils";
 import { DealForm } from "@/components/crm/deal-form";
 import { ColoredName, ColorChip } from "@/components/crm/crm-cells";
@@ -47,7 +47,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
   const workingDevIds = workingDevs.map((r: any) => r.developer_id);
 
   const [leads, profiles, developers, closers, bds, accounts, methods] = await Promise.all([
-    leadOptions(supabase), crmProfileOptions(supabase), developerOptions(supabase), closerOptions(supabase), bdOptions(supabase),
+    leadOptions(supabase), crmProfileOptions(supabase), dealMemberOptions(supabase), closerOptions(supabase), bdOptions(supabase),
     accountOptions(supabase), methodOptions(supabase),
   ]);
 
@@ -71,8 +71,9 @@ export default async function DealDetail({ params }: { params: { id: string } })
             <div><dt className="text-caption text-text-secondary">Closer</dt><dd><ColorChip label={d.closer?.full_name} color={d.closer?.color} /></dd></div>
             <div><dt className="text-caption text-text-secondary">BD owner</dt><dd><ColorChip label={d.owner_bd?.full_name} color={d.owner_bd?.color} /></dd></div>
             <div><dt className="text-caption text-text-secondary">Profile</dt><dd>{d.profile ? <Link href={`/crm/profiles/${d.dev_profile_id}`}><ColorChip label={d.profile.name} color={d.profile.color} /></Link> : <span className="text-text-secondary">—</span>}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Working developers</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? <span className="text-text-secondary">—</span> : workingDevs.map((w: any) => <ColorChip key={w.developer_id} label={w.dev?.full_name} color={w.dev?.color} />)}</dd></div>
-            <div><dt className="text-caption text-text-secondary">Salary</dt><dd>{formatMoney(d.salary, d.currency)}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Working members</dt><dd className="flex flex-wrap gap-1">{workingDevs.length === 0 ? <span className="text-text-secondary">—</span> : workingDevs.map((w: any) => <ColorChip key={w.developer_id} label={w.dev?.full_name} color={w.dev?.color} />)}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Engagement</dt><dd>{engagementLabel(d.engagement_type)}{d.hours ? ` · ${d.hours} h/wk` : ""}</dd></div>
+            <div><dt className="text-caption text-text-secondary">Amount</dt><dd>{d.salary != null ? `${formatMoney(d.salary, d.currency)}${rateSuffix(d.rate_type)}` : "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Joining date</dt><dd>{d.joining_date ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Receiving account</dt><dd>{d.account?.holder_name ?? "—"}</dd></div>
             <div><dt className="text-caption text-text-secondary">Payment method</dt><dd>{d.method?.name ?? "—"}</dd></div>
@@ -121,6 +122,7 @@ export default async function DealDetail({ params }: { params: { id: string } })
             initial={{
               name: d.name, lead_id: d.lead_id, dev_profile_id: d.dev_profile_id, working_developer: d.working_developer,
               closer_id: d.closer_id, owner_bd_id: d.owner_bd_id, currency: d.currency,
+              engagement_type: d.engagement_type, rate_type: d.rate_type, hours: d.hours != null ? String(d.hours) : "",
               designation: d.designation, joining_date: d.joining_date, salary: d.salary != null ? String(d.salary) : "",
               receiving_account_id: d.receiving_account_id, payment_method_id: d.payment_method_id,
               profile_dob: d.profile_dob, status: d.status,

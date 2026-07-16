@@ -19,6 +19,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       .from("profiles")
       .update({
         is_developer: BOOL(body.is_developer),
+        is_designer: BOOL(body.is_designer),
         is_bd_lead: BOOL(body.is_bd_lead),
         is_deal_developer: BOOL(body.is_deal_developer),
         is_closer: BOOL(body.is_closer),

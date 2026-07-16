@@ -7,6 +7,7 @@ import { FloatInput, FloatSelect, FloatShell } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
 import { CURRENCIES } from "@/lib/utils";
+import { ENGAGEMENT_TYPES, RATE_TYPES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
 
 const toOpts = (arr: Opt[]) => arr.map((o) => ({ value: o.id, label: o.label, sublabel: o.sublabel, color: o.color }));
@@ -50,6 +51,9 @@ export function DealForm({
     designation: initial?.designation ?? "",
     joining_date: initial?.joining_date ?? "",
     salary: initial?.salary ?? "",
+    engagement_type: initial?.engagement_type ?? "full_time",
+    rate_type: initial?.rate_type ?? "monthly",
+    hours: initial?.hours ?? "",
     receiving_account_id: initial?.receiving_account_id ?? "",
     payment_method_id: initial?.payment_method_id ?? "",
     profile_dob: initial?.profile_dob ?? "",
@@ -57,6 +61,10 @@ export function DealForm({
   });
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
+  const hourly = form.rate_type === "hourly";
+  // an 'hourly' engagement is always billed hourly — keep rate_type in sync (and lock the rate select).
+  const setEngagement = (v: string) => setForm((s) => ({ ...s, engagement_type: v, rate_type: v === "hourly" ? "hourly" : s.rate_type }));
+  const showHours = form.engagement_type !== "full_time" || hourly;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,8 +114,27 @@ export function DealForm({
         value={form.designation}
         onChange={(e) => set("designation", e.target.value)}
       />
-      {/* merged amount + currency */}
-      <FloatShell label="Amount" hint="The monthly amount for this deal, in the chosen currency. Receipts you log later are still recorded in PKR (what actually landed). Super-admin only." filled htmlFor="deal-salary" className="h-10">
+      <FloatSelect
+        id="deal-engagement"
+        label="Engagement type"
+        hint="Full-time, part-time, or purely hourly. This is how the client hired, and it drives how the amount below reads."
+        value={form.engagement_type}
+        onChange={(e) => setEngagement(e.target.value)}
+      >
+        {ENGAGEMENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </FloatSelect>
+      <FloatSelect
+        id="deal-rate_type"
+        label="Rate basis"
+        hint="Bill this deal per month or per hour. A full-time (or part-time) hire can still be paid an hourly wage. An hourly engagement is always per hour."
+        value={form.rate_type}
+        onChange={(e) => set("rate_type", e.target.value)}
+        disabled={form.engagement_type === "hourly"}
+      >
+        {RATE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+      </FloatSelect>
+      {/* merged amount + currency — label follows the rate basis */}
+      <FloatShell label={hourly ? "Hourly rate" : "Monthly amount"} hint={`The ${hourly ? "per-hour" : "monthly"} amount for this deal, in the chosen currency. Receipts you log later are still recorded in PKR (what actually landed). Super-admin only.`} filled htmlFor="deal-salary" className="h-10">
         <div className="flex h-10 items-center rounded-md border border-border bg-white transition-colors focus-within:ring-2 focus-within:ring-brand-primary">
           <select
             aria-label="Currency"
@@ -126,6 +153,16 @@ export function DealForm({
           />
         </div>
       </FloatShell>
+      {showHours && (
+        <FloatInput
+          id="deal-hours"
+          label="Hours per week"
+          hint="Agreed hours per week for a part-time or hourly engagement. Kept for reference; it does not change logged receipts."
+          type="number"
+          value={form.hours}
+          onChange={(e) => set("hours", e.target.value)}
+        />
+      )}
       <DatePicker
         id="deal-joining_date"
         label="Joining date"
@@ -139,7 +176,7 @@ export function DealForm({
       <Combobox id="deal-dev_profile_id" label="Selected profile" hint="The marketing profile the client hired. Search by number, name, stack or email." options={toOpts(profiles)} value={form.dev_profile_id} onChange={(v) => set("dev_profile_id", v)} searchPlaceholder="Search profiles…" />
       <Combobox id="deal-closer_id" label="Closer" hint="Who closed this deal. Only people flagged 'Can be a closer' on their employee page appear here." options={toOpts(closers)} value={form.closer_id} onChange={(v) => set("closer_id", v)} searchPlaceholder="Search closers…" />
       <Combobox id="deal-owner_bd_id" label="BD owner (optional)" hint="The BD who owns this deal." options={toOpts(bds)} value={form.owner_bd_id} onChange={(v) => set("owner_bd_id", v)} searchPlaceholder="Search BDs…" />
-      <Combobox id="deal-working_developers" label="Working developers (optional)" hint="Everyone doing the work on this deal — pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
+      <Combobox id="deal-working_developers" label="Working members (optional)" hint="Everyone doing the work on this deal — developers or designers, pick one or more. May differ from the closer." options={toOpts(developers)} value={workingDevs} onChange={setWorkingDevs} multiple searchPlaceholder="Search people…" />
 
       {/* ── Other ────────────────────────────────────────────────────────────── */}
       <Divider title="Other" />

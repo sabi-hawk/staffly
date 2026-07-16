@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const FLAGS: { key: string; label: string; hint: string }[] = [
   { key: "is_developer", label: "Developer", hint: "Assignable as the interview/assessment/deal developer." },
+  { key: "is_designer", label: "Designer", hint: "Assignable to deals as a working member (design deals). Appears in the deal Working-members picker alongside developers, but not in the interview/assessment developer picker." },
   { key: "is_bd_lead", label: "BD Lead", hint: "Sees & manages all BDs' CRM data." },
   { key: "is_deal_developer", label: "Deal-assigned developer", hint: "Works a client deal. Leave balances are hidden and leave requests are record-only; the client company governs their leave." },
   { key: "is_closer", label: "Can be a closer", hint: "Eligible to be picked as the closer on a deal (appears in the deal Closer list). Tick anyone who lands deals, not just developers." },
@@ -18,6 +19,7 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
   const router = useRouter();
   const [flags, setFlags] = useState<Record<string, boolean>>({
     is_developer: !!initial.is_developer,
+    is_designer: !!initial.is_designer,
     is_bd_lead: !!initial.is_bd_lead,
     is_deal_developer: !!initial.is_deal_developer,
     is_closer: !!initial.is_closer,
@@ -42,8 +44,8 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
   return (
     <div className="space-y-3">
       {FLAGS.map((f) => (
-        <label key={f.key} className="flex items-start gap-2">
-          <input type="checkbox" className="mt-0.5" checked={flags[f.key]} onChange={(e) => setFlags((s) => ({ ...s, [f.key]: e.target.checked }))} />
+        <label key={f.key} className="flex items-start gap-2.5">
+          <input type="checkbox" className="mt-[3px] size-4 shrink-0 accent-brand-primary" checked={flags[f.key]} onChange={(e) => setFlags((s) => ({ ...s, [f.key]: e.target.checked }))} />
           <span>
             <span className="text-sm font-medium text-text-primary">{f.label}</span>
             <span className="block text-caption text-text-secondary">{f.hint}</span>

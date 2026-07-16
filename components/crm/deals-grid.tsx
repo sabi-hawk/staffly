@@ -5,7 +5,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { ChevronRight, SlidersHorizontal, Check } from "lucide-react";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { labelize, statusTone } from "@/lib/crm/constants";
+import { labelize, statusTone, rateSuffix } from "@/lib/crm/constants";
 import { formatMoney, formatCode } from "@/lib/utils";
 import { ColorChip, ProfileCell } from "@/components/crm/crm-cells";
 
@@ -51,7 +51,7 @@ export function DealsGrid({ rows }: { rows: any[] }) {
           <TR>
             <TH>Code</TH><TH>Company</TH><TH>Profile</TH><TH>Closer</TH>
             {cols.owner && <TH>BD owner</TH>}
-            <TH>Working devs</TH>
+            <TH>Working members</TH>
             {cols.salary && <TH>Salary</TH>}
             <TH>Status</TH><TH></TH>
           </TR>
@@ -75,7 +75,7 @@ export function DealsGrid({ rows }: { rows: any[] }) {
                         {devs.map((w) => <ColorChip key={w.id} label={w.full_name} color={w.color} />)}
                       </span>}
                 </TD>
-                {cols.salary && <TD className="tabular">{formatMoney(d.salary, d.currency)}</TD>}
+                {cols.salary && <TD className="tabular">{d.salary != null ? <>{formatMoney(d.salary, d.currency)}<span className="text-text-secondary">{rateSuffix(d.rate_type)}</span></> : "—"}</TD>}
                 <TD><Badge tone={statusTone(d.status)}>{labelize(d.status)}</Badge></TD>
                 <TD className="text-right"><Link href={`/crm/deals/${d.id}`} className="inline-flex text-text-secondary hover:text-brand-primary" aria-label="Open"><ChevronRight className="size-4" /></Link></TD>
               </TR>

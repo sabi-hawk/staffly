@@ -39,7 +39,7 @@ export default async function EmployeeDetail({
   if (!p) return <p className="text-text-secondary">Employee not found.</p>;
   const isBD = (p.department ?? "").toLowerCase().includes("business");
   // Deal commissions apply to a BD OR to a developer assigned to a deal (basic salary + a deal cut).
-  const canHaveDealCommission = isBD || !!p.is_developer || !!p.is_deal_developer;
+  const canHaveDealCommission = isBD || !!p.is_developer || !!p.is_designer || !!p.is_deal_developer;
 
   const { data: shift } = await supabase
     .from("shifts").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle();
@@ -168,7 +168,7 @@ export default async function EmployeeDetail({
           description="Developer (assignable in pickers) / BD-Lead / deal-assigned. Assigning a role syncs the BD-Lead and deal-assigned flags automatically."
           defaultOpen={false}
         >
-          <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer, is_closer: p.is_closer }} />
+          <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_designer: p.is_designer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer, is_closer: p.is_closer }} />
         </CollapsibleCard>
       )}
 
