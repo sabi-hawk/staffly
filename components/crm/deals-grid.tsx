@@ -122,9 +122,13 @@ export function DealsGrid({ rows }: { rows: any[] }) {
   const gridCols = buildColumns(cols, true);
 
   const Toggle = (
-    <div className="inline-flex overflow-hidden rounded-md border border-border">
-      <button type="button" onClick={() => setView("cards")} className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 text-caption", view === "cards" ? "bg-brand-primary/10 text-brand-primary" : "text-text-secondary hover:bg-surface")} aria-pressed={view === "cards"}><LayoutList className="size-3.5" /> Cards</button>
-      <button type="button" onClick={() => setView("grid")} className={cn("inline-flex items-center gap-1.5 border-l border-border px-2.5 py-1 text-caption", view === "grid" ? "bg-brand-primary/10 text-brand-primary" : "text-text-secondary hover:bg-surface")} aria-pressed={view === "grid"}><LayoutGrid className="size-3.5" /> Grid</button>
+    <div className="inline-flex items-center rounded-lg border border-border bg-surface/50 p-0.5">
+      {([["cards", LayoutList, "Cards"], ["grid", LayoutGrid, "Grid"]] as const).map(([v, Icon, lbl]) => (
+        <button key={v} type="button" onClick={() => setView(v)} aria-pressed={view === v}
+          className={cn("inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition", view === v ? "bg-white text-brand-primary shadow-sm" : "text-text-secondary hover:text-text-primary")}>
+          <Icon className="size-3.5" /> {lbl}
+        </button>
+      ))}
     </div>
   );
 
@@ -138,8 +142,9 @@ export function DealsGrid({ rows }: { rows: any[] }) {
               {allOpen ? "Collapse all" : "Expand all"}
             </button>
           )}
-          {Toggle}
           <ColumnsMenu cols={cols} toggle={toggle} />
+          <span className="mx-0.5 h-5 w-px bg-border" />
+          {Toggle}
         </div>
       </div>
 
