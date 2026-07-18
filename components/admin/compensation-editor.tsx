@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Plus, Loader2 } from "lucide-react";
@@ -40,6 +40,8 @@ export function CompensationEditor({
   const [base, setBase] = useState(baseSalary ? String(baseSalary) : "");
   const [savingBase, setSavingBase] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  useEffect(() => { if (!pending) { setBusy(false); setRemovingId(null); } }, [pending]);
 
   async function saveBase() {
     setSavingBase(true);
@@ -69,21 +71,19 @@ export function CompensationEditor({
       recurring,
       is_fixed_amount: recurring ? fixedAmount : true,
     });
-    setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { setBusy(false); return toast.error(error.message); }
     toast.success("Category added");
     setLabel(""); setAmount(""); setDescription(""); setRecurring(true); setFixedAmount(true);
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   async function remove(id: string) {
     setRemovingId(id);
     const supabase = createClient();
     const { error } = await supabase.from("compensation_components").delete().eq("id", id);
-    setRemovingId(null);
-    if (error) return toast.error(error.message);
+    if (error) { setRemovingId(null); return toast.error(error.message); }
     toast.success("Removed");
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -96,7 +96,7 @@ export function CompensationEditor({
 
       <div className="space-y-2">
         <p className="text-caption font-medium text-text-secondary">Additional categories</p>
-        {components.length === 0 && <p className="text-caption text-text-secondary">No additional compensation categories yet.</p>}
+        {components.length === 0 && !pending && <p className="text-caption text-text-secondary">No additional compensation categories yet.</p>}
         {components.map((c) => (
           <div key={c.id} className="flex items-start justify-between rounded-md border border-border p-3">
             <div>
@@ -115,6 +115,11 @@ export function CompensationEditor({
             </div>
           </div>
         ))}
+        {pending && (
+          <div className="animate-pulse rounded-md border border-border px-3 py-3">
+            <div className="h-3.5 w-40 rounded bg-surface" /><div className="mt-2 h-2.5 w-24 rounded bg-surface" />
+          </div>
+        )}
       </div>
 
       <form onSubmit={add} className="space-y-3 rounded-md border border-dashed border-border p-3">
@@ -142,7 +147,7 @@ export function CompensationEditor({
               : "Added to every payslip; review the amount each run."
             : "An occasional category (e.g. a bonus). Saved here but only added to a payslip when you apply it for that month."}
         </p>
-        <Button type="submit" disabled={busy}><Plus className="size-4" /> Add category</Button>
+        <Button type="submit" disabled={busy || pending}>{busy || pending ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : <><Plus className="size-4" /> Add category</>}</Button>
       </form>
     </div>
   );

@@ -39,7 +39,7 @@ export default async function EmployeeDetail({
   if (!p) return <p className="text-text-secondary">Employee not found.</p>;
   const isBD = (p.department ?? "").toLowerCase().includes("business");
   // Deal commissions apply to a BD OR to a developer assigned to a deal (basic salary + a deal cut).
-  const canHaveDealCommission = isBD || !!p.is_developer || !!p.is_designer || !!p.is_deal_developer;
+  const canHaveDealCommission = isBD || !!p.is_developer || !!p.is_designer || !!p.is_deal_developer || !!p.is_closer;
 
   const { data: shift } = await supabase
     .from("shifts").select("*").eq("employee_id", params.id).eq("is_active", true).maybeSingle();
@@ -65,11 +65,11 @@ export default async function EmployeeDetail({
     // Newest policy first (the one in effect); ones without a date fall to the bottom.
     policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("effective_date", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false })).data ?? [];
     if (canHaveDealCommission) {
-      dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, deal_code, lead:leads(company))").eq("employee_id", params.id).order("created_at")).data ?? [];
-      // Only the deals this person is actually on: primary or secondary BD owner, OR a working member.
+      dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, deal_code, designation, owner_bd_id, secondary_owner_bd_id, closer_id, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)))").eq("employee_id", params.id).order("created_at")).data ?? [];
+      // Only the deals this person is actually on: primary/secondary BD owner, the CLOSER, or a working member.
       const ddRows = (await supabase.from("deal_developers").select("deal_id").eq("developer_id", params.id)).data ?? [];
       const memberDealIds = Array.from(new Set(ddRows.map((r: any) => r.deal_id)));
-      const orParts = [`owner_bd_id.eq.${params.id}`, `secondary_owner_bd_id.eq.${params.id}`];
+      const orParts = [`owner_bd_id.eq.${params.id}`, `secondary_owner_bd_id.eq.${params.id}`, `closer_id.eq.${params.id}`];
       if (memberDealIds.length) orParts.push(`id.in.(${memberDealIds.join(",")})`);
       const dealRows = (await supabase.from("deals").select("id, name, designation, deal_code, lead:leads(company)").or(orParts.join(",")).order("created_at", { ascending: false })).data ?? [];
       dealOpts = dealRows.map((d: any) => ({ id: d.id, label: `${d.name || d.lead?.company || "Deal"}${d.designation ? ` · ${d.designation}` : ""} · #${d.deal_code}` }));
