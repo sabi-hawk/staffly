@@ -24,11 +24,19 @@ export default async function PayslipPage({ params }: { params: { runId: string 
   const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", params.runId).order("created_at");
   const { data: company } = await supabase.from("company_settings").select("company_name").eq("id", 1).maybeSingle();
 
-  // Base salary always leads the particulars column; additions (allowances, commission) follow it.
-  const particulars = (lines ?? [])
-    .filter((l) => l.kind !== "deduction")
+  // Dismissed lines are excluded from the printed slip entirely.
+  const active = (lines ?? []).filter((l) => !l.dismissed);
+  // BD-safe payslip: deal commissions are AGGREGATED into a single "Deal commissions" line with no deal
+  // names, designations or rates — a BD must not see which deal earned what. The per-deal breakdown stays
+  // super-admin-only (the payroll page's row expand). Base leads; other additions (allowances) keep labels.
+  const nonCommission = active.filter((l) => l.kind !== "deduction" && !l.is_commission)
     .sort((a, b) => (a.kind === "base" ? 0 : 1) - (b.kind === "base" ? 0 : 1));
-  const deductions = (lines ?? []).filter((l) => l.kind === "deduction");
+  const commissionTotal = active.filter((l) => l.is_commission).reduce((s, l) => s + Number(l.amount), 0);
+  const particulars: { label: string; amount: number; description: string | null }[] = [
+    ...nonCommission.map((l) => ({ label: l.label, amount: Number(l.amount), description: l.description })),
+    ...(commissionTotal > 0 ? [{ label: "Deal commissions", amount: commissionTotal, description: null }] : []),
+  ];
+  const deductions = active.filter((l) => l.kind === "deduction");
   const grossPay = particulars.reduce((s, l) => s + Number(l.amount), 0);
   const start = new Date(run.period_start);
   const month = start.toLocaleString("en-US", { month: "long" });

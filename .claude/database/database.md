@@ -375,6 +375,15 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
   (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
   Assessments tab (same dynamic-add pattern as Manage stacks).
+- `0073_payslip_dismiss.sql` — `payslip_components.dismissed` (bool). A dismissed line is kept for the
+  record (shown struck through) but excluded from run totals (`recomputeRun` skips dismissed) and from the
+  printed payslip. Draft only. `generatePayroll` preserves dismissed lines by (kind|label) across a
+  recompute. New service fns: `setPayslipLineDismissed`, `addDealCommissionToRun` (catch-up commission by
+  amount or % of a month's receipts), `addPayslipLine` gains `is_commission`, `GenerateOptions.employeeId`
+  (per-run recompute). Routes: `PATCH /api/payroll/[id]/lines` (dismiss), `POST /api/payroll/[id]/recompute`,
+  `GET|POST /api/payroll/[id]/commission`. The payslip document aggregates all `is_commission` lines into a
+  single BD-safe "Deal commissions" total (no deal names/rates); the per-deal breakdown stays on the
+  super-admin payroll row-expand.
 - `0072_payroll_exempt.sql` — `profiles.payroll_exempt` (flag). Payroll generation now runs for every
   PAYABLE employee — anyone with an active base salary, active `deal_commissions`, or active recurring
   `compensation_components` — so a commission-only partner (base 0, no `salary_structures` row) still gets a

@@ -43,6 +43,22 @@ export async function companyNameOptions(supabase: SupabaseClient): Promise<stri
   return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
 }
 
+/** The deals an employee is on — primary/secondary BD owner, closer, or a working member — as rich
+ * two-line options (Company · Designation · #code / Profile · stack · email + colour). Reused by the
+ * deal-commission editor and the payroll "add commission" flow. */
+export async function employeeDealOptions(supabase: SupabaseClient, employeeId: string): Promise<Opt[]> {
+  const ddRows = (await supabase.from("deal_developers").select("deal_id").eq("developer_id", employeeId)).data ?? [];
+  const memberDealIds = Array.from(new Set(ddRows.map((r: any) => r.deal_id)));
+  const orParts = [`owner_bd_id.eq.${employeeId}`, `secondary_owner_bd_id.eq.${employeeId}`, `closer_id.eq.${employeeId}`];
+  if (memberDealIds.length) orParts.push(`id.in.(${memberDealIds.join(",")})`);
+  const rows = (await supabase.from("deals").select("id, name, designation, deal_code, lead:leads(company), profile:dev_profiles(name, email, color, stack:dev_stacks(name))").or(orParts.join(",")).order("created_at", { ascending: false })).data ?? [];
+  return rows.map((d: any) => {
+    const company = d.name || d.lead?.company || "Deal";
+    const profileBits = [d.profile?.name, d.profile?.stack?.name, d.profile?.email].filter(Boolean).join(" · ");
+    return { id: d.id, label: `${company}${d.designation ? ` · ${d.designation}` : ""} · #${d.deal_code}`, sublabel: profileBits || undefined, color: d.profile?.color ?? undefined };
+  });
+}
+
 /** Active assessment categories (configurable taxonomy, like dev_stacks) for the assessment form. */
 export async function assessmentCategoryOptions(supabase: SupabaseClient): Promise<Opt[]> {
   const { data } = await supabase.from("assessment_categories").select("id, name").eq("is_active", true).order("sort_order").order("name");

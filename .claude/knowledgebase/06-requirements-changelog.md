@@ -13,6 +13,21 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-19 — Payroll: row breakdown + dismiss, recompute, catch-up commission, BD-safe payslip (owner)
+Bigger payroll pass (migration 0073, `payslip_components.dismissed`):
+- **Row expand** — a leading expand button per payroll row opens the full breakdown (base, missing-
+  attendance, each commission/addition, deductions).
+- **Dismiss a line** — strike out any deduction/addition (kept for the record, excluded from the total and
+  the payslip); restore anytime. Preserved across a recompute. For early months where the attendance
+  deduction is judged invalid.
+- **Recompute** — a per-run button re-runs that employee's calculation for the period, so the missing-
+  attendance deduction shrinks as days pass (it only counts PAST days).
+- **Catch-up deal commission** — add a commission missed on a previous month: a direct amount, or the deal's
+  stored rate × the receipts billed to a chosen month.
+- **BD-safe payslip** — the payslip document aggregates all deal commissions into ONE "Deal commissions"
+  line (no deal names, designations or rates). The per-deal breakdown stays super-admin-only (the payroll
+  row expand). Employees can't see payslips or deals at all (RLS + admin-only routes) — verified.
+
 ## 2026-07-19 — Payroll for commission-only partners + rich deal-commission picker (owner)
 Payroll only generated for employees with a base salary, so partners with no base pay (Ali, Mohiudin)
 were skipped even though they earn deal commissions. Generation now runs for every PAYABLE employee —

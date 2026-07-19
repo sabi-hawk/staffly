@@ -9,6 +9,7 @@ export interface GenerateOptions {
   from: string; // YYYY-MM-DD
   to: string;
   generatedBy?: string;
+  employeeId?: string; // restrict to a single employee (per-run "recompute")
 }
 
 function sum(xs: number[]) {
@@ -81,7 +82,8 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
   const { data: profs } = candidateIds.size
     ? await supabase.from("profiles").select("id").in("id", Array.from(candidateIds)).eq("role", "employee").eq("status", "active").eq("payroll_exempt", false)
     : { data: [] as { id: string }[] };
-  const eligibleIds = (profs ?? []).map((p: any) => p.id as string);
+  let eligibleIds = (profs ?? []).map((p: any) => p.id as string);
+  if (opts.employeeId) eligibleIds = eligibleIds.filter((id) => id === opts.employeeId); // per-run recompute
 
   const runs = [];
   for (const employeeId of eligibleIds) {
@@ -209,6 +211,10 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
 
     // rebuild payslip line items for a draft run
     if (run.status === "draft") {
+      // Preserve admin overrides across a recompute: which (kind|label) lines were DISMISSED, so a
+      // deduction the admin struck out stays struck out after regenerating.
+      const { data: prev } = await supabase.from("payslip_components").select("kind, label, dismissed").eq("payroll_run_id", run.id);
+      const dismissedKeys = new Set((prev ?? []).filter((l: any) => l.dismissed).map((l: any) => `${l.kind}|${l.label}`));
       await supabase.from("payslip_components").delete().eq("payroll_run_id", run.id);
       const lines: Record<string, unknown>[] = [
         { payroll_run_id: run.id, label: "Base salary", amount: base, kind: "base", description: null, is_commission: false },
@@ -231,8 +237,12 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
           is_commission: false,
         });
       }
+      // re-apply the preserved dismissed flag by (kind|label)
+      for (const l of lines) l.dismissed = dismissedKeys.has(`${l.kind}|${l.label}`);
       const { error: linesErr } = await supabase.from("payslip_components").insert(lines);
       if (linesErr) throw new Error(linesErr.message);
+      // sync totals with any preserved dismissed lines (a dismissed line is excluded from the run totals)
+      if (dismissedKeys.size) await recomputeRun(supabase, run.id);
     }
 
     runs.push(run);
@@ -240,13 +250,15 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
   return runs;
 }
 
-/** Recompute a run's totals from its payslip_components (after manual line edits). Refuses a finalised run. */
+/** Recompute a run's totals from its payslip_components (after manual line edits). Dismissed lines are
+ * excluded from every total. Refuses a finalised run. */
 export async function recomputeRun(supabase: SupabaseClient, runId: string) {
   await assertNotFinalised(supabase, runId);
-  const { data: lines } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", runId);
-  const base = sum((lines ?? []).filter((l) => l.kind === "base").map((l) => Number(l.amount)));
-  const additions = sum((lines ?? []).filter((l) => l.kind === "addition").map((l) => Number(l.amount)));
-  const deductions = sum((lines ?? []).filter((l) => l.kind === "deduction").map((l) => Number(l.amount)));
+  const { data: all } = await supabase.from("payslip_components").select("*").eq("payroll_run_id", runId);
+  const lines = (all ?? []).filter((l) => !l.dismissed);
+  const base = sum(lines.filter((l) => l.kind === "base").map((l) => Number(l.amount)));
+  const additions = sum(lines.filter((l) => l.kind === "addition").map((l) => Number(l.amount)));
+  const deductions = sum(lines.filter((l) => l.kind === "deduction").map((l) => Number(l.amount)));
   const net = round2(base + additions - deductions);
   const { data } = await supabase
     .from("payroll_runs")
@@ -267,15 +279,52 @@ async function assertNotFinalised(supabase: SupabaseClient, runId: string) {
 export async function addPayslipLine(
   supabase: SupabaseClient,
   runId: string,
-  line: { label: string; amount: number; kind: "addition" | "deduction"; description?: string }
+  line: { label: string; amount: number; kind: "addition" | "deduction"; description?: string; is_commission?: boolean }
 ) {
   await assertNotFinalised(supabase, runId);
-  await supabase.from("payslip_components").insert({ payroll_run_id: runId, ...line, description: line.description ?? null });
+  await supabase.from("payslip_components").insert({ payroll_run_id: runId, label: line.label, amount: line.amount, kind: line.kind, description: line.description ?? null, is_commission: !!line.is_commission });
   return recomputeRun(supabase, runId);
 }
 export async function removePayslipLine(supabase: SupabaseClient, lineId: string, runId: string) {
   await assertNotFinalised(supabase, runId);
   await supabase.from("payslip_components").delete().eq("id", lineId);
+  return recomputeRun(supabase, runId);
+}
+/** Dismiss/undismiss a line — kept for the record (shown struck through) but excluded from totals. */
+export async function setPayslipLineDismissed(supabase: SupabaseClient, lineId: string, runId: string, dismissed: boolean) {
+  await assertNotFinalised(supabase, runId);
+  await supabase.from("payslip_components").update({ dismissed }).eq("id", lineId).eq("payroll_run_id", runId);
+  return recomputeRun(supabase, runId);
+}
+
+/** Add a deal commission line to a run — either a direct amount, or a % of a chosen billing month's
+ * receipts for that deal (using the employee's stored rate). Used to catch up a commission missed on a
+ * previous month's payslip. Flagged is_commission so the BD-safe payslip aggregates it. */
+export async function addDealCommissionToRun(
+  supabase: SupabaseClient,
+  runId: string,
+  input: { deal_id: string; month?: string; amount?: number; label?: string }
+) {
+  await assertNotFinalised(supabase, runId);
+  const { data: run } = await supabase.from("payroll_runs").select("employee_id").eq("id", runId).single();
+  if (!run) throw new Error("Run not found");
+  const { data: deal } = await supabase.from("deals").select("name, lead:leads(company)").eq("id", input.deal_id).single();
+  const company = (deal as any)?.name || (deal as any)?.lead?.company || "Deal";
+  const label = input.label?.trim() || `Commission — ${company}`;
+
+  let amount = input.amount != null ? round2(Number(input.amount)) : null;
+  let description = `Catch-up commission for ${company} (added manually)`;
+  if (amount == null) {
+    if (!input.month) throw new Error("Provide an amount or a month");
+    const { data: dc } = await supabase.from("deal_commissions").select("rate").eq("employee_id", run.employee_id).eq("deal_id", input.deal_id).eq("is_active", true).maybeSingle();
+    const rate = Number(dc?.rate) || 0;
+    const monthStart = `${input.month.slice(0, 7)}-01`;
+    const { data: pays } = await supabase.from("deal_payments").select("amount").eq("deal_id", input.deal_id).gte("billing_month", monthStart).lte("billing_month", monthStart);
+    const received = sum((pays ?? []).map((p: any) => Number(p.amount) || 0));
+    amount = round2((rate / 100) * received);
+    description = `${rate}% of ${received.toLocaleString("en-PK")} received for ${company} (${input.month.slice(0, 7)}, added manually)`;
+  }
+  await supabase.from("payslip_components").insert({ payroll_run_id: runId, label, amount, kind: "addition", description, is_commission: true });
   return recomputeRun(supabase, runId);
 }
 

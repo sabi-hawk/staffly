@@ -1,20 +1,22 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Trash2, FileText, LockOpen, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, FileText, LockOpen, Loader2, RefreshCw, EyeOff, Undo2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
+import { Combobox } from "@/components/ui/combobox";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatPKR, formatCode } from "@/lib/utils";
+import { formatPKR, formatCode, cn } from "@/lib/utils";
 import { monthBounds, MONTH_NAMES } from "@/lib/time";
 
-type Line = { id: string; label: string; amount: number; kind: string; description: string | null };
+type Line = { id: string; label: string; amount: number; kind: string; description: string | null; is_commission?: boolean; dismissed?: boolean };
+const COLS = 10; // table column count (for expanded-row colSpan)
 
 type SavedComp = { label: string; amount: number; recurring: boolean; is_fixed_amount: boolean; description: string | null };
 
@@ -105,6 +107,25 @@ export function PayrollClient({
     if (!res.ok) { toast.error("Remove failed"); return false; }
     toast.success("Removed"); return true;
   }
+  async function dismissLine(id: string, lineId: string, dismissed: boolean): Promise<boolean> {
+    const res = await fetch(`/api/payroll/${id}/lines`, {
+      method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ lineId, dismissed }),
+    });
+    if (!res.ok) { toast.error("Failed"); return false; }
+    toast.success(dismissed ? "Line dismissed" : "Line restored"); return true;
+  }
+  async function recomputeRun(id: string): Promise<boolean> {
+    const res = await fetch(`/api/payroll/${id}/recompute`, { method: "POST" });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Recompute failed"); return false; }
+    toast.success("Recomputed"); return true;
+  }
+  async function addCommission(id: string, body: any): Promise<boolean> {
+    const res = await fetch(`/api/payroll/${id}/commission`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); toast.error(j.error ?? "Add failed"); return false; }
+    toast.success("Commission added"); return true;
+  }
 
   const runs = initialRuns.filter(
     (r) => (!empFilter || r.employee_id === empFilter) && (statusFilter === "all" || r.payment_status === statusFilter)
@@ -169,7 +190,7 @@ export function PayrollClient({
         <CardContent>
           <Table>
             <THead>
-              <TR><TH>Code</TH><TH>Employee</TH><TH>Period</TH><TH>Base</TH><TH>Additions</TH><TH>Deductions</TH><TH>Net</TH><TH>Payment</TH><TH></TH></TR>
+              <TR><TH className="w-[36px]"></TH><TH>Code</TH><TH>Employee</TH><TH>Period</TH><TH>Base</TH><TH>Additions</TH><TH>Deductions</TH><TH>Net</TH><TH>Payment</TH><TH></TH></TR>
             </THead>
             <TBody>
               {runs.map((r) => {
@@ -183,10 +204,11 @@ export function PayrollClient({
                     onToggle={() => setExpanded(open ? null : r.id)}
                     onFinalise={() => finalise(r.id)} onReopen={() => reopen(r.id)} onMarkPaid={markPaid}
                     onAddLine={addLine} onRemoveLine={removeLine} onDelete={deleteRun} onRefresh={refresh}
+                    onDismissLine={dismissLine} onRecompute={recomputeRun} onAddCommission={addCommission}
                   />
                 );
               })}
-              {runs.length === 0 && <TR><TD className="py-6 text-center text-text-secondary">No runs. Pick a period and Generate.</TD></TR>}
+              {runs.length === 0 && <TR><TD colSpan={COLS} className="py-6 text-center text-text-secondary">No runs. Pick a period and Generate.</TD></TR>}
             </TBody>
           </Table>
         </CardContent>
@@ -195,18 +217,29 @@ export function PayrollClient({
   );
 }
 
-function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, onFinalise, onReopen, onMarkPaid, onAddLine, onRemoveLine, onDelete, onRefresh }: any) {
+function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, onFinalise, onReopen, onMarkPaid, onAddLine, onRemoveLine, onDelete, onRefresh, onDismissLine, onRecompute, onAddCommission }: any) {
   const [paidAt, setPaidAt] = useState("");
   const [account, setAccount] = useState(emp?.bank_account_number ? `${emp?.bank_name ?? ""} ${emp.bank_account_number}`.trim() : "");
   const [showPay, setShowPay] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [nl, setNl] = useState({ label: "", amount: "", kind: "addition", description: "" });
-  // per-action loaders so a click gives immediate feedback through the fetch AND the server refresh
-  const [acting, setActing] = useState(false);        // finalise / reopen / mark paid
-  const [savingLine, setSavingLine] = useState(false); // add line
-  const [removingId, setRemovingId] = useState<string | null>(null); // which line is being removed
-  const rowBusy = acting || savingLine || !!removingId || refreshing;
+  const [acting, setActing] = useState(false);
+  const [savingLine, setSavingLine] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [recomputing, setRecomputing] = useState(false);
+  const [addingComm, setAddingComm] = useState(false);
+  const [deals, setDeals] = useState<any[] | null>(null);
+  const [comm, setComm] = useState({ dealId: "", basis: "amount", amount: "", month: "", label: "" });
+  const rowBusy = acting || savingLine || !!removingId || !!dismissingId || recomputing || addingComm || refreshing;
+
+  // lazy-load this employee's deals when the row opens (for the add-commission picker)
+  useEffect(() => {
+    if (open && deals === null) {
+      fetch(`/api/payroll/${run.id}/commission`).then((r) => r.json()).then((j) => setDeals(j.deals ?? [])).catch(() => setDeals([]));
+    }
+  }, [open, deals, run.id]);
 
   async function handleFinalise() { setActing(true); const ok = await onFinalise(); setActing(false); if (ok) onRefresh(); }
   async function handleReopen() { setActing(true); const ok = await onReopen(); setActing(false); if (ok) onRefresh(); }
@@ -222,26 +255,66 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
     setRemovingId(lineId); const ok = await onRemoveLine(run.id, lineId); setRemovingId(null);
     if (ok) onRefresh();
   }
+  async function handleDismiss(lineId: string, dismissed: boolean) {
+    setDismissingId(lineId); const ok = await onDismissLine(run.id, lineId, dismissed); setDismissingId(null);
+    if (ok) onRefresh();
+  }
+  async function handleRecompute() { setRecomputing(true); const ok = await onRecompute(run.id); setRecomputing(false); if (ok) onRefresh(); }
+  async function handleAddCommission() {
+    if (!comm.dealId) return toast.error("Pick a deal");
+    const body: any = { deal_id: comm.dealId, label: comm.label || undefined };
+    if (comm.basis === "amount") { if (!comm.amount) return toast.error("Enter an amount"); body.amount = Number(comm.amount); }
+    else { if (!comm.month) return toast.error("Pick a month"); body.month = comm.month; }
+    setAddingComm(true); const ok = await onAddCommission(run.id, body); setAddingComm(false);
+    if (ok) { setComm({ dealId: "", basis: "amount", amount: "", month: "", label: "" }); onRefresh(); }
+  }
   async function handleDelete() { setActing(true); const ok = await onDelete(run.id); setActing(false); if (ok) onRefresh(); }
 
-  // occasional (non-recurring) + variable categories are the ones worth quick-adding to a run
   const pickable: SavedComp[] = (savedComps as SavedComp[]).filter((c) => !c.recurring || !c.is_fixed_amount);
+  const isDraft = run.status === "draft";
+  const base = lines.filter((l: Line) => l.kind === "base");
   const additions = lines.filter((l: Line) => l.kind !== "deduction" && l.kind !== "base");
   const deductions = lines.filter((l: Line) => l.kind === "deduction");
+
+  // one line row in the expanded breakdown, with dismiss (keep record) + remove controls on drafts.
+  const LineItem = ({ l, sign }: { l: Line; sign?: boolean }) => {
+    const dim = !!l.dismissed;
+    return (
+      <div className={cn("flex items-center justify-between gap-3 rounded border bg-white px-3 py-1.5 text-sm", dim ? "border-dashed opacity-55" : "border-border", sign && !dim ? "text-danger" : "")}>
+        <span className={cn("min-w-0", dim && "line-through")}>
+          {l.is_commission && <span className="mr-1.5 rounded bg-brand-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-primary">commission</span>}
+          {l.label}{l.description ? <span className="text-caption text-text-secondary"> · {l.description}</span> : ""}
+        </span>
+        <span className="flex shrink-0 items-center gap-2.5">
+          <span className={cn("tabular", dim && "line-through text-text-secondary")}>{sign ? "− " : ""}{formatPKR(l.amount)}</span>
+          {isDraft && l.kind !== "base" && (
+            <>
+              <button onClick={() => handleDismiss(l.id, !dim)} disabled={rowBusy} className="text-text-secondary hover:text-text-primary disabled:opacity-40" title={dim ? "Restore (include again)" : "Dismiss (exclude from pay, keep the record)"}>
+                {dismissingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : dim ? <Undo2 className="size-3.5" /> : <EyeOff className="size-3.5" />}
+              </button>
+              <button onClick={() => handleRemove(l.id)} disabled={rowBusy} className="text-text-secondary hover:text-danger disabled:opacity-40" title="Remove line">
+                {removingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+              </button>
+            </>
+          )}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <>
       <TR>
+        <TD className="pr-0">
+          <button onClick={onToggle} className="inline-flex size-6 items-center justify-center rounded text-text-secondary hover:bg-surface hover:text-brand-primary" aria-label={open ? "Collapse" : "Expand breakdown"}>
+            {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+          </button>
+        </TD>
         <TD className="tabular text-text-secondary">{formatCode(emp?.employee_code)}</TD>
         <TD>{emp?.full_name ?? "—"}</TD>
         <TD className="tabular text-caption">{run.period_start}→{run.period_end}</TD>
         <TD className="tabular">{formatPKR(run.base_salary)}</TD>
-        <TD>
-          <button onClick={onToggle} className="inline-flex items-center gap-1 tabular text-brand-primary hover:underline">
-            {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-            {formatPKR(run.additions_total)}
-          </button>
-        </TD>
+        <TD className="tabular">{formatPKR(run.additions_total)}</TD>
         <TD className="tabular text-danger">{formatPKR(run.deductions)}</TD>
         <TD className="tabular font-semibold">{formatPKR(run.net_pay)}</TD>
         <TD>
@@ -284,7 +357,7 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
       </TR>
       {showPay && (
         <TR>
-          <TD colSpan={9} className="bg-surface">
+          <TD colSpan={COLS} className="bg-surface">
             <div className="flex flex-wrap items-end gap-2">
               <DatePicker label="Paid date" hint="When the salary was credited to the employee." value={paidAt} onChange={setPaidAt} className="w-36" />
               <FloatInput label="Credited account" hint="The bank account or channel the salary was sent to." value={account} onChange={(e) => setAccount(e.target.value)} wrapClassName="w-64" />
@@ -296,63 +369,79 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
       )}
       {open && (
         <TR>
-          <TD colSpan={9} className="bg-surface">
-            <div className="space-y-2 py-1">
-              <div className="text-caption font-medium text-text-secondary">Additions</div>
-              {additions.length === 0 && <p className="text-caption text-text-secondary">No additions.</p>}
-              {additions.map((l: Line) => (
-                <div key={l.id} className="flex items-center justify-between rounded border border-border bg-white px-3 py-1.5 text-sm">
-                  <span>{l.label}{l.description ? <span className="text-caption text-text-secondary"> · {l.description}</span> : ""}</span>
-                  <span className="flex items-center gap-3"><span className="tabular">{formatPKR(l.amount)}</span>
-                    {run.status === "draft" && (
-                      <button onClick={() => handleRemove(l.id)} disabled={rowBusy} className="text-text-secondary hover:text-danger disabled:opacity-40" aria-label="Remove line">
-                        {removingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                      </button>
-                    )}
-                  </span>
-                </div>
-              ))}
-              {deductions.map((l: Line) => (
-                <div key={l.id} className="flex items-center justify-between rounded border border-border bg-white px-3 py-1.5 text-sm text-danger">
-                  <span>{l.label}{l.description ? <span className="text-caption"> · {l.description}</span> : ""}</span>
-                  <span className="flex items-center gap-3"><span className="tabular">− {formatPKR(l.amount)}</span>
-                    {run.status === "draft" && (
-                      <button onClick={() => handleRemove(l.id)} disabled={rowBusy} className="hover:text-danger disabled:opacity-40" aria-label="Remove line">
-                        {removingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                      </button>
-                    )}
-                  </span>
-                </div>
-              ))}
-              {run.status === "draft" && (
-                <div className="space-y-2 border-t border-border pt-2">
-                  {pickable.length > 0 && (
-                    <FloatSelect
-                      label="Add a saved category"
-                      hint="Quick-add one of this employee's occasional or variable compensation categories (fills the label and amount below)."
-                      value=""
-                      onChange={(e) => {
-                        const c = pickable.find((x) => x.label === e.target.value);
-                        if (c) setNl({ label: c.label, amount: String(c.amount), kind: "addition", description: c.description ?? "" });
-                      }}
-                      wrapClassName="w-72"
-                    >
-                      <option value="">Pick a category…</option>
-                      {pickable.map((c) => <option key={c.label} value={c.label}>{c.label} ({formatPKR(c.amount)}{c.recurring ? " · variable" : ""})</option>)}
-                    </FloatSelect>
-                  )}
-                  <div className="flex flex-wrap items-end gap-2">
-                    <FloatInput label="Label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} wrapClassName="w-40" />
-                    <FloatInput label="Amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} wrapClassName="w-28" />
-                    <FloatSelect label="Type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} wrapClassName="w-36">
-                      <option value="addition">Addition</option><option value="deduction">Deduction</option>
-                    </FloatSelect>
-                    <FloatInput label="Description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} wrapClassName="w-48" />
-                    <Button size="sm" onClick={handleAdd} disabled={rowBusy || !nl.label || !nl.amount}>
-                      {savingLine ? <Loader2 className="size-4 animate-spin" /> : null} Add
-                    </Button>
+          <TD colSpan={COLS} className="bg-surface">
+            <div className="space-y-3 py-1">
+              {/* full breakdown */}
+              <div className="flex items-center justify-between">
+                <div className="text-caption font-medium text-text-secondary">Breakdown</div>
+                {isDraft && (
+                  <Button size="sm" variant="outline" onClick={handleRecompute} disabled={rowBusy} title="Re-run this employee's calculation for the period — refreshes the missing-attendance deduction as days pass (keeps dismissed lines).">
+                    {recomputing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Recompute
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {base.map((l: Line) => <LineItem key={l.id} l={l} />)}
+                {additions.map((l: Line) => <LineItem key={l.id} l={l} />)}
+                {deductions.map((l: Line) => <LineItem key={l.id} l={l} sign />)}
+                {lines.length === 0 && <p className="text-caption text-text-secondary">No line items.</p>}
+              </div>
+
+              {isDraft && (
+                <>
+                  {/* add a deal commission (catch up a missed / previous-month commission) */}
+                  <div className="space-y-2 border-t border-border pt-2">
+                    <div className="text-caption font-medium text-text-secondary">Add deal commission</div>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="w-72">
+                        <Combobox label="Deal" hint="A deal this person is on. Search by company, designation, profile or code." options={(deals ?? []).map((d: any) => ({ value: d.id, label: d.label, sublabel: d.sublabel, color: d.color }))} value={comm.dealId} onChange={(v) => setComm({ ...comm, dealId: v })} placeholder={deals === null ? "Loading…" : "Pick a deal…"} searchPlaceholder="Search deals…" />
+                      </div>
+                      <FloatSelect label="Basis" value={comm.basis} onChange={(e) => setComm({ ...comm, basis: e.target.value })} wrapClassName="w-48">
+                        <option value="amount">Direct amount</option>
+                        <option value="month">% of a month&apos;s receipts</option>
+                      </FloatSelect>
+                      {comm.basis === "amount"
+                        ? <FloatInput label="Amount (PKR)" type="number" value={comm.amount} onChange={(e) => setComm({ ...comm, amount: e.target.value })} wrapClassName="w-32" />
+                        : <DatePicker label="Billing month" hint="Any date in the month you missed. The stored rate for this deal × that month's receipts is used." value={comm.month} onChange={(v) => setComm({ ...comm, month: v })} className="w-40" />}
+                      <FloatInput label="Label (optional)" value={comm.label} onChange={(e) => setComm({ ...comm, label: e.target.value })} wrapClassName="w-40" />
+                      <Button size="sm" onClick={handleAddCommission} disabled={rowBusy || !comm.dealId}>
+                        {addingComm ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Add commission
+                      </Button>
+                    </div>
+                    <p className="text-caption text-text-secondary">Catch up a commission missed on a previous month — a direct amount you know, or the stored rate × the receipts billed to a chosen month.</p>
                   </div>
-                </div>
+
+                  {/* add a manual addition / deduction */}
+                  <div className="space-y-2 border-t border-border pt-2">
+                    <div className="text-caption font-medium text-text-secondary">Add an addition or deduction</div>
+                    {pickable.length > 0 && (
+                      <FloatSelect
+                        label="Add a saved category"
+                        hint="Quick-add one of this employee's occasional or variable compensation categories (fills the label and amount below)."
+                        value=""
+                        onChange={(e) => {
+                          const c = pickable.find((x) => x.label === e.target.value);
+                          if (c) setNl({ label: c.label, amount: String(c.amount), kind: "addition", description: c.description ?? "" });
+                        }}
+                        wrapClassName="w-72"
+                      >
+                        <option value="">Pick a category…</option>
+                        {pickable.map((c) => <option key={c.label} value={c.label}>{c.label} ({formatPKR(c.amount)}{c.recurring ? " · variable" : ""})</option>)}
+                      </FloatSelect>
+                    )}
+                    <div className="flex flex-wrap items-end gap-2">
+                      <FloatInput label="Label" value={nl.label} onChange={(e) => setNl({ ...nl, label: e.target.value })} wrapClassName="w-40" />
+                      <FloatInput label="Amount" type="number" value={nl.amount} onChange={(e) => setNl({ ...nl, amount: e.target.value })} wrapClassName="w-28" />
+                      <FloatSelect label="Type" value={nl.kind} onChange={(e) => setNl({ ...nl, kind: e.target.value })} wrapClassName="w-36">
+                        <option value="addition">Addition</option><option value="deduction">Deduction</option>
+                      </FloatSelect>
+                      <FloatInput label="Description" value={nl.description} onChange={(e) => setNl({ ...nl, description: e.target.value })} wrapClassName="w-48" />
+                      <Button size="sm" onClick={handleAdd} disabled={rowBusy || !nl.label || !nl.amount}>
+                        {savingLine ? <Loader2 className="size-4 animate-spin" /> : null} Add
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </TD>

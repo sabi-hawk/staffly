@@ -21,6 +21,7 @@ import { RoleAssign } from "@/components/admin/role-assign";
 import { CommissionEditor } from "@/components/admin/commission-editor";
 import { DealCommissionEditor } from "@/components/admin/deal-commission-editor";
 import { RangeTabs } from "@/components/range-tabs";
+import { employeeDealOptions } from "@/lib/crm/options";
 import { formatHours, formatPKR, formatCode, ageFromDob, formatTime12, formatCrmDatetime } from "@/lib/utils";
 
 export default async function EmployeeDetail({
@@ -66,24 +67,9 @@ export default async function EmployeeDetail({
     policies = (await supabase.from("commission_policies").select("*").eq("employee_id", params.id).order("effective_date", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false })).data ?? [];
     if (canHaveDealCommission) {
       dealCommissions = (await supabase.from("deal_commissions").select("id, deal_id, rate, fixed_amount, label, deal:deals(name, deal_code, designation, owner_bd_id, secondary_owner_bd_id, closer_id, lead:leads(company), profile:dev_profiles(id, name, profile_no, email, color, stack:dev_stacks(name, color)))").eq("employee_id", params.id).order("created_at")).data ?? [];
-      // Only the deals this person is actually on: primary/secondary BD owner, the CLOSER, or a working member.
-      const ddRows = (await supabase.from("deal_developers").select("deal_id").eq("developer_id", params.id)).data ?? [];
-      const memberDealIds = Array.from(new Set(ddRows.map((r: any) => r.deal_id)));
-      const orParts = [`owner_bd_id.eq.${params.id}`, `secondary_owner_bd_id.eq.${params.id}`, `closer_id.eq.${params.id}`];
-      if (memberDealIds.length) orParts.push(`id.in.(${memberDealIds.join(",")})`);
-      const dealRows = (await supabase.from("deals").select("id, name, designation, deal_code, lead:leads(company), profile:dev_profiles(name, email, color, stack:dev_stacks(name))").or(orParts.join(",")).order("created_at", { ascending: false })).data ?? [];
-      dealOpts = dealRows.map((d: any) => {
-        const company = d.name || d.lead?.company || "Deal";
-        // Rich two-line card: "Company · Designation · #code" over "Profile name · stack · email" so two
-        // deals for the same company/designation are told apart by their profile, not just the number.
-        const profileBits = [d.profile?.name, d.profile?.stack?.name, d.profile?.email].filter(Boolean).join(" · ");
-        return {
-          id: d.id,
-          label: `${company}${d.designation ? ` · ${d.designation}` : ""} · #${d.deal_code}`,
-          sublabel: profileBits || undefined,
-          color: d.profile?.color ?? undefined,
-        };
-      });
+      // Only the deals this person is actually on: primary/secondary BD owner, the CLOSER, or a working
+      // member — as rich two-line cards (shared with the payroll add-commission flow).
+      dealOpts = await employeeDealOptions(supabase, params.id);
     }
   }
 
