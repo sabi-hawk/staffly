@@ -231,7 +231,9 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
   const [recomputing, setRecomputing] = useState(false);
   const [addingComm, setAddingComm] = useState(false);
   const [deals, setDeals] = useState<any[] | null>(null);
-  const [comm, setComm] = useState({ dealId: "", basis: "amount", amount: "", month: "", label: "" });
+  const runStart = new Date(`${run.period_start}T00:00:00Z`);
+  const emptyComm = { dealId: "", basis: "amount", amount: "", mon: runStart.getUTCMonth() + 1, yr: runStart.getUTCFullYear(), label: "" };
+  const [comm, setComm] = useState(emptyComm);
   const rowBusy = acting || savingLine || !!removingId || !!dismissingId || recomputing || addingComm || refreshing;
 
   // lazy-load this employee's deals when the row opens (for the add-commission picker)
@@ -264,9 +266,9 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
     if (!comm.dealId) return toast.error("Pick a deal");
     const body: any = { deal_id: comm.dealId, label: comm.label || undefined };
     if (comm.basis === "amount") { if (!comm.amount) return toast.error("Enter an amount"); body.amount = Number(comm.amount); }
-    else { if (!comm.month) return toast.error("Pick a month"); body.month = comm.month; }
+    else { body.month = `${comm.yr}-${String(comm.mon).padStart(2, "0")}-01`; }
     setAddingComm(true); const ok = await onAddCommission(run.id, body); setAddingComm(false);
-    if (ok) { setComm({ dealId: "", basis: "amount", amount: "", month: "", label: "" }); onRefresh(); }
+    if (ok) { setComm(emptyComm); onRefresh(); }
   }
   async function handleDelete() { setActing(true); const ok = await onDelete(run.id); setActing(false); if (ok) onRefresh(); }
 
@@ -393,16 +395,25 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
                   <div className="space-y-2 border-t border-border pt-2">
                     <div className="text-caption font-medium text-text-secondary">Add deal commission</div>
                     <div className="flex flex-wrap items-end gap-2">
-                      <div className="w-72">
+                      <div className="w-[30rem] max-w-full">
                         <Combobox label="Deal" hint="A deal this person is on. Search by company, designation, profile or code." options={(deals ?? []).map((d: any) => ({ value: d.id, label: d.label, sublabel: d.sublabel, color: d.color }))} value={comm.dealId} onChange={(v) => setComm({ ...comm, dealId: v })} placeholder={deals === null ? "Loading…" : "Pick a deal…"} searchPlaceholder="Search deals…" />
                       </div>
                       <FloatSelect label="Basis" value={comm.basis} onChange={(e) => setComm({ ...comm, basis: e.target.value })} wrapClassName="w-48">
                         <option value="amount">Direct amount</option>
                         <option value="month">% of a month&apos;s receipts</option>
                       </FloatSelect>
-                      {comm.basis === "amount"
-                        ? <FloatInput label="Amount (PKR)" type="number" value={comm.amount} onChange={(e) => setComm({ ...comm, amount: e.target.value })} wrapClassName="w-32" />
-                        : <DatePicker label="Billing month" hint="Any date in the month you missed. The stored rate for this deal × that month's receipts is used." value={comm.month} onChange={(v) => setComm({ ...comm, month: v })} className="w-40" />}
+                      {comm.basis === "amount" ? (
+                        <FloatInput label="Amount (PKR)" type="number" value={comm.amount} onChange={(e) => setComm({ ...comm, amount: e.target.value })} wrapClassName="w-32" />
+                      ) : (
+                        <>
+                          <FloatSelect label="Billing month" hint="The month the missed receipts belong to (the month you tagged them when logging the payment). The deal's stored rate × that month's receipts is used." value={String(comm.mon)} onChange={(e) => setComm({ ...comm, mon: Number(e.target.value) })} wrapClassName="w-36">
+                            {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                          </FloatSelect>
+                          <FloatSelect label="Year" value={String(comm.yr)} onChange={(e) => setComm({ ...comm, yr: Number(e.target.value) })} wrapClassName="w-24">
+                            {[runStart.getUTCFullYear() - 1, runStart.getUTCFullYear(), runStart.getUTCFullYear() + 1].map((y) => <option key={y} value={y}>{y}</option>)}
+                          </FloatSelect>
+                        </>
+                      )}
                       <FloatInput label="Label (optional)" value={comm.label} onChange={(e) => setComm({ ...comm, label: e.target.value })} wrapClassName="w-40" />
                       <Button size="sm" onClick={handleAddCommission} disabled={rowBusy || !comm.dealId}>
                         {addingComm ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Add commission
