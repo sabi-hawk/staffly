@@ -10,6 +10,7 @@ import { Trash2, Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { Combobox } from "@/components/ui/combobox";
 import { ProfileCell } from "@/components/crm/crm-cells";
 import { formatPKR, cn } from "@/lib/utils";
 
@@ -47,7 +48,7 @@ const ROLE_STYLE: Record<string, string> = {
   Closer: "bg-sky-100 text-sky-700",
 };
 
-type DealOpt = { id: string; label: string };
+type DealOpt = { id: string; label: string; sublabel?: string; color?: string };
 
 const dealName = (c: DealCommission) => c.deal?.name || c.deal?.lead?.company || "Deal";
 
@@ -140,10 +141,7 @@ export function DealCommissionEditor({
       ) : (
         <form onSubmit={add} className="space-y-3 rounded-md border border-dashed border-border p-3">
           <div className="grid gap-3 sm:grid-cols-2">
-            <FloatSelect id="dc-deal" label="Deal" hint="Which deal this BD earns a commission on." value={dealId} onChange={(e) => setDealId(e.target.value)}>
-              <option value="">Pick a deal…</option>
-              {deals.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-            </FloatSelect>
+            <Combobox id="dc-deal" label="Deal" hint="Which deal this person earns a commission on. Search by company, designation, profile or code." options={deals.map((d) => ({ value: d.id, label: d.label, sublabel: d.sublabel, color: d.color }))} value={dealId} onChange={setDealId} placeholder="Pick a deal…" searchPlaceholder="Search deals…" />
             <FloatSelect id="dc-basis" label="Basis" hint="Percentage of the deal's receipts in the payroll month, or a flat one-off amount." value={basis} onChange={(e) => setBasis(e.target.value as "rate" | "fixed")}>
               <option value="rate">Percentage of receipts</option>
               <option value="fixed">Fixed amount</option>

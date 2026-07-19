@@ -71,8 +71,19 @@ export default async function EmployeeDetail({
       const memberDealIds = Array.from(new Set(ddRows.map((r: any) => r.deal_id)));
       const orParts = [`owner_bd_id.eq.${params.id}`, `secondary_owner_bd_id.eq.${params.id}`, `closer_id.eq.${params.id}`];
       if (memberDealIds.length) orParts.push(`id.in.(${memberDealIds.join(",")})`);
-      const dealRows = (await supabase.from("deals").select("id, name, designation, deal_code, lead:leads(company)").or(orParts.join(",")).order("created_at", { ascending: false })).data ?? [];
-      dealOpts = dealRows.map((d: any) => ({ id: d.id, label: `${d.name || d.lead?.company || "Deal"}${d.designation ? ` · ${d.designation}` : ""} · #${d.deal_code}` }));
+      const dealRows = (await supabase.from("deals").select("id, name, designation, deal_code, lead:leads(company), profile:dev_profiles(name, email, color, stack:dev_stacks(name))").or(orParts.join(",")).order("created_at", { ascending: false })).data ?? [];
+      dealOpts = dealRows.map((d: any) => {
+        const company = d.name || d.lead?.company || "Deal";
+        // Rich two-line card: "Company · Designation · #code" over "Profile name · stack · email" so two
+        // deals for the same company/designation are told apart by their profile, not just the number.
+        const profileBits = [d.profile?.name, d.profile?.stack?.name, d.profile?.email].filter(Boolean).join(" · ");
+        return {
+          id: d.id,
+          label: `${company}${d.designation ? ` · ${d.designation}` : ""} · #${d.deal_code}`,
+          sublabel: profileBits || undefined,
+          color: d.profile?.color ?? undefined,
+        };
+      });
     }
   }
 
