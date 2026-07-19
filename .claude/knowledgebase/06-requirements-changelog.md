@@ -13,6 +13,18 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-19 — Payroll for commission-only partners + rich deal-commission picker (owner)
+Payroll only generated for employees with a base salary, so partners with no base pay (Ali, Mohiudin)
+were skipped even though they earn deal commissions. Generation now runs for every PAYABLE employee —
+anyone with a base salary OR active deal commissions OR recurring compensation — so a commission-only
+partner gets a payslip whose net is their commissions. New `payroll_exempt` flag (Flags panel) excludes a
+person entirely (e.g. the founder, who is a partner but takes no payslip). Migration 0072. Also: the deal-
+commission "Deal" picker became a rich searchable card (company · designation · #code over profile name ·
+stack · email + colour dot) so two deals for the same company/designation are distinguishable. Verified a
+commission-only partner nets their commission (Mohiudin: 10% of 100k = 10k). Shipped 2026-07-19.
+Remaining payroll asks in progress (separate slices): BD payslip privacy (aggregate commissions, hide deal
+names), row expand + line dismiss, recompute/sync + previous-month commission add.
+
 ## 2026-07-16 — Typed receiving accounts + on-deal selection; flag alignment (owner)
 Reworked deal payment config. A **receiving account** is now any mechanism money lands in, with a **type**
 (Bank transfer / Payoneer / Wise / Western Union / Other) that replaces the separate "payment method" —

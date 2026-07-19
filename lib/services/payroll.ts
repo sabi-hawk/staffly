@@ -60,18 +60,31 @@ async function computeDealCommissions(
   return lines;
 }
 
-/** Generate (or refresh) draft payroll runs + payslip line items for all active employees. */
+/** Generate (or refresh) draft payroll runs + payslip line items for every PAYABLE employee — anyone with
+ * a base salary, active deal commissions, or recurring compensation this period. A commission-only partner
+ * (base 0, no salary_structure) is therefore included; `payroll_exempt` employees (e.g. the founder) and
+ * inactive/non-employee accounts are always skipped. */
 export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOptions) {
-  const { data: salaries, error } = await supabase
-    .from("salary_structures")
-    .select("*")
-    .eq("is_active", true);
-  if (error) throw new Error(error.message);
+  const [salRes, dcRes, compRes] = await Promise.all([
+    supabase.from("salary_structures").select("employee_id, base_salary").eq("is_active", true),
+    supabase.from("deal_commissions").select("employee_id").eq("is_active", true),
+    supabase.from("compensation_components").select("employee_id").eq("is_active", true).eq("recurring", true),
+  ]);
+  if (salRes.error) throw new Error(salRes.error.message);
+  const baseByEmp = new Map<string, number>((salRes.data ?? []).map((s: any) => [s.employee_id as string, Number(s.base_salary) || 0]));
+  const candidateIds = new Set<string>([
+    ...Array.from(baseByEmp.keys()),
+    ...((dcRes.data ?? []).map((r: any) => r.employee_id as string)),
+    ...((compRes.data ?? []).map((r: any) => r.employee_id as string)),
+  ]);
+  // keep only active, payroll-eligible employees (base role employee, not exempt)
+  const { data: profs } = candidateIds.size
+    ? await supabase.from("profiles").select("id").in("id", Array.from(candidateIds)).eq("role", "employee").eq("status", "active").eq("payroll_exempt", false)
+    : { data: [] as { id: string }[] };
+  const eligibleIds = (profs ?? []).map((p: any) => p.id as string);
 
   const runs = [];
-  for (const sal of salaries ?? []) {
-    const employeeId = sal.employee_id as string;
-
+  for (const employeeId of eligibleIds) {
     // Never overwrite a FINALISED payslip: re-running "generate drafts" must not reset a locked run
     // to draft or wipe its (possibly hand-edited) lines. Check first — skip before any per-employee work.
     const { data: existingRun } = await supabase
@@ -83,7 +96,7 @@ export async function generatePayroll(supabase: SupabaseClient, opts: GenerateOp
       .maybeSingle();
     if (existingRun?.status === "finalised") continue;
 
-    const base = round2(Number(sal.base_salary) || 0);
+    const base = round2(baseByEmp.get(employeeId) ?? 0);
 
     // These reads are independent of each other — fetch them concurrently (was a sequential N+1).
     const [wdRes, attRes, leavesRes, compsRes, allLeavesRes, shiftRes, holRes] = await Promise.all([

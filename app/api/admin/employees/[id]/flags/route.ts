@@ -23,6 +23,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         is_bd_lead: BOOL(body.is_bd_lead),
         is_deal_developer: BOOL(body.is_deal_developer),
         is_closer: BOOL(body.is_closer),
+        payroll_exempt: BOOL(body.payroll_exempt),
       })
       .eq("id", params.id);
     if (error) throw new Error(error.message);

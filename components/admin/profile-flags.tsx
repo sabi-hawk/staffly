@@ -13,6 +13,7 @@ const FLAGS: { key: string; label: string; hint: string }[] = [
   { key: "is_bd_lead", label: "BD Lead", hint: "Sees & manages all BDs' CRM data." },
   { key: "is_deal_developer", label: "Deal-assigned developer", hint: "Works a client deal. Leave balances are hidden and leave requests are record-only; the client company governs their leave." },
   { key: "is_closer", label: "Can be a closer", hint: "Eligible to be picked as the closer on a deal (appears in the deal Closer list). Tick anyone who lands deals, not just developers." },
+  { key: "payroll_exempt", label: "Exclude from payroll", hint: "Never generate a payslip for this person, even if they have commissions (e.g. the founder). Payroll otherwise runs for anyone with a base salary, commissions, or recurring compensation." },
 ];
 
 export function ProfileFlags({ employeeId, initial }: { employeeId: string; initial: Record<string, boolean> }) {
@@ -23,6 +24,7 @@ export function ProfileFlags({ employeeId, initial }: { employeeId: string; init
     is_bd_lead: !!initial.is_bd_lead,
     is_deal_developer: !!initial.is_deal_developer,
     is_closer: !!initial.is_closer,
+    payroll_exempt: !!initial.payroll_exempt,
   });
   const [busy, setBusy] = useState(false);
   const [pending, startTransition] = useTransition();

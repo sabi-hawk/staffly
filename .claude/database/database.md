@@ -375,6 +375,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
   (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
   Assessments tab (same dynamic-add pattern as Manage stacks).
+- `0072_payroll_exempt.sql` — `profiles.payroll_exempt` (flag). Payroll generation now runs for every
+  PAYABLE employee — anyone with an active base salary, active `deal_commissions`, or active recurring
+  `compensation_components` — so a commission-only partner (base 0, no `salary_structures` row) still gets a
+  payslip (net = their commissions). `payroll_exempt` employees (e.g. the founder) and inactive/non-employee
+  accounts are always skipped. See `generatePayroll` in `lib/services/payroll.ts` (iterates the union of
+  those three sources, filtered to active role=employee & not exempt).
 - `0071_receiving_account_types.sql` — `receiving_accounts` gains **`type`** (`bank|payoneer|wise|
   western_union|other`, default bank) + type-specific fields: `label`, `email` (payoneer/wise), `iban`,
   `swift_code`, `branch_code`, `branch_address` (bank), `cnic` (western_union recipient). Merges the old

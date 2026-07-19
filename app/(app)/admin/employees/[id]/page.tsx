@@ -185,7 +185,7 @@ export default async function EmployeeDetail({
           description="Developer (assignable in pickers) / BD-Lead / deal-assigned. Assigning a role syncs the BD-Lead and deal-assigned flags automatically."
           defaultOpen={false}
         >
-          <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_designer: p.is_designer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer, is_closer: p.is_closer }} />
+          <ProfileFlags employeeId={p.id} initial={{ is_developer: p.is_developer, is_designer: p.is_designer, is_bd_lead: p.is_bd_lead, is_deal_developer: p.is_deal_developer, is_closer: p.is_closer, payroll_exempt: p.payroll_exempt }} />
         </CollapsibleCard>
       )}
 
