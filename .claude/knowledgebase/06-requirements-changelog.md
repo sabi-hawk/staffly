@@ -13,6 +13,16 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-20 — Admin attendance summary = full "eye" view; daily-summary notes optional (owner)
+(1) The admin Attendance page's **Summary** column showed only the stripped notes text (e.g. "Job Count:
+49"). It now shows the same rich **eye** view the employee sees on their dashboard recent-days: an eye
+button opening the per-profile **job applications** (profile → count) with a **Total**, plus the Notes.
+Reuses `DaySummary`; the page fetches `bd_job_applications` per (employee, day). (2) The daily-summary
+**Notes are now optional** — a BD who only logs job counts no longer gets "Write a short note before
+saving"; an empty note is simply skipped (never an error), and the field is labelled "(optional)". This is
+why the BD had typed "Job Count: 49" into notes — they were forced to write something; it was manual user
+input, not a system bug. Shipped 2026-07-20.
+
 ## 2026-07-20 — CRM profiles: highlight my-owned + no-wrap owner chip; BD dashboard CRM card (owner)
 Three CRM-view fixes (seen as a partner-BD). (1) On the Profiles list, rows the viewer OWNS are highlighted
 (brand tint + left accent + a "You" tag on the owner chip) with a "N assigned to you" header, so a BD/

@@ -12,7 +12,10 @@ import { AttendanceControls } from "@/components/attendance/attendance-controls"
 import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { CorrectionActions } from "@/components/admin/correction-actions";
 import { FilterShell } from "@/components/crm/filter-shell";
+import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
 import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
+
+const strip = (html: string | null | undefined) => (html ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
 
 const time = (t: string | null) =>
   t ? new Date(t).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -58,6 +61,23 @@ export default async function AdminAttendancePage({
     .range(offset, offset + pageSize - 1);
   if (employeeId) query = query.eq("employee_id", employeeId);
   const { data: rows, count } = await query;
+
+  // Per-(employee, day) BD job-application breakdown for the rich "eye" summary view (profile → count +
+  // total), the same the employee sees on their dashboard — keyed by owner_bd_id|work_date.
+  const empIds = Array.from(new Set((rows ?? []).map((r: any) => r.employee_id)));
+  const workDates = Array.from(new Set((rows ?? []).map((r: any) => r.work_date)));
+  const jobsByEmpDate: Record<string, JobLine[]> = {};
+  if (empIds.length && workDates.length) {
+    const { data: jrows } = await supabase
+      .from("bd_job_applications")
+      .select("owner_bd_id, work_date, count, profile:dev_profiles(profile_no, name)")
+      .in("owner_bd_id", empIds)
+      .in("work_date", workDates);
+    for (const j of (jrows ?? []) as any[]) {
+      const label = j.profile ? `#${j.profile.profile_no} ${j.profile.name}` : "—";
+      (jobsByEmpDate[`${j.owner_bd_id}|${j.work_date}`] ??= []).push({ label, count: Number(j.count) || 0 });
+    }
+  }
 
   return (
     <FilterShell
@@ -153,20 +173,29 @@ export default async function AdminAttendancePage({
                       {Number(r.deficit_hours) > 0 && <Badge tone="danger">-{formatHours(r.deficit_hours)}</Badge>}
                       {Number(r.extra_hours) > 0 && <Badge tone="success">+{formatHours(r.extra_hours)}</Badge>}
                     </TD>
-                    <TD className="max-w-[220px]">
-                      {(r.daily_summary ?? "").replace(/<[^>]*>/g, "").trim() ? (
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate text-text-secondary">{(r.daily_summary as string).replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim()}</span>
-                            {r.summary_late && <Badge tone="warning">late</Badge>}
-                          </div>
-                          {r.summary_late && r.summary_at && (
-                            <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <Badge tone="warning">missing</Badge>
-                      )}
+                    <TD className="max-w-[240px]">
+                      {(() => {
+                        const jobs = jobsByEmpDate[`${r.employee_id}|${r.work_date}`] ?? [];
+                        const total = jobs.reduce((s, j) => s + j.count, 0);
+                        const notesText = strip(r.daily_summary);
+                        if (notesText || total > 0) {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="truncate text-text-secondary">{notesText || `${total} job application${total === 1 ? "" : "s"}`}</span>
+                                  {r.summary_late && <Badge tone="warning">late</Badge>}
+                                </div>
+                                {r.summary_late && r.summary_at && (
+                                  <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>
+                                )}
+                              </div>
+                              <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} />
+                            </div>
+                          );
+                        }
+                        return <Badge tone="warning">missing</Badge>;
+                      })()}
                     </TD>
                     <TD>
                       <EditAttendance

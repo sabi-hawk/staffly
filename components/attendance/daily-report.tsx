@@ -56,8 +56,9 @@ export function DailyReport({
         const r = await fetch("/api/bd/job-counts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ work_date: workDate, counts: payload }) });
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Could not save the job counts");
       }
-      if (notesDirty) {
-        if (!strip(notes)) throw new Error("Write a short note before saving.");
+      // Notes are OPTIONAL (a BD may only be logging job counts). Only save when there's actual text —
+      // an empty note is simply skipped, never an error.
+      if (notesDirty && strip(notes)) {
         if (!checkedIn) throw new Error("Check in first, then add your notes.");
         const r = await fetch("/api/attendance/summary", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ work_date: workDate, html: notes }) });
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Could not save your notes");
@@ -116,7 +117,7 @@ export function DailyReport({
         )}
 
         <div className="space-y-2">
-          {isBd && <div className="text-sm font-medium text-text-primary">Notes</div>}
+          {isBd && <div className="text-sm font-medium text-text-primary">Notes <span className="font-normal text-text-secondary">(optional)</span></div>}
           <RichText value={notes} onChange={setNotes} placeholder={isBd ? "Meetings, profiles created or matured, help given to juniors…" : "e.g. What you designed / built / fixed today…"} />
         </div>
 
