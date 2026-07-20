@@ -2,7 +2,7 @@
 // Per-day task summary control for an attendance row. Shows the current state and opens a rich-text
 // editor (same editor as the lead notes). Rules mirror the service: edit freely the same day; a past
 // day with a summary is locked (view only); a past day still missing can be added LATE (flagged).
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Plus, Eye, X, AlertTriangle, Lock } from "lucide-react";
@@ -25,6 +25,10 @@ export function DailySummary({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState(html ?? "");
+  // Wrap the post-save refetch in a transition so it's a smooth internal refresh (not an abrupt whole-page
+  // re-render) and the button stays "Saving…" until the fresh data lands.
+  const [pending, startTransition] = useTransition();
+  useEffect(() => { if (!pending) setBusy(false); }, [pending]);
 
   const present = !!strip(html);
   const isToday = workDate === today;
@@ -41,11 +45,10 @@ export function DailySummary({
       body: JSON.stringify({ work_date: workDate, html: draft }),
     });
     const j = await res.json().catch(() => ({}));
-    setBusy(false);
-    if (!res.ok) return toast.error(j.error ?? "Failed to save");
+    if (!res.ok) { setBusy(false); return toast.error(j.error ?? "Failed to save"); }
     toast.success(j.late ? "Summary saved (added late)" : "Summary saved");
     setOpen(false);
-    router.refresh();
+    startTransition(() => router.refresh()); // busy stays on until the refetch lands (cleared by the effect)
   }
 
   return (
@@ -90,8 +93,8 @@ export function DailySummary({
                 </p>
                 <RichText value={draft} onChange={setDraft} placeholder="e.g. Closed 2 BD leads, prepped the DemoCorp assessment…" />
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save summary"}</Button>
-                  <Button size="sm" variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+                  <Button size="sm" onClick={save} disabled={busy || pending}>{busy || pending ? "Saving…" : "Save summary"}</Button>
+                  <Button size="sm" variant="outline" onClick={() => setOpen(false)} disabled={busy || pending}>Cancel</Button>
                 </div>
               </>
             )}

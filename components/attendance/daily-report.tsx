@@ -4,7 +4,7 @@
 // creating/maturing profiles, etc.); for everyone else it's just the Notes. One Save writes both — so a
 // BD no longer fills counts up top and a summary down below separately. The text part is "Notes"; the
 // whole form is the day's "summary".
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { NotebookPen } from "lucide-react";
@@ -36,6 +36,10 @@ export function DailyReport({
   );
   const [notes, setNotes] = useState(notesHtml ?? "");
   const [busy, setBusy] = useState(false);
+  // Smooth internal refresh after save (not an abrupt whole-page re-render); button stays "Saving…" until
+  // the fresh server data lands.
+  const [pending, startTransition] = useTransition();
+  useEffect(() => { if (!pending) setBusy(false); }, [pending]);
 
   const total = useMemo(
     () => profiles.reduce((s, p) => s + Math.max(0, Math.floor(Number(counts[p.dev_profile_id]) || 0)), 0),
@@ -64,11 +68,10 @@ export function DailyReport({
         if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "Could not save your notes");
       }
       toast.success("Today's summary saved");
-      router.refresh();
+      startTransition(() => router.refresh()); // busy stays on until the refetch lands (cleared by the effect)
     } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
       setBusy(false);
+      toast.error((e as Error).message);
     }
   }
 
@@ -122,7 +125,7 @@ export function DailyReport({
         </div>
 
         <div className="flex items-center gap-3">
-          <Button size="sm" onClick={save} disabled={busy || (!countsDirty && !notesDirty)}>{busy ? "Saving…" : "Save today's summary"}</Button>
+          <Button size="sm" onClick={save} disabled={busy || pending || (!countsDirty && !notesDirty)}>{busy || pending ? "Saving…" : "Save today's summary"}</Button>
           {!countsDirty && !notesDirty && (strip(notesHtml) || (isBd && profiles.some((p) => p.count > 0))) && (
             <span className="text-caption text-text-secondary">Saved.</span>
           )}
