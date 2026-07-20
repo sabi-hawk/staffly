@@ -30,7 +30,7 @@ export default async function CrmProfilesPage({
   // RLS scopes the rows: admins/BD-Leads see all; a plain BD sees only profiles they own.
   let query = supabase
     .from("dev_profiles")
-    .select("id, profile_no, name, email, mobile, status, linkedin_banned, stack:dev_stacks(name, color), owner:profiles(full_name, color)", { count: "exact" });
+    .select("id, profile_no, name, email, mobile, status, linkedin_banned, owner_bd_id, stack:dev_stacks(name, color), owner:profiles(full_name, color)", { count: "exact" });
   if (searchParams.owner) query = query.eq("owner_bd_id", searchParams.owner);
   if (searchParams.stack) query = query.eq("stack_id", searchParams.stack);
   // Default to ACTIVE profiles; "all" is the explicit no-filter sentinel.
@@ -75,7 +75,7 @@ export default async function CrmProfilesPage({
             </div>
           }
         >
-        <ProfilesGrid rows={list} canManage={canManage} canSeePasswords={hasPermP(me, PERM.crmProfilesPassword)} />
+        <ProfilesGrid rows={list} canManage={canManage} canSeePasswords={hasPermP(me, PERM.crmProfilesPassword)} mineId={me?.id} />
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
         </FilterShell>
       </CardContent>

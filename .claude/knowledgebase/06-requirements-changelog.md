@@ -13,6 +13,15 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-20 — CRM profiles: highlight my-owned + no-wrap owner chip; BD dashboard CRM card (owner)
+Three CRM-view fixes (seen as a partner-BD). (1) On the Profiles list, rows the viewer OWNS are highlighted
+(brand tint + left accent + a "You" tag on the owner chip) with a "N assigned to you" header, so a BD/
+partner-BD spots their accounts among all profiles. (2) The owner-BD chip (and every `ColorChip`) no longer
+wraps to a second line on narrow screens — `whitespace-nowrap`; the table already scrolls horizontally.
+(3) The dashboard was empty for a partner-BD (no check-in): added a "Your CRM at a glance" card (profiles
+assigned to you, active leads you own, quick links to Profiles/Leads/CRM calendar) for anyone with CRM
+access. Shipped 2026-07-20.
+
 ## 2026-07-19 — Payroll: row breakdown + dismiss, recompute, catch-up commission, BD-safe payslip (owner)
 Bigger payroll pass (migration 0073, `payslip_components.dismissed`):
 - **Row expand** — a leading expand button per payroll row opens the full breakdown (base, missing-

@@ -11,7 +11,7 @@ export function ColorChip({ label, color }: { label?: string | null; color?: str
   const c = color || FALLBACK;
   return (
     <span
-      className="inline-flex items-center rounded-full border px-2 py-[1px] text-[11px] font-medium leading-tight"
+      className="inline-flex items-center whitespace-nowrap rounded-full border px-2 py-[1px] text-[11px] font-medium leading-tight"
       style={{ color: c, borderColor: `${c}40`, backgroundColor: `${c}12` }}
     >
       {label}

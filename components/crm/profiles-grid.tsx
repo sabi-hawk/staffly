@@ -51,20 +51,26 @@ function PasswordCell({ profileId }: { profileId: string }) {
   );
 }
 
-export function ProfilesGrid({ rows, canManage, canSeePasswords }: { rows: any[]; canManage: boolean; canSeePasswords: boolean }) {
+export function ProfilesGrid({ rows, canManage, canSeePasswords, mineId }: { rows: any[]; canManage: boolean; canSeePasswords: boolean; mineId?: string }) {
   const [showPw, setShowPw] = useState(false);
+  const mineCount = mineId ? rows.filter((p) => p.owner_bd_id === mineId).length : 0;
 
   return (
     <>
-      {canSeePasswords && (
-        <div className="mb-3 flex justify-end">
-          <button
-            onClick={() => setShowPw((s) => !s)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-caption text-text-secondary hover:bg-surface"
-          >
-            <KeyRound className="size-3.5" />
-            {showPw ? "Hide passwords" : "Show passwords"}
-          </button>
+      {(canSeePasswords || mineCount > 0) && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          {mineCount > 0
+            ? <span className="inline-flex items-center gap-1.5 text-caption text-text-secondary"><span className="size-2 rounded-sm bg-brand-primary/50" /> {mineCount} assigned to you (highlighted)</span>
+            : <span />}
+          {canSeePasswords && (
+            <button
+              onClick={() => setShowPw((s) => !s)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-caption text-text-secondary hover:bg-surface"
+            >
+              <KeyRound className="size-3.5" />
+              {showPw ? "Hide passwords" : "Show passwords"}
+            </button>
+          )}
         </div>
       )}
       <Table>
@@ -76,9 +82,11 @@ export function ProfilesGrid({ rows, canManage, canSeePasswords }: { rows: any[]
           </TR>
         </THead>
         <TBody>
-          {rows.map((p) => (
-            <TR key={p.id}>
-              <TD><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
+          {rows.map((p) => {
+            const mine = !!mineId && p.owner_bd_id === mineId;
+            return (
+            <TR key={p.id} className={mine ? "bg-brand-primary/[0.05] hover:bg-brand-primary/[0.08]" : undefined}>
+              <TD className={mine ? "relative before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-brand-primary" : undefined}><span className="rounded bg-brand-light px-1.5 py-0.5 font-mono text-caption text-brand-primary">#{p.profile_no}</span></TD>
               <TD>
                 <span className="inline-flex items-center gap-1.5">
                   {p.linkedin_banned && <span title="LinkedIn banned" className="inline-flex text-danger"><Ban className="size-3.5 shrink-0" aria-label="LinkedIn banned" /></span>}
@@ -87,13 +95,13 @@ export function ProfilesGrid({ rows, canManage, canSeePasswords }: { rows: any[]
               </TD>
               <TD className="text-text-secondary">{p.email ?? "—"}</TD>
               <TD><StackBadge name={p.stack?.name} color={p.stack?.color} /></TD>
-              <TD>{p.owner?.full_name ? <ColorChip label={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}</TD>
+              <TD><span className="inline-flex items-center gap-1.5">{p.owner?.full_name ? <ColorChip label={p.owner.full_name} color={p.owner.color} /> : <span className="text-text-secondary">Unassigned</span>}{mine && <span className="rounded bg-brand-primary px-1.5 py-[1px] text-[10px] font-semibold text-white">You</span>}</span></TD>
               <TD className="text-text-secondary">{p.mobile ?? "—"}</TD>
               {canSeePasswords && showPw && <TD><PasswordCell profileId={p.id} /></TD>}
               <TD><StatusPill status={p.status} /></TD>
               <TD>{canManage ? <ProfileRowActions profileId={p.id} name={p.name} /> : null}</TD>
             </TR>
-          ))}
+          );})}
           {rows.length === 0 && <TR><TD colSpan={9} className="py-6 text-center text-text-secondary">No profiles match.</TD></TR>}
         </TBody>
       </Table>

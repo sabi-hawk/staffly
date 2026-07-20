@@ -8,6 +8,8 @@ import { CheckWidget } from "@/components/attendance/check-widget";
 import { DailySummary } from "@/components/attendance/daily-summary";
 import { DailyReport } from "@/components/attendance/daily-report";
 import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
+import Link from "next/link";
+import { Contact, Briefcase, CalendarDays } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +21,20 @@ import { formatHours } from "@/lib/utils";
 export default async function EmployeeDashboard() {
   const profile = (await getCurrentProfile())!;
   const canAttend = hasPermP(profile, PERM.attendanceSelf); // partners have no attendance duties
+  const canCrm = hasPermP(profile, PERM.crmAccess);
   const supabase = createClient();
+
+  // CRM-at-a-glance for BD / partner-BD users — fills an otherwise-empty dashboard for people without
+  // attendance duties, and a quick jump into their work for everyone with CRM access.
+  let myProfileCount = 0, myLeadCount = 0;
+  if (canCrm) {
+    const [pc, lc] = await Promise.all([
+      supabase.from("dev_profiles").select("id", { count: "exact", head: true }).eq("owner_bd_id", profile.id),
+      supabase.from("leads").select("id", { count: "exact", head: true }).eq("owner_bd_id", profile.id).eq("status", "in_progress"),
+    ]);
+    myProfileCount = pc.count ?? 0;
+    myLeadCount = lc.count ?? 0;
+  }
   const today = companyToday();
   const todayData = await todayAttendance(supabase, profile.id);
 
@@ -70,6 +85,33 @@ export default async function EmployeeDashboard() {
       {/* Attendance widgets only for people with attendance duties — partners (no attendance.self) skip
           check-in / the daily summary entirely. */}
       {canAttend && <CheckWidget today={todayData as any} summaryMissing={summaryMissing} />}
+
+      {/* CRM at a glance — for BD / partner-BD users (fills the dashboard for people with no check-in). */}
+      {canCrm && (
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle>Your CRM at a glance</CardTitle>
+            <Link href="/crm/profiles" className="text-caption font-medium text-brand-primary hover:underline">Open CRM →</Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link href="/crm/profiles" className="flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-brand-primary/50 hover:bg-surface/50">
+                <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-brand-primary/10 text-brand-primary"><Contact className="size-5" /></span>
+                <span><span className="block text-h2 font-semibold tabular text-text-primary">{myProfileCount}</span><span className="text-caption text-text-secondary">Profiles assigned to you</span></span>
+              </Link>
+              <Link href="/crm/leads" className="flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:border-brand-primary/50 hover:bg-surface/50">
+                <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><Briefcase className="size-5" /></span>
+                <span><span className="block text-h2 font-semibold tabular text-text-primary">{myLeadCount}</span><span className="text-caption text-text-secondary">Active leads you own</span></span>
+              </Link>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/crm/profiles" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-caption font-medium text-text-secondary hover:bg-surface"><Contact className="size-3.5" /> Profiles</Link>
+              <Link href="/crm/leads" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-caption font-medium text-text-secondary hover:bg-surface"><Briefcase className="size-3.5" /> Leads</Link>
+              <Link href="/crm/calendar" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-caption font-medium text-text-secondary hover:bg-surface"><CalendarDays className="size-3.5" /> CRM calendar</Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* One consolidated "Today's summary": BDs get job counts + notes; everyone else just notes. */}
       {canAttend && (jobProfiles.length > 0 || !!todayRow?.check_in_time) && (
