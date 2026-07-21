@@ -19,6 +19,8 @@ export function AssessmentForm({
   categories = [],
   initial,
   onDone,
+  compact = false,
+  role,
 }: {
   id?: string;
   leadId?: string;
@@ -28,10 +30,12 @@ export function AssessmentForm({
   categories?: Opt[];
   initial?: Partial<Record<string, string | null>>;
   onDone?: () => void;
+  compact?: boolean; // rendered inside a lead — hide company/job title/job-post URL (on the lead header)
+  role?: string | null;
 }) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({
-    job_title: initial?.job_title ?? "",
+    job_title: initial?.job_title ?? role ?? "",
     company: initial?.company ?? company ?? "",
     status: initial?.status ?? "pending",
     priority: initial?.priority ?? "medium",
@@ -73,8 +77,8 @@ export function AssessmentForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <FloatInput id="assessment-job-title" label="Job title" hint={ASSESSMENT_HINTS.job_title} value={form.job_title} onChange={(e) => set("job_title", e.target.value)} />
-      <FloatInput id="assessment-company" label="Company" hint={ASSESSMENT_HINTS.company} value={form.company} onChange={(e) => set("company", e.target.value)} />
+      {!compact && <FloatInput id="assessment-job-title" label="Job title" hint={ASSESSMENT_HINTS.job_title} value={form.job_title} onChange={(e) => set("job_title", e.target.value)} />}
+      {!compact && <FloatInput id="assessment-company" label="Company" hint={ASSESSMENT_HINTS.company} value={form.company} onChange={(e) => set("company", e.target.value)} />}
       <FloatSelect
         id="assessment-status"
         label="Status"
@@ -150,7 +154,7 @@ export function AssessmentForm({
       </FloatSelect>
       <FloatInput id="assessment-budget" label="Budget" hint={ASSESSMENT_HINTS.budget} value={form.budget} onChange={(e) => set("budget", e.target.value)} />
       <FloatInput id="assessment-mail-subject" label="Mail subject" hint="The subject line of the email that delivered the assessment, so it is easy to find in the inbox later." wrapClassName="lg:col-span-2" value={form.mail_subject} onChange={(e) => set("mail_subject", e.target.value)} />
-      <FloatInput id="assessment-job-post-url" label="Job post URL" hint={ASSESSMENT_HINTS.job_post_url} wrapClassName="lg:col-span-2" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} />
+      {!compact && <FloatInput id="assessment-job-post-url" label="Job post URL" hint={ASSESSMENT_HINTS.job_post_url} wrapClassName="lg:col-span-2" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} />}
       <FloatInput id="assessment-assessment-link" label="Assessment link" hint="Direct link to the assessment task or platform, e.g. HackerRank or a shared doc." wrapClassName="lg:col-span-2" value={form.assessment_link} onChange={(e) => set("assessment_link", e.target.value)} />
       <FloatInput id="assessment-job-description" label="Job description" hint="The job description text or a short summary of the role requirements, for whoever completes the assessment." wrapClassName="lg:col-span-4" value={form.job_description} onChange={(e) => set("job_description", e.target.value)} />
       <FloatInput id="assessment-notes" label="Notes" hint={ASSESSMENT_HINTS.feedback} wrapClassName="lg:col-span-2" value={form.notes} onChange={(e) => set("notes", e.target.value)} />

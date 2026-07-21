@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
@@ -30,6 +31,8 @@ export function InterviewForm({
   initial,
   defaultDeveloper,
   onDone,
+  compact = false,
+  role,
 }: {
   id?: string;
   leadId?: string;
@@ -39,12 +42,14 @@ export function InterviewForm({
   initial?: Partial<Record<string, string | null>>;
   defaultDeveloper?: string | null; // round-1 developer — later rounds default to the same person (FRD-02)
   onDone?: () => void;
+  compact?: boolean; // rendered inside a lead — hide company/job title/job-post URL (shown on the lead header)
+  role?: string | null; // the lead's role, used as the (hidden) job-title default in compact mode
 }) {
   const router = useRouter();
   // For a NEW round on an existing lead, default the developer to round 1's (the same-developer rule).
   const devDefault = id ? "" : defaultDeveloper ?? "";
   const [form, setForm] = useState<Record<string, string>>({
-    job_title: initial?.job_title ?? "",
+    job_title: initial?.job_title ?? role ?? "",
     company: initial?.company ?? company ?? "",
     job_post_url: initial?.job_post_url ?? "",
     status: initial?.status ?? "scheduled",
@@ -53,6 +58,7 @@ export function InterviewForm({
     given_by: initial?.given_by ?? devDefault,
     whom_should_give: initial?.whom_should_give ?? devDefault,
     interview_at: toLocalInput(initial?.interview_at),
+    meeting_link: initial?.meeting_link ?? "",
     received_date: initial?.received_date ?? (id ? "" : companyToday()), // email-received date; default today on create
     notes: initial?.notes ?? "",
     notes2: initial?.notes2 ?? "",
@@ -60,12 +66,23 @@ export function InterviewForm({
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
 
+  // People on the call besides us (client interviewers / panel) — a repeatable {name, note} list.
+  type Person = { name: string; note: string };
+  const initParticipants: Person[] = Array.isArray((initial as any)?.participants)
+    ? ((initial as any).participants as any[]).map((p) => ({ name: String(p?.name ?? ""), note: String(p?.note ?? "") }))
+    : [];
+  const [participants, setParticipants] = useState<Person[]>(initParticipants);
+  const setPerson = (i: number, k: keyof Person, v: string) => setParticipants((s) => s.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
+  const addPerson = () => setParticipants((s) => [...s, { name: "", note: "" }]);
+  const removePerson = (i: number) => setParticipants((s) => s.filter((_, idx) => idx !== i));
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     const payload = {
       ...form,
       interview_at: toUtcIso(form.interview_at),
+      participants: participants.filter((p) => p.name.trim() || p.note.trim()),
       ...(id ? {} : { lead_id: leadId ?? null, dev_profile_id: devProfileId ?? null }),
     };
     const res = await fetch(id ? `/api/crm/interviews/${id}` : "/api/crm/interviews", {
@@ -83,9 +100,11 @@ export function InterviewForm({
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <FloatInput id="interview-job-title" label="Job title" hint={INTERVIEW_HINTS.job_title} value={form.job_title} onChange={(e) => set("job_title", e.target.value)} />
-      <FloatInput id="interview-company" label="Company" hint={INTERVIEW_HINTS.company} value={form.company} onChange={(e) => set("company", e.target.value)} />
-      <FloatInput id="interview-job-post-url" label="Job post URL" hint={INTERVIEW_HINTS.job_post_url} wrapClassName="lg:col-span-2" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} />
+      {!compact && <>
+        <FloatInput id="interview-job-title" label="Job title" hint={INTERVIEW_HINTS.job_title} value={form.job_title} onChange={(e) => set("job_title", e.target.value)} />
+        <FloatInput id="interview-company" label="Company" hint={INTERVIEW_HINTS.company} value={form.company} onChange={(e) => set("company", e.target.value)} />
+        <FloatInput id="interview-job-post-url" label="Job post URL" hint={INTERVIEW_HINTS.job_post_url} wrapClassName="lg:col-span-2" value={form.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} />
+      </>}
       <FloatSelect
         id="interview-status"
         label="Status"
@@ -117,6 +136,7 @@ export function InterviewForm({
       </FloatSelect>
       <DatePicker id="interview-received" label="Received (email date)" hint={INTERVIEW_HINTS.received_date} value={form.received_date} onChange={(v) => set("received_date", v)} />
       <DateTimePicker id="interview-interview-at" label="Interview time" hint={INTERVIEW_HINTS.interview_at} value={form.interview_at} onChange={(v) => set("interview_at", v)} />
+      <FloatInput id="interview-meeting-link" label="Meeting link" hint="Zoom / Google Meet / other link for this interview — paste it so it's one click to join." wrapClassName="lg:col-span-2" value={form.meeting_link} onChange={(e) => set("meeting_link", e.target.value)} />
       <FloatSelect
         id="interview-given-by"
         label="Given by (developer)"
@@ -139,6 +159,23 @@ export function InterviewForm({
       </FloatSelect>
       <FloatInput id="interview-notes" label="Notes" hint="How the interview went. Notes from the developer or client." wrapClassName="lg:col-span-2" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
       <FloatInput id="interview-notes2" label="Notes 2" hint="Overflow notes when the main Notes field is full, e.g. follow-up details or client remarks." wrapClassName="lg:col-span-2" value={form.notes2} onChange={(e) => set("notes2", e.target.value)} />
+
+      {/* People on the call (besides us) — a repeatable name + detail list. */}
+      <div className="space-y-2 rounded-md border border-dashed border-border p-3 sm:col-span-2 lg:col-span-4">
+        <div className="flex items-center justify-between">
+          <span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">People on the call</span>
+          <Button type="button" size="sm" variant="outline" onClick={addPerson}><Plus className="size-3.5" /> Add person</Button>
+        </div>
+        {participants.length === 0 && <p className="text-caption text-text-secondary">Client-side interviewers or panel members besides us. Add each person&apos;s name and any detail (designation, LinkedIn URL, contact).</p>}
+        {participants.map((p, i) => (
+          <div key={i} className="flex flex-wrap items-end gap-2">
+            <FloatInput id={`participant-name-${i}`} label="Name" value={p.name} onChange={(e) => setPerson(i, "name", e.target.value)} wrapClassName="w-56" />
+            <FloatInput id={`participant-note-${i}`} label="Designation / LinkedIn / contact" value={p.note} onChange={(e) => setPerson(i, "note", e.target.value)} wrapClassName="min-w-[16rem] flex-1" />
+            <button type="button" onClick={() => removePerson(i)} className="mb-1 rounded-md p-2 text-text-secondary hover:text-danger" aria-label="Remove person"><X className="size-4" /></button>
+          </div>
+        ))}
+      </div>
+
       <div className="sm:col-span-2 lg:col-span-4">
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : id ? "Save interview" : "Add interview"}</Button>
       </div>

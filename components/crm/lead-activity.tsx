@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, EyeOff, RotateCcw } from "lucide-react";
+import { Pencil, Trash2, Plus, EyeOff, RotateCcw, Video, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ export function LeadActivity({
   leadId,
   devProfileId,
   company,
+  role,
   developers,
   categories = [],
   interviews,
@@ -27,6 +28,7 @@ export function LeadActivity({
   leadId: string;
   devProfileId: string | null;
   company: string | null;
+  role?: string | null;
   developers: Opt[];
   categories?: Opt[];
   interviews: Interview[];
@@ -100,7 +102,7 @@ export function LeadActivity({
         </div>
         {iEdit === "new" && (
           <div className="rounded-md border border-border p-3">
-            <InterviewForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} defaultDeveloper={firstDeveloper} onDone={() => setIEdit(null)} />
+            <InterviewForm leadId={leadId} devProfileId={devProfileId} company={company} role={role} compact developers={developers} defaultDeveloper={firstDeveloper} onDone={() => setIEdit(null)} />
           </div>
         )}
         <div className="space-y-2">
@@ -116,9 +118,19 @@ export function LeadActivity({
                 </div>
                 {rowActions("interviews", iv.id, !!iv.dismissed_at, iEdit === iv.id, () => setIEdit(iEdit === iv.id ? null : iv.id))}
               </div>
+              {(iv.meeting_link || (iv.participants?.length ?? 0) > 0) && !iv.dismissed_at && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption">
+                  {iv.meeting_link && (/^https?:\/\//i.test(iv.meeting_link)
+                    ? <a href={iv.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-brand-primary hover:underline"><Video className="size-3.5" /> Join meeting</a>
+                    : <span className="inline-flex items-center gap-1 text-text-secondary"><Video className="size-3.5" /> {iv.meeting_link}</span>)}
+                  {(iv.participants?.length ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 text-text-secondary"><Users className="size-3.5 shrink-0" /> {iv.participants.map((p) => p.name + (p.note ? ` (${p.note})` : "")).filter((x) => x.trim()).join(", ")}</span>
+                  )}
+                </div>
+              )}
               {iEdit === iv.id && (
                 <div className="mt-3 border-t border-border pt-3">
-                  <InterviewForm id={iv.id} developers={developers} initial={iv as never} onDone={() => setIEdit(null)} />
+                  <InterviewForm id={iv.id} role={role} compact developers={developers} initial={iv as never} onDone={() => setIEdit(null)} />
                 </div>
               )}
             </div>
@@ -137,7 +149,7 @@ export function LeadActivity({
         </div>
         {aEdit === "new" && (
           <div className="rounded-md border border-border p-3">
-            <AssessmentForm leadId={leadId} devProfileId={devProfileId} company={company} developers={developers} categories={categories} onDone={() => setAEdit(null)} />
+            <AssessmentForm leadId={leadId} devProfileId={devProfileId} company={company} role={role} compact developers={developers} categories={categories} onDone={() => setAEdit(null)} />
           </div>
         )}
         <div className="space-y-2">
@@ -155,7 +167,7 @@ export function LeadActivity({
               </div>
               {aEdit === as.id && (
                 <div className="mt-3 border-t border-border pt-3">
-                  <AssessmentForm id={as.id} developers={developers} categories={categories} initial={as as never} onDone={() => setAEdit(null)} />
+                  <AssessmentForm id={as.id} role={role} compact developers={developers} categories={categories} initial={as as never} onDone={() => setAEdit(null)} />
                 </div>
               )}
             </div>

@@ -13,6 +13,19 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-21 — Interviews: later rounds, meeting link, participants; compact activity forms; required profile (owner)
+Several interview/lead fixes from BD feedback:
+- **Round 4th–8th allowed (bug):** `interviews_round_check` only permitted 1st/2nd/3rd/final, so recording
+  a later round (onboarding an existing lead mid-process) errored. Widened to 1st–8th + final (0074).
+- **Meeting link:** each interview has a `meeting_link` (Zoom/Meet/other); shown as a one-click **Join**
+  link on the activity row (0075).
+- **Participants:** each interview has a repeatable **People on the call** list — `{name, note}` (note =
+  designation / LinkedIn / contact), Add-person button, any number; shown on the activity row (0075).
+- **No repeated fields in the lead activity:** when editing/adding an interview or assessment from a lead's
+  Activity section, the **Company / Job title / Job-post-URL** fields are hidden (they're on the lead
+  header); the hidden job title defaults to the lead's role. (`compact` mode.)
+- **Add-to-CRM profile required + rich picker** (previous change, same area).
+
 ## 2026-07-20 — Admin attendance summary = full "eye" view; daily-summary notes optional (owner)
 (1) The admin Attendance page's **Summary** column showed only the stripped notes text (e.g. "Job Count:
 49"). It now shows the same rich **eye** view the employee sees on their dashboard recent-days: an eye

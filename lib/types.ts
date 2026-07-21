@@ -129,11 +129,13 @@ export interface Interview {
   whom_should_give: string | null;
   interview_at: string | null;
   received_date: string | null; // email-received date (editable, FRD-07)
-  round: "1st" | "2nd" | "3rd" | "final" | null;
+  round: "1st" | "2nd" | "3rd" | "4th" | "5th" | "6th" | "7th" | "8th" | "final" | null;
   outcome: "pending" | "selected" | "rejected" | "on_hold" | null;
   feedback: string | null; // FRD-07
   notes: string | null;
   notes2: string | null;
+  meeting_link: string | null; // Zoom / Google Meet / other join link (0075)
+  participants: { name: string; note: string }[]; // people on the call besides us (0075)
   dismissed_at: string | null; // soft-hide (0049): BD may dismiss, only super restores/deletes
   created_at: string;
   updated_at: string;

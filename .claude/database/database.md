@@ -375,6 +375,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
   (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
   Assessments tab (same dynamic-add pattern as Manage stacks).
+- `0075_interview_meeting_participants.sql` — `interviews.meeting_link` (text: Zoom/Meet/other join link)
+  + `interviews.participants` (jsonb `[]`, a repeatable list of `{name, note}` for people on the call
+  besides us — the note holds designation / LinkedIn / contact). Both in `INTERVIEW_FIELDS`.
+- `0074_interview_round_all.sql` — widened `interviews_round_check` from `1st/2nd/3rd/final` to the full UI
+  set (`1st`–`8th`, `final`), so a BD can record a later round (e.g. a 4th call) when onboarding an
+  existing lead without the earlier rounds existing.
 - `0073_payslip_dismiss.sql` — `payslip_components.dismissed` (bool). A dismissed line is kept for the
   record (shown struck through) but excluded from run totals (`recomputeRun` skips dismissed) and from the
   printed payslip. Draft only. `generatePayroll` preserves dismissed lines by (kind|label) across a

@@ -27,6 +27,7 @@ const LEAD_FIELDS = [
 const INTERVIEW_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "job_post_url", "status",
   "given_by", "whom_should_give", "interview_at", "received_date", "round", "outcome", "feedback", "notes", "notes2",
+  "meeting_link", "participants",
 ] as const;
 const ASSESSMENT_FIELDS = [
   "lead_id", "dev_profile_id", "owner_bd_id", "job_title", "company", "status", "entry_date", "deadline",

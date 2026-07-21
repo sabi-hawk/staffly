@@ -92,6 +92,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
             leadId={lead.id}
             devProfileId={lead.dev_profile_id}
             company={lead.company}
+            role={lead.role}
             developers={developers}
             categories={categories}
             interviews={interviews}
