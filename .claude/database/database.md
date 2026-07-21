@@ -375,6 +375,14 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   `assessments` gains **`camera`** (`null` = not determined, `'with'`, `'without'`) and **`category_id`**
   (FK → assessment_categories, on delete set null). Managed via `AssessmentCategoriesManager` on the
   Assessments tab (same dynamic-add pattern as Manage stacks).
+- `0076_job_hunts.sql` — **shared BD Job Hunt Board**: `job_hunts` (owner_bd_id, company, position,
+  job_post_url, stack_id→dev_stacks, feedback, dismissed/dismissed_by/dismissed_at, timestamps). Every
+  field optional. RLS: **read** = any `crm.access` user (the whole board is shared, no owner scoping);
+  **insert** = crm.access + owner=self; **update** = crm.access (column-level rules enforced in the API —
+  a non-owner may only edit the shared `feedback` and dismiss/restore); **delete** = owner or super. Added
+  to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
+  `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
+  `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
 - `0075_interview_meeting_participants.sql` — `interviews.meeting_link` (text: Zoom/Meet/other join link)
   + `interviews.participants` (jsonb `[]`, a repeatable list of `{name, note}` for people on the call
   besides us — the note holds designation / LinkedIn / contact). Both in `INTERVIEW_FIELDS`.

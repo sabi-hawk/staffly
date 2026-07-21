@@ -19,6 +19,7 @@ import {
   FolderKanban,
   FileText,
   FileStack,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { PERM } from "@/lib/access/permissions";
@@ -66,6 +67,7 @@ function group(label: string, icon: LucideIcon, children: NavItem[]): NavEntry[]
 }
 
 const crmChildren: PermNavItem[] = [
+  { label: "Job board", href: "/crm/job-board", icon: Target, perm: PERM.crmAccess },
   { label: "Profiles", href: "/crm/profiles", icon: Contact, perm: PERM.crmProfilesOwn },
   { label: "Leads", href: "/crm/leads", icon: Briefcase, perm: PERM.crmLeadsOwn },
   { label: "Calendar", href: "/crm/calendar", icon: CalendarRange, perm: PERM.crmCalendarView },

@@ -13,6 +13,18 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-21 — Shared BD Job Hunt Board (owner)
+New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
+collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,
+Position, Job post (link + copy button), Stack, actions. Every field optional. **Real-time** via Supabase
+Realtime (+ a manual Refresh). **Duplicate companies colour-coded** by how many times they appear (legend
+shown). **Filters** by BD / company / position. **Bulk paste** many URLs at once — de-duped within the
+paste AND against the board, with a "N added, M duplicates skipped" report; a live "already on the board"
+warning when typing a single URL. **Rows expand** (payroll-style): the OWNER edits any field; ANY BD edits
+the shared **feedback** field and can **dismiss** a row (struck through, kept with the reason) — others
+can't edit another BD's non-feedback fields. Entry/modified times shown in the expand. Migration 0076
+(job_hunts table + RLS + realtime). Shipped 2026-07-21.
+
 ## 2026-07-21 — Interviews: later rounds, meeting link, participants; compact activity forms; required profile (owner)
 Several interview/lead fixes from BD feedback:
 - **Round 4th–8th allowed (bug):** `interviews_round_check` only permitted 1st/2nd/3rd/final, so recording
