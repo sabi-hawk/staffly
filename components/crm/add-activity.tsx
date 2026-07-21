@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Plus, X, Search, Check, CalendarClock, ClipboardList, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { Combobox } from "@/components/ui/combobox";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { INTERVIEW_HINTS, ASSESSMENT_HINTS } from "@/lib/crm/field-hints";
 import { INTERVIEW_ROUND, roundLabel, PRIORITIES } from "@/lib/crm/constants";
@@ -124,14 +125,15 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
   async function submit() {
     if (mode === "new" && !newCompany.trim()) return toast.error("Enter a company name");
     if (mode === "existing" && !leadId) return toast.error("Pick an existing company");
+    if (!profileId) return toast.error("Pick a profile");
     setBusy(true);
     try {
       let lid = leadId;
       if (mode === "new") {
-        const lead = await post("/api/crm/leads", { company: newCompany.trim(), dev_profile_id: profileId || null, status: "in_progress" });
+        const lead = await post("/api/crm/leads", { company: newCompany.trim(), dev_profile_id: profileId, status: "in_progress" });
         lid = lead.id;
       }
-      const base = { lead_id: lid, company: selectedCompany, dev_profile_id: profileId || null, job_title: jobTitle || null };
+      const base = { lead_id: lid, company: selectedCompany, dev_profile_id: profileId, job_title: jobTitle || null };
       if (type === "interview") {
         await post("/api/crm/interviews", { ...base, received_date: received || null, round, interview_at: interviewAt || null });
       } else {
@@ -187,10 +189,7 @@ export function AddActivity({ leads, profiles }: { leads: LeadOpt[]; profiles: O
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <FloatSelect id="add-profile" label="Profile (optional)" hint="Which of our dev profiles this activity is under. Leave unset if not decided yet." value={profileId} onChange={(e) => setProfileId(e.target.value)}>
-              <option value="">Not set</option>
-              {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </FloatSelect>
+            <Combobox id="add-profile" label="Profile *" hint="Which of our dev profiles this activity is under. Search by number, name, stack or email." options={profiles.map((p) => ({ value: p.id, label: p.label, sublabel: p.sublabel, color: p.color }))} value={profileId} onChange={setProfileId} placeholder="Select a profile…" searchPlaceholder="Search profiles…" />
             <DatePicker id="add-received" label="Received (email date)" hint="The date the request email arrived. Defaults to today." value={received} onChange={setReceived} />
           </div>
 
