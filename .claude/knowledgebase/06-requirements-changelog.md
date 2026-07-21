@@ -13,6 +13,21 @@ translucent session chips, and a prominent white Check-in / Check-out button wit
 unchanged (timer, multi-session, missed-checkout correction). `components/attendance/check-widget.tsx`.
 Shipped 2026-07-17.
 
+## 2026-07-21 — Job board: pagination, all-BD filter, bulk copy, today default, jobs-hunted stat (owner)
+Enhancements to the Job Hunt Board:
+- **Pagination + day scope:** server loads the selected **day (defaults to today)**, paginated (default
+  **200**/page, selectable 100/200/500/1000) with prev/next. A date picker changes the day.
+- **BD filter lists all BDs by name** (was only "All BDs / You") — sourced from bdOptions; the current user
+  shows as **You**.
+- **Bulk select + Copy links:** a checkbox per row + select-all; "Copy N links" copies the selected rows'
+  URLs line-by-line to the clipboard (for the tab-opener extension / opening many at once). Works over the
+  active filters.
+- **Jobs hunted stat (auto):** the count of job-board rows a BD added on a day now shows (read-only) on the
+  BD's dashboard **Today's summary** and in the admin attendance **eye** summary + preview — auto-counted
+  from the board, not entered by the BD.
+Deferred (owner still deciding): auto-cleanup of board rows older than ~10 days (would snapshot the daily
+per-BD hunted counts first so stats survive the purge).
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,

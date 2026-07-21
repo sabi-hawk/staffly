@@ -23,6 +23,7 @@ export default async function EmployeeDashboard() {
   const canAttend = hasPermP(profile, PERM.attendanceSelf); // partners have no attendance duties
   const canCrm = hasPermP(profile, PERM.crmAccess);
   const supabase = createClient();
+  const today = companyToday();
 
   // CRM-at-a-glance for BD / partner-BD users — fills an otherwise-empty dashboard for people without
   // attendance duties, and a quick jump into their work for everyone with CRM access.
@@ -35,7 +36,14 @@ export default async function EmployeeDashboard() {
     myProfileCount = pc.count ?? 0;
     myLeadCount = lc.count ?? 0;
   }
-  const today = companyToday();
+  // Jobs hunted today — auto-counted from the shared job board (rows this BD added today).
+  let huntedToday = 0;
+  if (canCrm) {
+    const { count } = await supabase.from("job_hunts").select("id", { count: "exact", head: true })
+      .eq("owner_bd_id", profile.id)
+      .gte("created_at", `${today}T00:00:00+05:00`).lte("created_at", `${today}T23:59:59.999+05:00`);
+    huntedToday = count ?? 0;
+  }
   const todayData = await todayAttendance(supabase, profile.id);
 
   const { data: recent } = await supabase
@@ -120,6 +128,7 @@ export default async function EmployeeDashboard() {
           workDate={today}
           checkedIn={!!todayRow?.check_in_time}
           notesHtml={todayRow?.daily_summary ?? null}
+          huntedToday={huntedToday}
         />
       )}
 

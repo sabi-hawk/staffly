@@ -21,11 +21,13 @@ export function DailyReport({
   workDate,
   checkedIn,
   notesHtml,
+  huntedToday = 0,
 }: {
   profiles: ProfileCount[];
   workDate: string;
   checkedIn: boolean;
   notesHtml: string | null;
+  huntedToday?: number; // auto-counted from the shared job board (read-only)
 }) {
   const router = useRouter();
   const isBd = profiles.length > 0;
@@ -115,6 +117,11 @@ export function DailyReport({
                   </span>
                 ))}
               </div>
+            </div>
+            {/* Jobs hunted — auto-counted from the shared job board, not editable here. */}
+            <div className="flex items-center justify-between rounded-md border border-border px-4 py-2.5">
+              <span className="text-caption text-text-secondary">Jobs hunted today <span className="text-text-secondary/70">(auto-counted from the job board)</span></span>
+              <span className="text-h3 font-semibold text-text-primary tabular">{huntedToday}</span>
             </div>
           </div>
         )}

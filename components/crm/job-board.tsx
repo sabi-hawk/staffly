@@ -1,23 +1,24 @@
 "use client";
-// Shared BD "Job Hunt Board". Every field optional; all BDs see every row LIVE (Supabase realtime +
-// a manual Refresh). Duplicate company names are colour-coded by how many times they appear; a legend
-// explains it. Rows expand (payroll-style) to edit — the OWNER edits any field, ANY BD edits the shared
-// feedback and can dismiss (strike out, kept for the record). Bulk-paste many URLs at once (de-duped).
+// Shared BD "Job Hunt Board". Server loads a chosen DAY (default today) paginated (default 200); the
+// client refines by BD / company / position, bulk-selects rows to Copy links (line-by-line, for the
+// tab-opener extension), and subscribes to Supabase realtime for live updates. Duplicate companies are
+// colour-coded by occurrence. Rows expand — the OWNER edits any field, ANY BD edits the shared feedback
+// and can dismiss (struck through, kept with the reason).
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Copy, ChevronRight, ChevronDown, ExternalLink, EyeOff, RotateCcw, Trash2, Loader2, RefreshCw, ClipboardPaste } from "lucide-react";
+import { Plus, Copy, ChevronRight, ChevronDown, ChevronLeft, ExternalLink, EyeOff, RotateCcw, Trash2, Loader2, RefreshCw, ClipboardPaste, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { ColorChip } from "@/components/crm/crm-cells";
-import { formatCrmDatetime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatCrmDatetime, cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import type { Opt } from "@/lib/crm/options";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// colour by how many times a company appears on the board (repeat awareness).
 const OCC = [
   { min: 2, label: "2 posts", cls: "bg-sky-100 text-sky-800 border-sky-200" },
   { min: 3, label: "3 posts", cls: "bg-violet-100 text-violet-800 border-violet-200" },
@@ -26,26 +27,28 @@ const OCC = [
 ];
 const occStyle = (n: number) => (n >= 5 ? OCC[3] : n === 4 ? OCC[2] : n === 3 ? OCC[1] : n === 2 ? OCC[0] : null);
 const isUrl = (s?: string | null) => !!s && /^https?:\/\//i.test(s);
-async function copy(text: string) {
-  try { await navigator.clipboard.writeText(text); toast.success("Link copied"); } catch { toast.error("Copy failed"); }
-}
+const PER_PAGE = [100, 200, 500, 1000];
+async function copy(text: string, msg: string) { try { await navigator.clipboard.writeText(text); toast.success(msg); } catch { toast.error("Copy failed"); } }
 
-export function JobBoard({ rows, stacks, meId }: { rows: any[]; stacks: { id: string; name: string; color?: string }[]; meId: string }) {
+export function JobBoard({ rows, total, page, pageSize, day, bds, stacks, meId }: { rows: any[]; total: number; page: number; pageSize: number; day: string; bds: Opt[]; stacks: any[]; meId: string }) {
   const router = useRouter();
+  const sp = useSearchParams();
   const [pending, startTransition] = useTransition();
   const refresh = () => startTransition(() => router.refresh());
+  const setParam = (updates: Record<string, string | null>) => {
+    const p = new URLSearchParams(sp.toString());
+    for (const [k, v] of Object.entries(updates)) { if (v) p.set(k, v); else p.delete(k); }
+    startTransition(() => router.push(`?${p.toString()}`));
+  };
 
-  // live updates: refresh on any change to the board (+ a manual Refresh button as a fallback).
+  // live updates on the board (any change) + a manual Refresh.
   useEffect(() => {
     const sb = createClient();
-    const ch = sb.channel("job_hunts_board")
-      .on("postgres_changes", { event: "*", schema: "public", table: "job_hunts" }, () => startTransition(() => router.refresh()))
-      .subscribe();
+    const ch = sb.channel("job_hunts_board").on("postgres_changes", { event: "*", schema: "public", table: "job_hunts" }, () => startTransition(() => router.refresh())).subscribe();
     return () => { sb.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // occurrence counts by company (case-insensitive)
   const companyCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of rows) { const c = (r.company ?? "").trim().toLowerCase(); if (c) m.set(c, (m.get(c) ?? 0) + 1); }
@@ -53,12 +56,7 @@ export function JobBoard({ rows, stacks, meId }: { rows: any[]; stacks: { id: st
   }, [rows]);
   const urlSet = useMemo(() => new Set(rows.filter((r) => r.job_post_url).map((r) => String(r.job_post_url).trim().toLowerCase())), [rows]);
 
-  // filters
-  const owners = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const r of rows) if (r.owner_bd_id) m.set(r.owner_bd_id, r.owner_bd_id === meId ? "You" : r.owner?.full_name ?? "—");
-    return Array.from(m.entries());
-  }, [rows, meId]);
+  // client refine
   const [fOwner, setFOwner] = useState("");
   const [fCompany, setFCompany] = useState("");
   const [fPosition, setFPosition] = useState("");
@@ -68,45 +66,81 @@ export function JobBoard({ rows, stacks, meId }: { rows: any[]; stacks: { id: st
     (!fPosition || (r.position ?? "").toLowerCase().includes(fPosition.toLowerCase()))
   );
 
+  // bulk selection (over the FILTERED set) → copy links
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const filteredIds = filtered.map((r) => r.id);
+  const allSelected = filteredIds.length > 0 && filteredIds.every((id) => selected.has(id));
+  const toggleAll = () => setSelected((prev) => { const n = new Set(prev); if (allSelected) filteredIds.forEach((id) => n.delete(id)); else filteredIds.forEach((id) => n.add(id)); return n; });
+  const toggleOne = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const selectedUrls = filtered.filter((r) => selected.has(r.id) && r.job_post_url).map((r) => r.job_post_url as string);
+  const copySelected = () => { if (!selectedUrls.length) return toast.error("Select rows that have a link"); copy(selectedUrls.join("\n"), `Copied ${selectedUrls.length} link${selectedUrls.length === 1 ? "" : "s"}`); };
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const bdName = (id: string, label: string) => (id === meId ? "You" : label);
+
   return (
     <div className="space-y-4">
       <AddBar stacks={stacks} urlSet={urlSet} rows={rows} onDone={refresh} />
 
-      {/* legend + refresh */}
+      {/* legend + selection actions + refresh */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-caption text-text-secondary">
           <span>Repeated company:</span>
           {OCC.map((o) => <span key={o.label} className={cn("rounded border px-1.5 py-0.5 text-[11px] font-medium", o.cls)}>{o.label}</span>)}
-          <span className="text-text-secondary/70">— same company added by several BDs.</span>
         </div>
-        <Button size="sm" variant="outline" onClick={refresh} disabled={pending}>{pending ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Refresh</Button>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && <Button size="sm" onClick={copySelected}><Link2 className="size-3.5" /> Copy {selectedUrls.length} link{selectedUrls.length === 1 ? "" : "s"}</Button>}
+          <Button size="sm" variant="outline" onClick={refresh} disabled={pending}>{pending ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Refresh</Button>
+        </div>
       </div>
 
-      {/* filters */}
+      {/* filters: date (server, default today) + BD/company/position (client) */}
       <div className="flex flex-wrap items-end gap-2">
-        <FloatSelect label="BD" value={fOwner} onChange={(e) => setFOwner(e.target.value)} wrapClassName="w-44">
+        <DatePicker id="jb-date" label="Day" hint="The day the posts were added. Defaults to today." value={day} onChange={(v) => setParam({ date: v || null, page: null })} className="w-40" />
+        <FloatSelect label="BD" value={fOwner} onChange={(e) => setFOwner(e.target.value)} wrapClassName="w-48">
           <option value="">All BDs</option>
-          {owners.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          {bds.map((b) => <option key={b.id} value={b.id}>{bdName(b.id, b.label)}</option>)}
         </FloatSelect>
-        <FloatInput id="jb-f-company" label="Company" value={fCompany} onChange={(e) => setFCompany(e.target.value)} wrapClassName="w-56" />
-        <FloatInput id="jb-f-position" label="Position" value={fPosition} onChange={(e) => setFPosition(e.target.value)} wrapClassName="w-56" />
-        <span className="pb-2 text-caption text-text-secondary">{filtered.length} of {rows.length}</span>
+        <FloatInput id="jb-f-company" label="Company" value={fCompany} onChange={(e) => setFCompany(e.target.value)} wrapClassName="w-48" />
+        <FloatInput id="jb-f-position" label="Position" value={fPosition} onChange={(e) => setFPosition(e.target.value)} wrapClassName="w-48" />
+        <span className="pb-2 text-caption text-text-secondary">{filtered.length}{filtered.length !== rows.length ? ` of ${rows.length}` : ""} shown</span>
       </div>
 
       <Table>
         <THead>
-          <TR><TH className="w-[36px]"></TH><TH>BD</TH><TH>Company</TH><TH>Position</TH><TH>Job post</TH><TH>Stack</TH><TH className="text-right">Actions</TH></TR>
+          <TR>
+            <TH className="w-[34px]"><input type="checkbox" className="size-4 accent-brand-primary" checked={allSelected} onChange={toggleAll} aria-label="Select all" /></TH>
+            <TH className="w-[34px]"></TH><TH>BD</TH><TH>Company</TH><TH>Position</TH><TH>Job post</TH><TH>Stack</TH><TH className="text-right">Actions</TH>
+          </TR>
         </THead>
         <TBody>
-          {filtered.map((r) => <Row key={r.id} r={r} meId={meId} stacks={stacks} occ={occStyle(companyCounts.get((r.company ?? "").trim().toLowerCase()) ?? 0)} onDone={refresh} />)}
-          {filtered.length === 0 && <TR><TD colSpan={7} className="py-8 text-center text-text-secondary">No job posts yet. Add a link above to start.</TD></TR>}
+          {filtered.map((r) => <Row key={r.id} r={r} meId={meId} stacks={stacks} occ={occStyle(companyCounts.get((r.company ?? "").trim().toLowerCase()) ?? 0)} selected={selected.has(r.id)} onSelect={() => toggleOne(r.id)} onDone={refresh} />)}
+          {filtered.length === 0 && <TR><TD colSpan={8} className="py-8 text-center text-text-secondary">No job posts for this day{fOwner || fCompany || fPosition ? " match the filters" : ""}. Add a link above to start.</TD></TR>}
         </TBody>
       </Table>
+
+      {total > 0 && (
+        <div className="flex items-center justify-between gap-3 text-caption text-text-secondary">
+          <div className="flex items-center gap-2">
+            <span>Rows per page</span>
+            <NativeSelect value={String(pageSize)} onChange={(e) => setParam({ pageSize: e.target.value, page: null })} className="w-auto">
+              {PER_PAGE.map((n) => <option key={n} value={n}>{n}</option>)}
+            </NativeSelect>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}</span>
+            <div className="flex items-center gap-1">
+              <button type="button" disabled={page <= 1} onClick={() => setParam({ page: String(page - 1) })} className="inline-flex size-7 items-center justify-center rounded-md border border-border hover:bg-surface disabled:opacity-40" aria-label="Previous"><ChevronLeft className="size-4" /></button>
+              <button type="button" disabled={page >= totalPages} onClick={() => setParam({ page: String(page + 1) })} className="inline-flex size-7 items-center justify-center rounded-md border border-border hover:bg-surface disabled:opacity-40" aria-label="Next"><ChevronRight className="size-4" /></button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function Row({ r, meId, stacks, occ, onDone }: { r: any; meId: string; stacks: any[]; occ: { cls: string } | null; onDone: () => void }) {
+function Row({ r, meId, stacks, occ, selected, onSelect, onDone }: { r: any; meId: string; stacks: any[]; occ: { cls: string } | null; selected: boolean; onSelect: () => void; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const mine = r.owner_bd_id === meId;
@@ -130,6 +164,7 @@ function Row({ r, meId, stacks, occ, onDone }: { r: any; meId: string; stacks: a
   return (
     <>
       <TR className={dim ? "opacity-60" : undefined}>
+        <TD><input type="checkbox" className="size-4 accent-brand-primary" checked={selected} onChange={onSelect} aria-label="Select row" /></TD>
         <TD className="pr-0"><button onClick={() => setOpen((o) => !o)} className="inline-flex size-6 items-center justify-center rounded text-text-secondary hover:bg-surface hover:text-brand-primary" aria-label="Expand">{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button></TD>
         <TD>{mine ? <span className="rounded-full bg-brand-primary px-2 py-[1px] text-[11px] font-semibold text-white">You</span> : <ColorChip label={r.owner?.full_name} color={r.owner?.color} />}</TD>
         <TD className={dim ? "line-through" : undefined}>{r.company ? (occ ? <span className={cn("rounded border px-1.5 py-0.5 text-[13px] font-medium", occ.cls)}>{r.company}</span> : r.company) : <span className="text-text-secondary">—</span>}</TD>
@@ -138,7 +173,7 @@ function Row({ r, meId, stacks, occ, onDone }: { r: any; meId: string; stacks: a
         <TD>{r.stack?.name ? <ColorChip label={r.stack.name} color={r.stack.color} /> : <span className="text-text-secondary">—</span>}</TD>
         <TD className="text-right">
           <span className="inline-flex items-center gap-1">
-            {r.job_post_url && <button onClick={() => copy(r.job_post_url)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-brand-primary" title="Copy link"><Copy className="size-4" /></button>}
+            {r.job_post_url && <button onClick={() => copy(r.job_post_url, "Link copied")} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-brand-primary" title="Copy link"><Copy className="size-4" /></button>}
             {dim
               ? <button onClick={() => patch({ dismissed: false }, "Restored")} disabled={busy} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-text-primary" title="Restore"><RotateCcw className="size-4" /></button>
               : <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface" title="Dismiss (expand to add a reason)"><EyeOff className="size-4" /></button>}
@@ -148,7 +183,7 @@ function Row({ r, meId, stacks, occ, onDone }: { r: any; meId: string; stacks: a
       </TR>
       {open && (
         <TR>
-          <TD colSpan={7} className="bg-surface">
+          <TD colSpan={8} className="bg-surface">
             <ExpandEditor r={r} mine={mine} busy={busy} stacks={stacks} onPatch={patch} onClose={() => setOpen(false)} />
           </TD>
         </TR>

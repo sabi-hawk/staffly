@@ -79,6 +79,19 @@ export default async function AdminAttendancePage({
     }
   }
 
+  // Jobs HUNTED per (BD, day) — auto-counted from the shared job board (rows a BD added that day).
+  const huntedByEmpDate: Record<string, number> = {};
+  if (empIds.length) {
+    const { data: jh } = await supabase
+      .from("job_hunts").select("owner_bd_id, created_at")
+      .in("owner_bd_id", empIds)
+      .gte("created_at", `${from}T00:00:00+05:00`).lte("created_at", `${to}T23:59:59.999+05:00`);
+    for (const h of (jh ?? []) as any[]) {
+      const d = companyToday(new Date(h.created_at));
+      huntedByEmpDate[`${h.owner_bd_id}|${d}`] = (huntedByEmpDate[`${h.owner_bd_id}|${d}`] ?? 0) + 1;
+    }
+  }
+
   return (
     <FilterShell
       toolbar={
@@ -177,20 +190,22 @@ export default async function AdminAttendancePage({
                       {(() => {
                         const jobs = jobsByEmpDate[`${r.employee_id}|${r.work_date}`] ?? [];
                         const total = jobs.reduce((s, j) => s + j.count, 0);
+                        const hunted = huntedByEmpDate[`${r.employee_id}|${r.work_date}`] ?? 0;
                         const notesText = strip(r.daily_summary);
-                        if (notesText || total > 0) {
+                        if (notesText || total > 0 || hunted > 0) {
+                          const preview = notesText || [total > 0 ? `${total} job app${total === 1 ? "" : "s"}` : "", hunted > 0 ? `${hunted} hunted` : ""].filter(Boolean).join(" · ");
                           return (
                             <div className="flex items-center gap-2">
                               <div className="min-w-0 space-y-0.5">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="truncate text-text-secondary">{notesText || `${total} job application${total === 1 ? "" : "s"}`}</span>
+                                  <span className="truncate text-text-secondary">{preview}</span>
                                   {r.summary_late && <Badge tone="warning">late</Badge>}
                                 </div>
                                 {r.summary_late && r.summary_at && (
                                   <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>
                                 )}
                               </div>
-                              <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} />
+                              <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} hunted={hunted} />
                             </div>
                           );
                         }

@@ -11,11 +11,11 @@ const strip = (html: string | null | undefined) => (html ?? "").replace(/<[^>]*>
 
 export type JobLine = { label: string; count: number };
 
-export function DaySummary({ workDate, notesHtml, jobs = [] }: { workDate: string; notesHtml: string | null; jobs?: JobLine[] }) {
+export function DaySummary({ workDate, notesHtml, jobs = [], hunted = 0 }: { workDate: string; notesHtml: string | null; jobs?: JobLine[]; hunted?: number }) {
   const [open, setOpen] = useState(false);
   const hasNotes = !!strip(notesHtml);
   const total = jobs.reduce((s, j) => s + (Number(j.count) || 0), 0);
-  const hasContent = hasNotes || total > 0;
+  const hasContent = hasNotes || total > 0 || hunted > 0;
   if (!hasContent) return null;
 
   return (
@@ -33,6 +33,12 @@ export function DaySummary({ workDate, notesHtml, jobs = [] }: { workDate: strin
           <DialogTitle>Summary · {workDate}</DialogTitle>
           <DialogDescription>What was done on this day.</DialogDescription>
           <div className="mt-4 space-y-4">
+            {hunted > 0 && (
+              <div className="flex items-center justify-between rounded-md border border-border bg-surface/60 px-3 py-2 text-sm">
+                <span className="font-medium text-text-primary">Jobs hunted (board)</span>
+                <span className="tabular font-semibold text-text-primary">{hunted}</span>
+              </div>
+            )}
             {total > 0 && (
               <div>
                 <div className="mb-2 text-sm font-medium text-text-primary">Job applications</div>
