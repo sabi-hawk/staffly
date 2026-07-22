@@ -383,6 +383,15 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
   `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
   `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
+- `0078_google_oauth_tokens.sql` — **per-user Google OAuth tokens** so a BD connects their Google account
+  once and the server can create Calendar events (with Drive attachments) on their behalf. `google_oauth_tokens`
+  (`profile_id` PK → profiles, `google_email`, `access_token`, `refresh_token`, `token_expiry`, `scope`,
+  timestamps). **RLS enabled with NO client policies** — service-role only (OAuth callback + calendar
+  routes); the UI reads only `google_email` via the admin client to show "Connected as …". Refresh tokens
+  never reach the browser. Feature-flagged by `GOOGLE_CALENDAR_API_ENABLED` (off → the interview button
+  stays the one-click TEMPLATE URL from #104). Env: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+  `GOOGLE_CALENDAR_API_ENABLED`. Routes: `/api/auth/google/{start,callback,disconnect}`; lib
+  `lib/google/{oauth,tokens}.ts`; UI `components/crm/connect-google.tsx` on `/profile`.
 - `0077_job_hunts_retention.sql` — **auto-cleanup for the board** so it stays lean while the per-BD
   "jobs hunted" counts survive forever. New table `job_hunt_daily_counts` (owner_bd_id, `day` [Karachi],
   `count`, PK(owner_bd_id, day); RLS read = `crm.access`; **no client writes** — only the definer

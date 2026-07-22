@@ -1,9 +1,13 @@
-import { getCurrentProfile } from "@/lib/auth";
+import { getCurrentProfile, hasPermP } from "@/lib/auth";
+import { PERM } from "@/lib/access/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCode, ageFromDob, formatTime12 } from "@/lib/utils";
+import { calendarApiEnabled } from "@/lib/google/oauth";
+import { getGoogleConnection } from "@/lib/google/tokens";
+import { ConnectGoogle } from "@/components/crm/connect-google";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -21,6 +25,10 @@ export default async function ProfilePage() {
     .from("shifts").select("*").eq("employee_id", profile.id).eq("is_active", true).maybeSingle();
   const { data: priv } = await supabase
     .from("employee_private").select("*").eq("employee_id", profile.id).maybeSingle();
+
+  // Google Calendar connection — only for CRM users, and only when the API path is enabled (flag).
+  const showGoogle = calendarApiEnabled() && hasPermP(profile, PERM.crmAccess);
+  const googleConn = showGoogle ? await getGoogleConnection(profile.id) : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -57,6 +65,18 @@ export default async function ProfilePage() {
           {shift && <Row label="Shift" value={`${formatTime12(shift.start_time)} – ${formatTime12(shift.end_time)}`} />}
         </CardContent>
       </Card>
+
+      {showGoogle && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Google Calendar</CardTitle>
+            <p className="text-caption text-text-secondary">Create interview events straight in your Google Calendar, with the developer invited and the lead&apos;s documents attached.</p>
+          </CardHeader>
+          <CardContent>
+            <ConnectGoogle connectedEmail={googleConn?.email ?? null} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

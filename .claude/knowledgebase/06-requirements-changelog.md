@@ -88,6 +88,25 @@ A batch of CRM polish + one new feature:
   link version now, API later"). Verified: URL params correct (guest email, 15:00-16:00 Karachi, signed
   doc link present). Shipped 2026-07-22. DECISIONS #104.
 
+## 2026-07-22 — Google Calendar API: OAuth connect foundation (owner set up Google Cloud)
+Owner created the Google OAuth client (Web app "Staffly Calendar Integration"), enabled the Calendar +
+Drive APIs, added scopes (calendar + drive.file), and set redirect URIs `…/api/auth/google/callback`
+for `http://localhost:3000` and `https://portal.softonoma.com`. Built the OAuth CONNECT foundation so a
+BD can link their Google account (prereq for real file attachments):
+- **Env (server-only):** `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and the flag
+  `GOOGLE_CALENDAR_API_ENABLED` (**true** → API path offered; absent/false → the one-click URL from
+  #104 stays — the SAFE default). Same OAuth client serves both localhost + prod (redirect URI derived
+  from the request origin), so no DEV_/PROD_ split needed.
+- **`0078_google_oauth_tokens`** (service-role only, RLS deny-all to clients) stores per-user tokens.
+  `lib/google/oauth.ts` (fetch-based, no SDK) + `lib/google/tokens.ts` (save / status / refresh).
+- **Routes** `/api/auth/google/{start,callback,disconnect}` (httpOnly state-cookie CSRF). A "Connect
+  Google Calendar" section on `/profile` (CRM users only, shown only when the flag is on) with a
+  Connected-as / Reconnect / Disconnect state.
+- Verified with the flag OFF (current state): profile renders, Google section hidden, start route 400s
+  "not enabled" — prod stays on the one-click path untouched. The live OAuth consent is the owner's to
+  test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
+  DECISIONS #105. Shipped 2026-07-22.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,
