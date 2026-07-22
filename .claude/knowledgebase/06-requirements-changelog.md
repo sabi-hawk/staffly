@@ -107,6 +107,13 @@ BD can link their Google account (prereq for real file attachments):
   test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
   DECISIONS #105. Shipped 2026-07-22.
 
+## 2026-07-22 — Interview duration field (owner)
+Interviews had no duration, so the calendar event assumed 60 min. Added `interviews.duration_min`
+(`0079`, minutes, default 60, check 1..600) with a **Duration** select on the interview form
+(15/20/30/45/60/90/120/180 → "15 min" … "3 hours"; `INTERVIEW_DURATIONS` + `durationMinLabel`). The
+one-click Google Calendar route now sets the event **end = start + duration** (verified: 30 min →
+15:00–15:30 Karachi). Duration also shows on the interview meta line. Shipped 2026-07-22.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,

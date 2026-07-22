@@ -7,7 +7,7 @@ import { GoogleCalendarButton } from "@/components/crm/gcal-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
-import { labelize, statusTone } from "@/lib/crm/constants";
+import { labelize, statusTone, durationMinLabel } from "@/lib/crm/constants";
 import { formatCrmDatetime as fmt } from "@/lib/utils";
 import type { Interview, Assessment } from "@/lib/types";
 import type { Opt } from "@/lib/crm/options";
@@ -115,7 +115,7 @@ export function LeadActivity({
                   {iv.round && <Badge tone="neutral">{iv.round}</Badge>}
                   <Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge>
                   {iv.outcome && <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge>}
-                  <span className="text-text-secondary">· given {devName(iv.given_by)}{iv.whom_should_give ? ` → next ${devName(iv.whom_should_give)}` : ""} · {fmt(iv.interview_at)}</span>
+                  <span className="text-text-secondary">· given {devName(iv.given_by)}{iv.whom_should_give ? ` → next ${devName(iv.whom_should_give)}` : ""} · {fmt(iv.interview_at)}{iv.interview_at && iv.duration_min ? ` · ${durationMinLabel(iv.duration_min)}` : ""}</span>
                 </div>
                 {rowActions("interviews", iv.id, !!iv.dismissed_at, iEdit === iv.id, () => setIEdit(iEdit === iv.id ? null : iv.id))}
               </div>

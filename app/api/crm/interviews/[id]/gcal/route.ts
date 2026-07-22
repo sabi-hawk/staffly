@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const supabase = createClient(); // RLS: the caller only reads interviews they may see
   const { data: iv } = await supabase
     .from("interviews")
-    .select("id, interview_at, round, notes, notes2, meeting_link, given_by, whom_should_give, lead:leads(id, company, role)")
+    .select("id, interview_at, duration_min, round, notes, notes2, meeting_link, given_by, whom_should_give, lead:leads(id, company, role)")
     .eq("id", params.id)
     .maybeSingle();
   if (!iv) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -73,7 +73,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const url = googleCalendarEventUrl({
     title,
     startISO: iv.interview_at as string,
-    durationMin: 60,
+    durationMin: (iv.duration_min as number) || 60,
     guests: [devEmail],
     location: iv.meeting_link,
     details: detailLines.join("\n"),

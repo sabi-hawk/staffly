@@ -54,6 +54,13 @@ export const engagementLabel = (v: string | null | undefined) =>
 export const rateSuffix = (rate: string | null | undefined) => (rate === "hourly" ? " / hr" : " / mo");
 export const PRIORITIES = ["high", "medium", "low"] as const;
 export const DURATIONS = ["15m", "30m", "45m", "1h", "1.5h", "2h", "2h+"] as const;
+// Interview durations in MINUTES — used to compute the calendar event's end time (start + duration).
+export const INTERVIEW_DURATIONS = [15, 20, 30, 45, 60, 90, 120, 180] as const;
+export const durationMinLabel = (m: number) => {
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return `${h} hour${h > 1 ? "s" : ""}${r ? ` ${r} min` : ""}`;
+};
 
 /** Title-case a snake/underscore value for display, every word ("on_hold" → "On Hold"). */
 export function labelize(v: string | null | undefined): string {

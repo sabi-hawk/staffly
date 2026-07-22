@@ -128,6 +128,7 @@ export interface Interview {
   given_by: string | null;
   whom_should_give: string | null;
   interview_at: string | null;
+  duration_min: number | null; // interview length in minutes → calendar event end time (0079)
   received_date: string | null; // email-received date (editable, FRD-07)
   round: "1st" | "2nd" | "3rd" | "4th" | "5th" | "6th" | "7th" | "8th" | "final" | null;
   outcome: "pending" | "selected" | "rejected" | "on_hold" | null;

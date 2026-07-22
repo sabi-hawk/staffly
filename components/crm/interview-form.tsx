@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { INTERVIEW_HINTS } from "@/lib/crm/field-hints";
-import { labelize, roundLabel, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME } from "@/lib/crm/constants";
+import { labelize, roundLabel, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME, INTERVIEW_DURATIONS, durationMinLabel } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
@@ -58,6 +58,7 @@ export function InterviewForm({
     given_by: initial?.given_by ?? devDefault,
     whom_should_give: initial?.whom_should_give ?? devDefault,
     interview_at: toLocalInput(initial?.interview_at),
+    duration_min: initial?.duration_min != null ? String(initial.duration_min) : "60",
     meeting_link: initial?.meeting_link ?? "",
     received_date: initial?.received_date ?? (id ? "" : companyToday()), // email-received date; default today on create
     notes: initial?.notes ?? "",
@@ -82,6 +83,7 @@ export function InterviewForm({
     const payload = {
       ...form,
       interview_at: toUtcIso(form.interview_at),
+      duration_min: Number(form.duration_min) || 60, // int column — send a number, not "60"
       participants: participants.filter((p) => p.name.trim() || p.note.trim()),
       ...(id ? {} : { lead_id: leadId ?? null, dev_profile_id: devProfileId ?? null }),
     };
@@ -136,6 +138,15 @@ export function InterviewForm({
       </FloatSelect>
       <DatePicker id="interview-received" label="Received (email date)" hint={INTERVIEW_HINTS.received_date} value={form.received_date} onChange={(v) => set("received_date", v)} />
       <DateTimePicker id="interview-interview-at" label="Interview time" hint={INTERVIEW_HINTS.interview_at} value={form.interview_at} onChange={(v) => set("interview_at", v)} />
+      <FloatSelect
+        id="interview-duration"
+        label="Duration"
+        hint="How long the call is booked for. Sets the end time on the calendar event (start + duration)."
+        value={form.duration_min}
+        onChange={(e) => set("duration_min", e.target.value)}
+      >
+        {INTERVIEW_DURATIONS.map((m) => <option key={m} value={m}>{durationMinLabel(m)}</option>)}
+      </FloatSelect>
       <FloatInput id="interview-meeting-link" label="Meeting link" hint="Zoom / Google Meet / other link for this interview — paste it so it's one click to join." wrapClassName="lg:col-span-2" value={form.meeting_link} onChange={(e) => set("meeting_link", e.target.value)} />
       <FloatSelect
         id="interview-given-by"

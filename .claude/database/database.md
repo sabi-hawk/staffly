@@ -383,6 +383,10 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
   `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
   `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
+- `0079_interview_duration.sql` — `interviews.duration_min int not null default 60` (check 1..600): the
+  interview length in minutes, so a scheduled call has a real end time (start + duration) and the Google
+  Calendar event spans the right window. Options 15/20/30/45/60/90/120/180 (`INTERVIEW_DURATIONS`); in
+  `INTERVIEW_FIELDS`; shown on the interview form + meta line; used by the gcal route for the event end.
 - `0078_google_oauth_tokens.sql` — **per-user Google OAuth tokens** so a BD connects their Google account
   once and the server can create Calendar events (with Drive attachments) on their behalf. `google_oauth_tokens`
   (`profile_id` PK → profiles, `google_email`, `access_token`, `refresh_token`, `token_expiry`, `scope`,
