@@ -3,7 +3,7 @@
 // audit) but never hard-delete; only a super admin may RESTORE (un-dismiss) or DELETE. Buttons shown
 // depend on role (canManage = super admin) and whether the row is already dismissed.
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExternalLink, Pencil, Trash2, EyeOff, RotateCcw } from "lucide-react";
@@ -29,6 +29,10 @@ export function ActivityRowActions({
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDismiss, setConfirmDismiss] = useState(false);
+  // Stay busy THROUGH the server refresh so the row visibly updates (crossed out / gone) before the
+  // control frees up — the toast never lands seconds ahead of the change.
+  const [isRefreshing, startRefresh] = useTransition();
+  const loading = busy || isRefreshing;
   const noun = kind === "interviews" ? "interview" : "assessment";
   const Noun = `${noun[0].toUpperCase()}${noun.slice(1)}`;
 
@@ -44,7 +48,7 @@ export function ActivityRowActions({
       return toast.error(error ?? fail);
     }
     toast.success(ok!);
-    router.refresh();
+    startRefresh(() => router.refresh());
   }
 
   const btn = "inline-flex size-7 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-surface";
@@ -64,12 +68,12 @@ export function ActivityRowActions({
 
       {/* Dismiss: available while the row is live. Restore: super admin only, when dismissed. */}
       {!dismissed && (
-        <button onClick={() => setConfirmDismiss(true)} disabled={busy} className={`${btn} hover:text-warning`} title={`Dismiss ${noun}`} aria-label={`Dismiss ${noun}`}>
+        <button onClick={() => setConfirmDismiss(true)} disabled={loading} className={`${btn} hover:text-warning`} title={`Dismiss ${noun}`} aria-label={`Dismiss ${noun}`}>
           <EyeOff className="size-3.5" />
         </button>
       )}
       {dismissed && canManage && (
-        <button onClick={() => send("PATCH", { _restore: true }, `${Noun} restored`, `Could not restore the ${noun}`)} disabled={busy} className={`${btn} hover:text-success`} title={`Restore ${noun}`} aria-label={`Restore ${noun}`}>
+        <button onClick={() => send("PATCH", { _restore: true }, `${Noun} restored`, `Could not restore the ${noun}`)} disabled={loading} className={`${btn} hover:text-success`} title={`Restore ${noun}`} aria-label={`Restore ${noun}`}>
           <RotateCcw className="size-3.5" />
         </button>
       )}
@@ -79,7 +83,7 @@ export function ActivityRowActions({
 
       {/* Hard delete: super admin only. */}
       {canManage && (
-        <button onClick={() => setConfirmDelete(true)} disabled={busy} className={`${btn} hover:text-danger`} title={`Delete ${noun}`} aria-label={`Delete ${noun}`}>
+        <button onClick={() => setConfirmDelete(true)} disabled={loading} className={`${btn} hover:text-danger`} title={`Delete ${noun}`} aria-label={`Delete ${noun}`}>
           <Trash2 className="size-3.5" />
         </button>
       )}

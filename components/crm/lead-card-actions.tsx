@@ -1,11 +1,11 @@
 "use client";
 // Inline lead actions on a Leads-tab card: change pipeline status (rejected/dismissed require a
 // reason → feedback) and jump to the full lead. Writes via PATCH /api/crm/leads/[id] (updateLead).
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { NativeSelect } from "@/components/ui/field";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { LEAD_STATUS_META, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
@@ -30,6 +30,14 @@ export function LeadCardActions({
   const [reason, setReason] = useState(feedback ?? "");
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Keep the control in a loading state THROUGH the server refresh (not just the fetch) so the toast
+  // never lands seconds before the card visibly updates — the old "is it stuck?" confusion. `optimistic`
+  // shows the chosen status immediately so it doesn't flip back to the old value during the refresh.
+  const [isRefreshing, startRefresh] = useTransition();
+  const [optimistic, setOptimistic] = useState<string | null>(null);
+  const workingStatus = optimistic ?? pending ?? status;
+  const loading = busy || isRefreshing;
+  useEffect(() => { if (!isRefreshing) setOptimistic(null); }, [isRefreshing]);
 
   async function del() {
     setBusy(true);
@@ -40,7 +48,7 @@ export function LeadCardActions({
       return toast.error(error ?? "Could not delete the lead");
     }
     toast.success(`Deleted: ${company}`);
-    router.refresh();
+    startRefresh(() => router.refresh());
   }
 
   async function save(next: string, note?: string) {
@@ -60,7 +68,8 @@ export function LeadCardActions({
     }
     toast.success(next === "closed" ? `Closed: ${company}` : "Lead updated");
     setPending(null);
-    router.refresh();
+    setOptimistic(next); // hold the new status on-screen until the refresh confirms it
+    startRefresh(() => router.refresh());
   }
 
   function onPick(next: string) {
@@ -75,14 +84,15 @@ export function LeadCardActions({
       <NativeSelect
         id={`lead-status-${leadId}`}
         className="h-8 text-caption"
-        value={pending ?? status}
+        value={workingStatus}
         onChange={(e) => onPick(e.target.value)}
-        disabled={busy}
+        disabled={loading}
       >
         {LEAD_STATUS_META.map((s) => (
           <option key={s.value} value={s.value}>{s.label}</option>
         ))}
       </NativeSelect>
+      {loading && <span className="inline-flex items-center gap-1 text-caption text-text-secondary"><Loader2 className="size-3.5 animate-spin" /> Updating…</span>}
 
       <Link
         href={`/crm/leads/${leadId}`}
@@ -94,7 +104,7 @@ export function LeadCardActions({
       {canDelete && (
         <button
           onClick={() => setConfirmDelete(true)}
-          disabled={busy}
+          disabled={loading}
           title="Delete lead"
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-caption text-text-secondary hover:bg-danger/10 hover:text-danger hover:border-danger/40"
         >
@@ -123,14 +133,14 @@ export function LeadCardActions({
             className="h-8 flex-1 rounded-md border border-border bg-white px-2 text-caption"
           />
           <button
-            disabled={busy || !reason.trim()}
+            disabled={loading || !reason.trim()}
             onClick={() => save(pending, reason.trim())}
             className="h-8 rounded-md bg-brand-primary px-3 text-caption font-medium text-white disabled:opacity-50"
           >
             Save
           </button>
           <button
-            disabled={busy}
+            disabled={loading}
             onClick={() => { setPending(null); setReason(feedback ?? ""); }}
             className="h-8 rounded-md border border-border px-3 text-caption text-text-secondary"
           >
