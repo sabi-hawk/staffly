@@ -53,7 +53,10 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
        assessments(id, status, entry_date, deadline)`,
       { count: "exact" }
     );
-  if (searchParams.status) query = query.eq("status", searchParams.status);
+  // Default to IN PROGRESS (the active pipeline) so the list opens on live leads, not everything;
+  // "all" is the explicit no-filter sentinel (mirrors the Owner filter).
+  const statusParam = searchParams.status ?? "in_progress";
+  if (statusParam !== "all") query = query.eq("status", statusParam);
   // Owner scoping: BD Lead defaults to their OWN leads (can switch to any BD or "all");
   // admins default to all. "all" is the explicit no-filter sentinel.
   const viewer = await getCurrentProfile();
@@ -97,7 +100,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
       <div className="border-t border-border pt-3">
         <CrmFilterBar
           filters={[
-            { key: "status", label: "Status", options: LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) })) },
+            { key: "status", label: "Status", defaultValue: "in_progress", options: [{ value: "all", label: "All statuses" }, ...LEAD_STATUS.map((s) => ({ value: s, label: labelize(s) }))] },
             ...(canFilterOwner
               ? [{
                   key: "owner", label: "Owner",
