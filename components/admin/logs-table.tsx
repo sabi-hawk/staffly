@@ -43,7 +43,7 @@ function AuditRow({ r, expanded, onToggle, nameMap }: { r: AuditLog; expanded: b
             </button>
           ) : null}
         </TD>
-        <TD className="tabular text-caption whitespace-nowrap">{new Date(r.created_at).toLocaleString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</TD>
+        <TD className="tabular text-caption whitespace-nowrap">{new Date(r.created_at).toLocaleString("en-US", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true })}</TD>
         <TD className="text-sm">{r.actor_email ?? "System"}<span className="ml-1 text-caption text-text-secondary capitalize">{r.actor_role ? `(${r.actor_role.replace("_", " ")})` : ""}</span></TD>
         <TD><Badge tone={actionTone(r.action) as any}>{actionVerb(r.action)}</Badge></TD>
         <TD className="text-sm">{entityLabel(r.entity)}</TD>

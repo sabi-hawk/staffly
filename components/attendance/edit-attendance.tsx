@@ -10,7 +10,7 @@ import { FloatInput } from "@/components/ui/field";
 /** Time portion (HH:MM in Asia/Karachi) of an ISO instant, for the input default. */
 function localTime(iso: string | null): string {
   if (!iso) return "18:00";
-  return new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" });
 }
 
 /**

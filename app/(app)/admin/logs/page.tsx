@@ -89,7 +89,7 @@ export default async function LogsPage({
               <TBody>
                 {(logins ?? []).map((l) => (
                   <TR key={l.id}>
-                    <TD className="tabular text-caption">{new Date(l.created_at).toLocaleString("en-GB", { timeZone: "Asia/Karachi" })}</TD>
+                    <TD className="tabular text-caption">{new Date(l.created_at).toLocaleString("en-US", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</TD>
                     <TD>{l.email ?? "—"}</TD>
                     <TD className="tabular">{l.ip_address ?? "—"}</TD>
                     <TD className="max-w-[420px] truncate text-caption text-text-secondary">{l.user_agent ?? "—"}</TD>

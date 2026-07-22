@@ -48,6 +48,15 @@ function toDateString(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 const fmt = (d: Date) => d.toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+// Render a wall-clock "HH:mm" (24h, how the value is stored) as 12-hour with AM/PM for display, so the
+// picker trigger reads "6:00 PM", never "18:00" (owner: times must always be am/pm, not 24-hour).
+function fmtTime12(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  if (Number.isNaN(h)) return hhmm;
+  const period = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m ?? 0).padStart(2, "0")} ${period}`;
+}
 
 function Calendar({
   selected,
@@ -249,7 +258,7 @@ export function DateTimePicker({
   const picker = (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <Trigger id={id} filled={!!date} placeholder={label ? "" : placeholder} disabled={disabled} className={cn(label && "h-10", className)}>
-        {date ? `${fmt(date)}${time ? ` · ${time}` : ""}` : null}
+        {date ? `${fmt(date)}${time ? ` · ${fmtTime12(time)}` : ""}` : null}
       </Trigger>
       <Content>
         <Calendar selected={date} onSelect={(d) => d && setParts(toDateString(d))} />

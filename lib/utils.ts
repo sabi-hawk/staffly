@@ -80,9 +80,11 @@ export function ageFromDob(dob: string | null | undefined): number | null {
 /** Format a stored UTC ISO timestamp as a short Asia/Karachi date+time (CRM lists). */
 export function formatCrmDatetime(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-GB", {
-    timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-  });
+  // 12-hour with AM/PM (owner: times must always be am/pm, never 24-hour). en-GB keeps the app's
+  // day-first order ("24 Jul"); we upper-case the meridiem so it reads "24 Jul, 6:00 PM".
+  return new Date(iso)
+    .toLocaleString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true })
+    .replace(/\b([ap])m\b/i, (m) => m.toUpperCase());
 }
 
 /** Date only (Asia/Karachi), for CRM Entry/Modified/Received columns. Accepts a date or timestamp. */

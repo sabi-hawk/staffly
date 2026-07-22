@@ -83,7 +83,7 @@ export function CheckWidget({ today, summaryMissing }: { today: Today; summaryMi
 
   const openDate = today.openSince ? companyToday(new Date(today.openSince)) : null;
   const staleOpen = working && !!openDate && openDate < companyToday();
-  const openTime = today.openSince ? new Date(today.openSince).toLocaleTimeString("en-GB", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "";
+  const openTime = today.openSince ? new Date(today.openSince).toLocaleTimeString("en-PK", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit" }) : "";
 
   return (
     <div className="space-y-3">

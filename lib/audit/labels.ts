@@ -102,7 +102,7 @@ export function formatValue(key: string, v: unknown, nameMap?: Record<string, st
   if (typeof v === "object") return JSON.stringify(v);
   const s = String(v);
   if ((key.endsWith("_at") || key === "interview_at") && !isNaN(Date.parse(s))) {
-    return new Date(s).toLocaleString("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    return new Date(s).toLocaleString("en-US", { timeZone: "Asia/Karachi", day: "2-digit", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
   }
   if (UUID.test(s)) return nameMap?.[s] ?? `…${s.slice(-6)}`; // resolve id references to a name when known
   return s;
