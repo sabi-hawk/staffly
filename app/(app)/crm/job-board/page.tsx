@@ -27,7 +27,11 @@ export default async function JobBoardPage({ searchParams }: { searchParams: { d
       .from("job_hunts")
       .select("*, owner:profiles!job_hunts_owner_bd_id_fkey(full_name, color), stack:dev_stacks(name, color), dismisser:profiles!job_hunts_dismissed_by_fkey(full_name)", { count: "exact" })
       .gte("created_at", start).lte("created_at", end)
+      // Stable order: created_at DESC puts the newest on top, and id DESC is a deterministic tiebreak so
+      // rows with the SAME created_at (a bulk paste inserts them in one transaction → identical now())
+      // never reshuffle — editing a row can't push it to the end.
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .range(from, from + pageSize - 1),
     bdOptions(supabase),
     supabase.from("dev_stacks").select("id, name, color").eq("is_active", true).order("sort_order"),

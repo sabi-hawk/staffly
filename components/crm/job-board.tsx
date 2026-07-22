@@ -4,7 +4,7 @@
 // tab-opener extension), and subscribes to Supabase realtime for live updates. Duplicate companies are
 // colour-coded by occurrence. Rows expand — the OWNER edits any field, ANY BD edits the shared feedback
 // and can dismiss (struck through, kept with the reason).
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Copy, ChevronRight, ChevronDown, ChevronLeft, ExternalLink, EyeOff, RotateCcw, Trash2, Loader2, RefreshCw, ClipboardPaste, Link2 } from "lucide-react";
@@ -30,7 +30,7 @@ const isUrl = (s?: string | null) => !!s && /^https?:\/\//i.test(s);
 const PER_PAGE = [100, 200, 500, 1000];
 async function copy(text: string, msg: string) { try { await navigator.clipboard.writeText(text); toast.success(msg); } catch { toast.error("Copy failed"); } }
 
-export function JobBoard({ rows, total, page, pageSize, day, bds, stacks, meId }: { rows: any[]; total: number; page: number; pageSize: number; day: string; bds: Opt[]; stacks: any[]; meId: string }) {
+export function JobBoard({ rows: initialRows, total, page, pageSize, day, bds, stacks, meId }: { rows: any[]; total: number; page: number; pageSize: number; day: string; bds: Opt[]; stacks: any[]; meId: string }) {
   const router = useRouter();
   const sp = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -40,6 +40,55 @@ export function JobBoard({ rows, total, page, pageSize, day, bds, stacks, meId }
     for (const [k, v] of Object.entries(updates)) { if (v) p.set(k, v); else p.delete(k); }
     startTransition(() => router.push(`?${p.toString()}`));
   };
+
+  // Local copy of the rows so edits/deletes apply INSTANTLY (optimistic) instead of waiting on a full
+  // server round-trip. `pending` tracks rows with an in-flight write so a background refresh (realtime,
+  // add, manual) doesn't clobber the optimistic value before the server confirms it.
+  const [rows, setRows] = useState<any[]>(initialRows);
+  const pendingWrites = useRef<Map<string, "patch" | "delete">>(new Map());
+  useEffect(() => {
+    setRows((prev) => {
+      if (pendingWrites.current.size === 0) return initialRows;
+      const localById = new Map(prev.map((r) => [r.id, r]));
+      return initialRows
+        .filter((r) => pendingWrites.current.get(r.id) !== "delete")
+        .map((r) => (pendingWrites.current.has(r.id) ? localById.get(r.id) ?? r : r));
+    });
+  }, [initialRows]);
+
+  // Optimistically merge a change into one row (updating the joined stack chip too), POST in the
+  // background, and reconcile — realtime/refresh replaces it with the server row in the SAME position
+  // (stable ordering), or we revert + toast on failure.
+  async function patchRow(id: string, body: any, ok = "Saved") {
+    const prev = rows;
+    pendingWrites.current.set(id, "patch");
+    setRows((rs) => rs.map((r) => (r.id === id ? mergeRow(r, body, stacks) : r)));
+    try {
+      const res = await fetch(`/api/crm/job-hunts/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Failed");
+      toast.success(ok);
+    } catch (e) {
+      setRows(prev);
+      toast.error((e as Error).message);
+    } finally {
+      pendingWrites.current.delete(id);
+    }
+  }
+  async function deleteRow(id: string) {
+    const prev = rows;
+    pendingWrites.current.set(id, "delete");
+    setRows((rs) => rs.filter((r) => r.id !== id));
+    try {
+      const res = await fetch(`/api/crm/job-hunts/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success("Deleted");
+    } catch (e) {
+      setRows(prev);
+      toast.error((e as Error).message);
+    } finally {
+      pendingWrites.current.delete(id);
+    }
+  }
 
   // live updates on the board (any change) + a manual Refresh.
   useEffect(() => {
@@ -114,7 +163,7 @@ export function JobBoard({ rows, total, page, pageSize, day, bds, stacks, meId }
           </TR>
         </THead>
         <TBody>
-          {filtered.map((r) => <Row key={r.id} r={r} meId={meId} stacks={stacks} occ={occStyle(companyCounts.get((r.company ?? "").trim().toLowerCase()) ?? 0)} selected={selected.has(r.id)} onSelect={() => toggleOne(r.id)} onDone={refresh} />)}
+          {filtered.map((r) => <Row key={r.id} r={r} meId={meId} stacks={stacks} occ={occStyle(companyCounts.get((r.company ?? "").trim().toLowerCase()) ?? 0)} selected={selected.has(r.id)} onSelect={() => toggleOne(r.id)} onPatch={patchRow} onDelete={deleteRow} />)}
           {filtered.length === 0 && <TR><TD colSpan={8} className="py-8 text-center text-text-secondary">No job posts for this day{fOwner || fCompany || fPosition ? " match the filters" : ""}. Add a link above to start.</TD></TR>}
         </TBody>
       </Table>
@@ -140,26 +189,23 @@ export function JobBoard({ rows, total, page, pageSize, day, bds, stacks, meId }
   );
 }
 
-function Row({ r, meId, stacks, occ, selected, onSelect, onDone }: { r: any; meId: string; stacks: any[]; occ: { cls: string } | null; selected: boolean; onSelect: () => void; onDone: () => void }) {
+// Optimistically fold a patch body into a row (so the grid updates before the server confirms),
+// including re-deriving the joined stack chip and a fresh "modified" time.
+function mergeRow(r: any, body: any, stacks: any[]) {
+  const next: any = { ...r, ...body, updated_at: new Date().toISOString() };
+  if ("stack_id" in body) {
+    const s = stacks.find((x) => x.id === body.stack_id);
+    next.stack = s ? { name: s.name, color: s.color } : null;
+  }
+  return next;
+}
+
+function Row({ r, meId, stacks, occ, selected, onSelect, onPatch, onDelete }: { r: any; meId: string; stacks: any[]; occ: { cls: string } | null; selected: boolean; onSelect: () => void; onPatch: (id: string, body: any, ok?: string) => void; onDelete: (id: string) => void }) {
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
   const mine = r.owner_bd_id === meId;
   const dim = !!r.dismissed;
-
-  async function patch(body: any, ok = "Saved") {
-    setBusy(true);
-    const res = await fetch(`/api/crm/job-hunts/${r.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    setBusy(false);
-    if (!res.ok) { const j = await res.json().catch(() => ({})); return toast.error(j.error ?? "Failed"); }
-    toast.success(ok); onDone();
-  }
-  async function del() {
-    setBusy(true);
-    const res = await fetch(`/api/crm/job-hunts/${r.id}`, { method: "DELETE" });
-    setBusy(false);
-    if (!res.ok) return toast.error("Delete failed");
-    toast.success("Deleted"); onDone();
-  }
+  const patch = (body: any, ok = "Saved") => onPatch(r.id, body, ok);
+  const del = () => onDelete(r.id);
 
   return (
     <>
@@ -175,16 +221,16 @@ function Row({ r, meId, stacks, occ, selected, onSelect, onDone }: { r: any; meI
           <span className="inline-flex items-center gap-1">
             {r.job_post_url && <button onClick={() => copy(r.job_post_url, "Link copied")} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-brand-primary" title="Copy link"><Copy className="size-4" /></button>}
             {dim
-              ? <button onClick={() => patch({ dismissed: false }, "Restored")} disabled={busy} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-text-primary" title="Restore"><RotateCcw className="size-4" /></button>
+              ? <button onClick={() => patch({ dismissed: false }, "Restored")} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-text-primary" title="Restore"><RotateCcw className="size-4" /></button>
               : <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface" title="Dismiss (expand to add a reason)"><EyeOff className="size-4" /></button>}
-            {mine && <button onClick={del} disabled={busy} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-danger" title="Delete"><Trash2 className="size-4" /></button>}
+            {mine && <button onClick={del} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-danger" title="Delete"><Trash2 className="size-4" /></button>}
           </span>
         </TD>
       </TR>
       {open && (
         <TR>
           <TD colSpan={8} className="bg-surface">
-            <ExpandEditor r={r} mine={mine} busy={busy} stacks={stacks} onPatch={patch} onClose={() => setOpen(false)} />
+            <ExpandEditor r={r} mine={mine} stacks={stacks} onPatch={patch} onClose={() => setOpen(false)} />
           </TD>
         </TR>
       )}
@@ -192,10 +238,15 @@ function Row({ r, meId, stacks, occ, selected, onSelect, onDone }: { r: any; meI
   );
 }
 
-function ExpandEditor({ r, mine, busy, stacks, onPatch }: { r: any; mine: boolean; busy: boolean; stacks: any[]; onPatch: (b: any, ok?: string) => void; onClose: () => void }) {
+function ExpandEditor({ r, mine, stacks, onPatch, onClose }: { r: any; mine: boolean; stacks: any[]; onPatch: (b: any, ok?: string) => void; onClose: () => void }) {
   const [f, setF] = useState({ company: r.company ?? "", position: r.position ?? "", job_post_url: r.job_post_url ?? "", stack_id: r.stack_id ?? "", feedback: r.feedback ?? "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const dim = !!r.dismissed;
+  // Save/dismiss/restore apply optimistically in the parent and close the editor immediately — no
+  // waiting on the server (the change is already on-screen; failures revert + toast).
+  const save = () => { onPatch(mine ? f : { feedback: f.feedback }); onClose(); };
+  const dismiss = () => { onPatch({ dismissed: true, feedback: f.feedback || r.feedback }, "Dismissed"); onClose(); };
+  const restore = () => { onPatch({ dismissed: false }, "Restored"); onClose(); };
 
   return (
     <div className="space-y-3 py-1">
@@ -210,10 +261,10 @@ function ExpandEditor({ r, mine, busy, stacks, onPatch }: { r: any; mine: boolea
         <FloatInput id={`jb-feedback-${r.id}`} label="Feedback (shared)" hint="Any BD can add feedback, e.g. why it's dismissed, or a note about the post." value={f.feedback} onChange={(e) => set("feedback", e.target.value)} wrapClassName="lg:col-span-3" />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={() => onPatch(mine ? f : { feedback: f.feedback })} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : null} Save</Button>
+        <Button size="sm" onClick={save}>Save</Button>
         {dim
-          ? <Button size="sm" variant="outline" onClick={() => onPatch({ dismissed: false }, "Restored")} disabled={busy}><RotateCcw className="size-3.5" /> Restore</Button>
-          : <Button size="sm" variant="danger" onClick={() => onPatch({ dismissed: true, feedback: f.feedback || r.feedback }, "Dismissed")} disabled={busy}><EyeOff className="size-3.5" /> Dismiss</Button>}
+          ? <Button size="sm" variant="outline" onClick={restore}><RotateCcw className="size-3.5" /> Restore</Button>
+          : <Button size="sm" variant="danger" onClick={dismiss}><EyeOff className="size-3.5" /> Dismiss</Button>}
         {!mine && <span className="text-caption text-text-secondary">You can edit only the shared feedback (and dismiss) on another BD&apos;s row.</span>}
       </div>
       <div className="flex flex-wrap gap-x-4 text-caption text-text-secondary">
