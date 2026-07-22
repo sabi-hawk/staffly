@@ -207,7 +207,7 @@ function ExpandEditor({ r, mine, busy, stacks, onPatch }: { r: any; mine: boolea
           {stacks.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </FloatSelect>
         <FloatInput id={`jb-url-${r.id}`} label="Job post URL" value={f.job_post_url} onChange={(e) => set("job_post_url", e.target.value)} wrapClassName="lg:col-span-2" disabled={!mine} />
-        <FloatInput id={`jb-feedback-${r.id}`} label="Feedback (shared)" hint="Any BD can add feedback — e.g. why it's dismissed, or a note about the post." value={f.feedback} onChange={(e) => set("feedback", e.target.value)} wrapClassName="lg:col-span-3" />
+        <FloatInput id={`jb-feedback-${r.id}`} label="Feedback (shared)" hint="Any BD can add feedback, e.g. why it's dismissed, or a note about the post." value={f.feedback} onChange={(e) => set("feedback", e.target.value)} wrapClassName="lg:col-span-3" />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => onPatch(mine ? f : { feedback: f.feedback })} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : null} Save</Button>
@@ -219,7 +219,7 @@ function ExpandEditor({ r, mine, busy, stacks, onPatch }: { r: any; mine: boolea
       <div className="flex flex-wrap gap-x-4 text-caption text-text-secondary">
         <span>Added {formatCrmDatetime(r.created_at)}</span>
         <span>Modified {formatCrmDatetime(r.updated_at)}</span>
-        {dim && <span className="text-danger">Dismissed{r.dismisser?.full_name ? ` by ${r.dismisser.full_name}` : ""}{r.dismissed_at ? ` · ${formatCrmDatetime(r.dismissed_at)}` : ""}{r.feedback ? ` — ${r.feedback}` : ""}</span>}
+        {dim && <span className="text-danger">Dismissed{r.dismisser?.full_name ? ` by ${r.dismisser.full_name}` : ""}{r.dismissed_at ? ` · ${formatCrmDatetime(r.dismissed_at)}` : ""}{r.feedback ? ` · ${r.feedback}` : ""}</span>}
       </div>
     </div>
   );

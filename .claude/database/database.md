@@ -383,6 +383,17 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
   `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
   `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
+- `0077_job_hunts_retention.sql` — **auto-cleanup for the board** so it stays lean while the per-BD
+  "jobs hunted" counts survive forever. New table `job_hunt_daily_counts` (owner_bd_id, `day` [Karachi],
+  `count`, PK(owner_bd_id, day); RLS read = `crm.access`; **no client writes** — only the definer
+  functions below write it). Two `security definer` fns (execute revoked from anon/authenticated, granted
+  to `service_role`): `snapshot_job_hunt_counts()` upserts each BD's per-Karachi-day live count with
+  `GREATEST` on conflict (so a purged day keeps its peak), and `purge_job_hunts(retention_days int
+  default 10)` snapshots then deletes `job_hunts` whose Karachi day is older than the window, returning
+  the row count. Driven by the guarded daily cron `GET /api/cron/purge-job-hunts` (`isAuthorizedCron`,
+  Bearer `CRON_SECRET`; scheduled in `vercel.json` at 20:00 UTC). Reads that need historical counts use
+  `huntedCountsForRange()` (`lib/services/job-hunts.ts`), which merges the snapshot (old/purged days)
+  with live rows (recent days win) — used by the admin attendance "jobs hunted" report.
 - `0075_interview_meeting_participants.sql` — `interviews.meeting_link` (text: Zoom/Meet/other join link)
   + `interviews.participants` (jsonb `[]`, a repeatable list of `{name, note}` for people on the call
   besides us — the note holds designation / LinkedIn / contact). Both in `INTERVIEW_FIELDS`.

@@ -13,6 +13,7 @@ import { EditAttendance } from "@/components/attendance/edit-attendance";
 import { CorrectionActions } from "@/components/admin/correction-actions";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
+import { huntedCountsForRange } from "@/lib/services/job-hunts";
 import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
 
 const strip = (html: string | null | undefined) => (html ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
@@ -79,18 +80,9 @@ export default async function AdminAttendancePage({
     }
   }
 
-  // Jobs HUNTED per (BD, day) — auto-counted from the shared job board (rows a BD added that day).
-  const huntedByEmpDate: Record<string, number> = {};
-  if (empIds.length) {
-    const { data: jh } = await supabase
-      .from("job_hunts").select("owner_bd_id, created_at")
-      .in("owner_bd_id", empIds)
-      .gte("created_at", `${from}T00:00:00+05:00`).lte("created_at", `${to}T23:59:59.999+05:00`);
-    for (const h of (jh ?? []) as any[]) {
-      const d = companyToday(new Date(h.created_at));
-      huntedByEmpDate[`${h.owner_bd_id}|${d}`] = (huntedByEmpDate[`${h.owner_bd_id}|${d}`] ?? 0) + 1;
-    }
-  }
+  // Jobs HUNTED per (BD, day) — auto-counted from the shared job board (rows a BD added that day),
+  // merging live rows with the persisted daily-count snapshot so counts survive board auto-cleanup.
+  const huntedByEmpDate = empIds.length ? await huntedCountsForRange(supabase, empIds, from, to) : {};
 
   return (
     <FilterShell

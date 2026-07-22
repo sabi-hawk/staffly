@@ -37,7 +37,7 @@ export default async function JobBoardPage({ searchParams }: { searchParams: { d
     <Card>
       <CardHeader>
         <CardTitle>Job hunt board</CardTitle>
-        <p className="text-caption text-text-secondary">A shared board of hunted job posts. Everyone sees everyone&apos;s rows live. Every field is optional — add a link or a company now, fill the rest later.</p>
+        <p className="text-caption text-text-secondary">A shared board of hunted job posts. Everyone sees everyone&apos;s rows live. Every field is optional, so add a link or a company now and fill the rest later.</p>
       </CardHeader>
       <CardContent>
         <JobBoard

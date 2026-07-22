@@ -28,6 +28,24 @@ Enhancements to the Job Hunt Board:
 Deferred (owner still deciding): auto-cleanup of board rows older than ~10 days (would snapshot the daily
 per-BD hunted counts first so stats survive the purge).
 
+## 2026-07-22 — Job board auto-cleanup + persistent hunted counts (owner: "go ahead and do it")
+Owner green-lit the deferred cleanup. Implemented the snapshot-then-purge design so the board stays lean
+without ever losing the stats:
+- **`0077_job_hunts_retention.sql`:** new `job_hunt_daily_counts` (owner_bd_id, Karachi `day`, `count`;
+  RLS read = crm.access, **no client writes**). Two `security definer` fns (execute granted only to
+  `service_role`): `snapshot_job_hunt_counts()` (upsert per-BD per-day live count, `GREATEST` on conflict
+  so a purged day keeps its peak) and `purge_job_hunts(retention_days default 10)` (snapshot, then delete
+  board rows older than the Karachi-day window; returns rows purged; idempotent).
+- **Daily cron** `GET /api/cron/purge-job-hunts` (guarded by `isAuthorizedCron`, Bearer `CRON_SECRET`,
+  fail-closed) → `lib/services/job-hunts.ts#purgeJobHunts`. Scheduled in `vercel.json` (20:00 UTC daily);
+  can also be hit by an external scheduler.
+- **Reads survive the purge:** admin attendance "jobs hunted" now uses `huntedCountsForRange()` which
+  merges the persisted snapshot (old/purged days) with live rows (recent days win), so counts stay
+  accurate past the 10-day window. Dashboard "today" is always live (within retention).
+- Verified against dev: backdated rows purged, today's kept, re-run idempotent, snapshot preserved the
+  day's count. Also fixed three em dashes in the board's user-visible copy (conventions). Product doc +
+  database.md updated. Shipped 2026-07-22.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,
