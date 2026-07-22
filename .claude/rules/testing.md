@@ -15,6 +15,14 @@ ad-hoc script) → PNGs in `test-artifacts/`. **Read the screenshots** to confir
 See the `browser-verify` skill. This catches the bugs unit tests miss (it caught the RSC
 client-import 0-row-grid bug and the broken alerts feed).
 
+- **Always run `npm run e2e:auth` first.** It resets ONLY the demo accounts' passwords (service-role,
+  non-destructive — never reseeds/wipes the owner's live dev data) and verifies each sign-in, so login
+  never blocks the pass. Historically the "Invalid username or password" failure was password drift or a
+  down dev server, not a code bug. Playwright reuses the owner's running dev server (or starts its own).
+- **A new CRM/UI module or a materially changed flow ships with a `tests/e2e/*.spec.ts` in the same
+  change** (owner-mandated 2026-07-22). Specs reuse `tests/e2e/_helpers.ts` (`login`, `DEMO`, `SHOT`);
+  anything that mutates the shared cloud DB must delete what it creates.
+
 ## Definition of done (a change is shippable when)
 - `npx tsc --noEmit` clean and `npm run verify:build` green (isolated `.next-verify`; **never**
   `npm run build` while the owner's dev server may be running — shared `.next` corrupts it).

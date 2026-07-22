@@ -46,6 +46,24 @@ without ever losing the stats:
   day's count. Also fixed three em dashes in the board's user-visible copy (conventions). Product doc +
   database.md updated. Shipped 2026-07-22.
 
+## 2026-07-22 — Reliable Playwright browser-verify baked into every cycle (owner)
+Owner wants browser testing (Playwright) to be a standard, dependable part of every development cycle,
+especially for the CRM, and the past "Invalid username or password" blocker resolved.
+- **Root cause:** not a code bug — either password drift from the hard-coded demo creds, or the dev
+  server being down. Confirmed all demo logins work now; the blocker earlier was the server being down.
+- **`npm run e2e:auth`** (`scripts/e2e-ensure-auth.mjs`): self-healing preflight that resets ONLY the
+  demo accounts' passwords via the service-role admin API and verifies each sign-in. **Non-destructive**
+  — never reseeds, so the owner's live dev data is safe (reseeding via `seed:test` would wipe it).
+  Refuses to run against production.
+- **Shared `tests/e2e/_helpers.ts`** (`login`, `DEMO`, `SHOT`) so specs stop re-implementing login.
+- **New CRM coverage** `tests/e2e/crm-jobboard.spec.ts`: a BD opens the board, adds a post, asserts it
+  renders, deletes it (self-cleaning); a non-BD is redirected away. Both pass live.
+- **Workflow docs updated:** `browser-verify` skill + `.claude/rules/testing.md` now mandate running
+  `e2e:auth` first and shipping a spec with any new CRM/UI module. DECISIONS #103.
+What I need from the owner going forward: just keep the dev server (`npm run dev`) running during a
+verify pass, or let me launch my own — Playwright reuses a running server or starts its own. Nothing
+else; `e2e:auth` handles credentials. Shipped 2026-07-22.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,

@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "test:rls": "node scripts/rls-test.mjs",
     "test:int": "vitest run --config vitest.integration.config.ts",
+    "e2e:auth": "node scripts/e2e-ensure-auth.mjs",
     "test:e2e": "playwright test",
     "report": "node scripts/final-report.mjs"
   },
