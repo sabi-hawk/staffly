@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { bdColor } from "@/lib/crm/bd-color";
+import { GoogleCalendarButton } from "@/components/crm/gcal-button";
 
 export type CalEvent = {
   id: string; interview_at: string; round: string | null; status: string | null; outcome: string | null;
@@ -47,7 +48,10 @@ export function CalendarEvent({ ev }: { ev: CalEvent }) {
               {ev.developer && <div className="flex justify-between gap-3"><dt className="text-text-secondary">Developer</dt><dd>{ev.developer}</dd></div>}
               <div className="flex justify-between gap-3"><dt className="text-text-secondary">BD</dt><dd style={{ color: c.text }}>{ev.owner_name ?? "—"}</dd></div>
             </dl>
-            <a href={`/crm/leads?tab=interviews`} className="mt-3 inline-block text-caption text-brand-primary hover:underline">Open in interviews →</a>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <GoogleCalendarButton interviewId={ev.id} variant="link" />
+              <a href={`/crm/leads?tab=interviews`} className="text-caption text-brand-primary hover:underline">Open in interviews →</a>
+            </div>
           </div>
         </div>
       )}

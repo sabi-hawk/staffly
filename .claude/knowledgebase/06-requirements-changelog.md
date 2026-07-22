@@ -64,6 +64,30 @@ What I need from the owner going forward: just keep the dev server (`npm run dev
 verify pass, or let me launch my own — Playwright reuses a running server or starts its own. Nothing
 else; `e2e:auth` handles credentials. Shipped 2026-07-22.
 
+## 2026-07-22 — Job board save UX, leads default, loading feedback, am/pm times, GCal scheduling (owner)
+A batch of CRM polish + one new feature:
+- **Job board — instant edits + stable order.** Edits/dismiss/delete now apply optimistically (local
+  state, ~50ms) instead of waiting on `router.refresh`; a pending-write guard avoids clobbering. Root
+  cause of rows jumping to the bottom on edit: a bulk paste inserts in ONE transaction → identical
+  `created_at` → `created_at DESC` had no tiebreak, so an UPDATE reshuffled the tie group. Fixed with
+  `created_at DESC, id DESC`.
+- **Leads list defaults to In progress** (was all statuses); "All statuses" is the explicit no-filter.
+- **Loading feedback.** Dismissing a lead / interview / assessment kept `busy` only for the fetch, so
+  the toast landed 2-3s before the row updated (looked stuck). Now the control stays loading THROUGH
+  the refresh (`useTransition`) with an "Updating…" hint; the lead status shows optimistically so it
+  doesn't flip back.
+- **Times are 12-hour am/pm everywhere** (owner: never 24-hour). Fixed the DateTimePicker trigger
+  (showed 18:00), `formatCrmDatetime` (CRM lists / interview "given" line / job board), and swept the
+  remaining en-GB 24-hour spots (attendance edit + check-widget, activity/audit logs).
+- **NEW — one-click "Add to Google Calendar" for an interview** (interview row + calendar popup):
+  `GET /api/crm/interviews/[id]/gcal` builds a Google Calendar TEMPLATE URL — title, interview time in
+  **Asia/Karachi** (`ctz`), the assigned developer (`whom_should_give` else `given_by`) as a **guest**
+  via their primary email, the **meeting link** as location, and the lead's **documents as 14-day
+  signed links** in the description. No API/OAuth/secrets. `lib/crm/gcal.ts` + `components/crm/gcal-button.tsx`.
+  Real file ATTACHMENTS need the Google Calendar API + OAuth + Drive — deferred (owner chose "ship the
+  link version now, API later"). Verified: URL params correct (guest email, 15:00-16:00 Karachi, signed
+  doc link present). Shipped 2026-07-22. DECISIONS #104.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,

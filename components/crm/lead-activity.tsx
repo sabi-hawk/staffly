@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus, EyeOff, RotateCcw, Video, Users } from "lucide-react";
+import { GoogleCalendarButton } from "@/components/crm/gcal-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
@@ -118,11 +119,13 @@ export function LeadActivity({
                 </div>
                 {rowActions("interviews", iv.id, !!iv.dismissed_at, iEdit === iv.id, () => setIEdit(iEdit === iv.id ? null : iv.id))}
               </div>
-              {(iv.meeting_link || (iv.participants?.length ?? 0) > 0) && !iv.dismissed_at && (
+              {(iv.meeting_link || (iv.participants?.length ?? 0) > 0 || iv.interview_at) && !iv.dismissed_at && (
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption">
                   {iv.meeting_link && (/^https?:\/\//i.test(iv.meeting_link)
                     ? <a href={iv.meeting_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-brand-primary hover:underline"><Video className="size-3.5" /> Join meeting</a>
                     : <span className="inline-flex items-center gap-1 text-text-secondary"><Video className="size-3.5" /> {iv.meeting_link}</span>)}
+                  {/* One-click Google Calendar event (developer as guest, PKT time, meeting link, doc links). */}
+                  {iv.interview_at && <GoogleCalendarButton interviewId={iv.id} variant="link" />}
                   {(iv.participants?.length ?? 0) > 0 && (
                     <span className="inline-flex items-center gap-1 text-text-secondary"><Users className="size-3.5 shrink-0" /> {iv.participants.map((p) => p.name + (p.note ? ` (${p.note})` : "")).filter((x) => x.trim()).join(", ")}</span>
                   )}
