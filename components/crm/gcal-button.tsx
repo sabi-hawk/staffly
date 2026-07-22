@@ -12,11 +12,23 @@ export function GoogleCalendarButton({ interviewId, variant = "icon", className 
   async function open() {
     setBusy(true);
     try {
-      const res = await fetch(`/api/crm/interviews/${interviewId}/gcal`);
+      // POST decides: if the API is on AND this BD has connected Google, it creates the event with the
+      // documents ATTACHED (returns htmlLink); otherwise it returns the one-click URL to open.
+      const res = await fetch(`/api/crm/interviews/${interviewId}/gcal`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok || !j.url) throw new Error(j.error ?? "Could not build the event");
-      window.open(j.url, "_blank", "noopener,noreferrer");
-      if (!j.guest) toast.message("Opened Google Calendar. No developer email on file, so no guest was added.");
+      if (!res.ok) throw new Error(j.error ?? "Could not create the event");
+
+      if (j.api && j.htmlLink) {
+        window.open(j.htmlLink, "_blank", "noopener,noreferrer");
+        toast.success(j.attached ? `Event created with ${j.attached} file${j.attached === 1 ? "" : "s"} attached` : "Event created in Google Calendar");
+        return;
+      }
+      // One-click fallback (not connected / API off).
+      if (j.url) {
+        window.open(j.url, "_blank", "noopener,noreferrer");
+        if (j.needsConnect) toast.message("Opened Google Calendar (docs as links). Connect Google on your profile to attach the files automatically.");
+        else if (!j.guest) toast.message("Opened Google Calendar. No developer email on file, so no guest was added.");
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {

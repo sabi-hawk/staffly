@@ -107,6 +107,22 @@ BD can link their Google account (prereq for real file attachments):
   test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
   DECISIONS #105. Shipped 2026-07-22.
 
+## 2026-07-22 — Google Calendar API: create the event + ATTACH the documents (owner)
+The connect foundation was live but the button still used the one-click URL (docs as links, not
+attached) — the owner saw signed Supabase links on the event and asked why the API wasn't attaching.
+Built the actual create path:
+- `POST /api/crm/interviews/[id]/gcal`: when the flag is on AND the BD has connected Google, it uploads
+  each lead document to the BD's **Drive** (`drive.file`; then `anyone:reader`) and inserts a **Calendar
+  event with the files ATTACHED** (`supportsAttachments=true`), invites the developer (`sendUpdates=all`),
+  and returns the event link. If not connected / flag off, it returns the one-click URL (unchanged) so
+  nothing regresses. `lib/google/calendar.ts` (fetch-based Drive multipart upload + Calendar insert).
+- The button now POSTs and opens the created event (or the fallback URL), toasting "Event created with N
+  files attached" or nudging the BD to connect for attachments.
+- IMPORTANT for the owner: prod had **0 stored tokens** — the in-app "Connect Google Calendar" (Profile
+  page) was never completed; the earlier event was pure one-click. To get attachments: connect once on
+  the profile, then click the button. Can't be self-verified (needs a live Google token). DECISIONS #106.
+  Shipped 2026-07-22.
+
 ## 2026-07-22 — Interview duration field (owner)
 Interviews had no duration, so the calendar event assumed 60 min. Added `interviews.duration_min`
 (`0079`, minutes, default 60, check 1..600) with a **Duration** select on the interview form
