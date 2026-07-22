@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ExternalLink, Pencil, Trash2, EyeOff, RotateCcw } from "lucide-react";
+import { ExternalLink, Pencil, Trash2, CircleX, RotateCcw } from "lucide-react";
 import { CopyButton } from "@/components/crm/copy-button";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
 
@@ -69,7 +69,7 @@ export function ActivityRowActions({
       {/* Dismiss: available while the row is live. Restore: super admin only, when dismissed. */}
       {!dismissed && (
         <button onClick={() => setConfirmDismiss(true)} disabled={loading} className={`${btn} hover:text-warning`} title={`Dismiss ${noun}`} aria-label={`Dismiss ${noun}`}>
-          <EyeOff className="size-3.5" />
+          <CircleX className="size-3.5" />
         </button>
       )}
       {dismissed && canManage && (

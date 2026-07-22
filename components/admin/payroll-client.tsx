@@ -3,7 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Trash2, FileText, LockOpen, Loader2, RefreshCw, EyeOff, Undo2, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, FileText, LockOpen, Loader2, RefreshCw, CircleX, Undo2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
 import { Combobox } from "@/components/ui/combobox";
@@ -292,7 +292,7 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
           {isDraft && l.kind !== "base" && (
             <>
               <button onClick={() => handleDismiss(l.id, !dim)} disabled={rowBusy} className="text-text-secondary hover:text-text-primary disabled:opacity-40" title={dim ? "Restore (include again)" : "Dismiss (exclude from pay, keep the record)"}>
-                {dismissingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : dim ? <Undo2 className="size-3.5" /> : <EyeOff className="size-3.5" />}
+                {dismissingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : dim ? <Undo2 className="size-3.5" /> : <CircleX className="size-3.5" />}
               </button>
               <button onClick={() => handleRemove(l.id)} disabled={rowBusy} className="text-text-secondary hover:text-danger disabled:opacity-40" title="Remove line">
                 {removingId === l.id ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}

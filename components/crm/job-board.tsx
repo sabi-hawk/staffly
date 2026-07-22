@@ -7,8 +7,9 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Copy, ChevronRight, ChevronDown, ChevronLeft, ExternalLink, EyeOff, RotateCcw, Trash2, Loader2, RefreshCw, ClipboardPaste, Link2 } from "lucide-react";
+import { Plus, Copy, ChevronRight, ChevronDown, ChevronLeft, ExternalLink, CircleX, RotateCcw, Trash2, Loader2, RefreshCw, ClipboardPaste, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { FloatInput, FloatSelect, NativeSelect } from "@/components/ui/field";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -222,7 +223,7 @@ function Row({ r, meId, stacks, occ, selected, onSelect, onPatch, onDelete }: { 
             {r.job_post_url && <button onClick={() => copy(r.job_post_url, "Link copied")} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-brand-primary" title="Copy link"><Copy className="size-4" /></button>}
             {dim
               ? <button onClick={() => patch({ dismissed: false }, "Restored")} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-text-primary" title="Restore"><RotateCcw className="size-4" /></button>
-              : <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface" title="Dismiss (expand to add a reason)"><EyeOff className="size-4" /></button>}
+              : <button onClick={() => setOpen(true)} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-warning" title="Dismiss (expand to add a reason)"><CircleX className="size-4" /></button>}
             {mine && <button onClick={del} className="rounded-md p-1.5 text-text-secondary hover:bg-surface hover:text-danger" title="Delete"><Trash2 className="size-4" /></button>}
           </span>
         </TD>
@@ -242,8 +243,9 @@ function ExpandEditor({ r, mine, stacks, onPatch, onClose }: { r: any; mine: boo
   const [f, setF] = useState({ company: r.company ?? "", position: r.position ?? "", job_post_url: r.job_post_url ?? "", stack_id: r.stack_id ?? "", feedback: r.feedback ?? "" });
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const dim = !!r.dismissed;
+  const [confirmDismiss, setConfirmDismiss] = useState(false);
   // Save/dismiss/restore apply optimistically in the parent and close the editor immediately — no
-  // waiting on the server (the change is already on-screen; failures revert + toast).
+  // waiting on the server (the change is already on-screen; failures revert + toast). Dismiss asks first.
   const save = () => { onPatch(mine ? f : { feedback: f.feedback }); onClose(); };
   const dismiss = () => { onPatch({ dismissed: true, feedback: f.feedback || r.feedback }, "Dismissed"); onClose(); };
   const restore = () => { onPatch({ dismissed: false }, "Restored"); onClose(); };
@@ -264,9 +266,18 @@ function ExpandEditor({ r, mine, stacks, onPatch, onClose }: { r: any; mine: boo
         <Button size="sm" onClick={save}>Save</Button>
         {dim
           ? <Button size="sm" variant="outline" onClick={restore}><RotateCcw className="size-3.5" /> Restore</Button>
-          : <Button size="sm" variant="danger" onClick={dismiss}><EyeOff className="size-3.5" /> Dismiss</Button>}
+          : <Button size="sm" variant="danger" onClick={() => setConfirmDismiss(true)}><CircleX className="size-3.5" /> Dismiss</Button>}
         {!mine && <span className="text-caption text-text-secondary">You can edit only the shared feedback (and dismiss) on another BD&apos;s row.</span>}
       </div>
+      <ConfirmDialog
+        open={confirmDismiss}
+        onOpenChange={setConfirmDismiss}
+        title="Dismiss this job post?"
+        description="It stays on the board for the record but is crossed out. You can restore it anytime."
+        confirmLabel="Dismiss"
+        tone="danger"
+        onConfirm={async () => { dismiss(); }}
+      />
       <div className="flex flex-wrap gap-x-4 text-caption text-text-secondary">
         <span>Added {formatCrmDatetime(r.created_at)}</span>
         <span>Modified {formatCrmDatetime(r.updated_at)}</span>

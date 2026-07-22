@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, EyeOff, RotateCcw, Video, Users } from "lucide-react";
+import { Pencil, Trash2, Plus, CircleX, RotateCcw, Video, Users } from "lucide-react";
 import { GoogleCalendarButton } from "@/components/crm/gcal-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +76,7 @@ export function LeadActivity({
       <span className="flex shrink-0 gap-1">
         <Button variant="outline" size="sm" onClick={onEdit} title={editing ? "Close" : "Edit"}><Pencil className="size-4" /></Button>
         {!dismissed && (
-          <Button variant="outline" size="sm" onClick={() => setPendingDismiss({ kind, id })} title="Dismiss (cross out)"><EyeOff className="size-4" /></Button>
+          <Button variant="outline" size="sm" onClick={() => setPendingDismiss({ kind, id })} title="Dismiss (cross out)"><CircleX className="size-4" /></Button>
         )}
         {dismissed && canManage && (
           <Button variant="outline" size="sm" onClick={() => patch(kind, id, { _restore: true }, "Restored")} title="Restore"><RotateCcw className="size-4" /></Button>

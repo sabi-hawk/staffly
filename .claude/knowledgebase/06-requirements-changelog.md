@@ -114,6 +114,17 @@ Interviews had no duration, so the calendar event assumed 60 min. Added `intervi
 one-click Google Calendar route now sets the event **end = start + duration** (verified: 30 min →
 15:00–15:30 Karachi). Duration also shows on the interview meta line. Shipped 2026-07-22.
 
+## 2026-07-22 — Dismiss = circled-cross icon + confirm-first (owner)
+Owner: the dismiss control read as an eye-with-slash (`EyeOff`) and dismissed immediately. Changed the
+**dismiss icon to `CircleX`** (a circled cross — reads "remove/dismiss", distinct from the `Trash2`
+delete bin) and made **every record-dismiss confirm first**. Interviews/assessments (grid +
+lead page) already had a ReasonDialog — icon swapped. The **job board** dismissed immediately — added a
+`ConfirmDialog` ("Dismiss this job post?"). Payroll line-dismiss got the icon for consistency but keeps
+no modal (reversible, high-frequency admin toggle); notification-clear (already an `X`) left as-is.
+Convention recorded in `.claude/rules/conventions.md`. Also applied prod migrations 0077/0078/0079
+(prod was missing `duration_min` → interview save failed). Verified: job-board Dismiss shows the modal,
+strikes through only after confirm. Shipped 2026-07-22.
+
 ## 2026-07-21 — Shared BD Job Hunt Board (owner)
 New CRM module at **/crm/job-board** (its own page under CRM, not the shared employee dashboard) — a live
 collaborative board where BDs log hunted job posts. Grid columns: BD (own rows tagged **You**), Company,

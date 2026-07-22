@@ -42,6 +42,12 @@ in the same change. Seed = `supabase/seed.sql` + `scripts/seed.mjs`.
 - **Badges**: shared `Badge` (rounded-md, coloured border + translucent fill, auto-Capitalised).
   **Buttons** for approve/reject-style row actions: `variant="success" | "danger"` (soft coloured
   border + tint, not solid).
+- **Dismiss (soft-hide a record) = `CircleX` icon + a confirm dialog** (owner-mandated 2026-07-22). A
+  record dismiss (interviews, assessments, job-board posts, …) uses the circled-cross `CircleX` (NOT the
+  reveal `EyeOff`, NOT the `Trash2` delete bin) and MUST confirm first via `ConfirmDialog`/`ReasonDialog`
+  before applying — never dismiss on the first click. Restore uses `RotateCcw`/`Undo2`. (Exceptions:
+  clearing a notification and toggling a payslip line are reversible high-frequency micro-actions — cross
+  icon for consistency, no per-click modal.)
 - **Selects** always `appearance-none` with our own chevron and a real gap from the right border
   (see `FloatSelect`).
 - **No em dashes (—) in user-visible copy** — write plain sentences (owner: reads as AI-generated).
