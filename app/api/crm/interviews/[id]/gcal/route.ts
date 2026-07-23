@@ -30,7 +30,7 @@ async function loadCtx(id: string): Promise<Ctx | NextResponse> {
   const supabase = createClient(); // RLS: the caller only reads interviews they may see
   const { data: iv } = await supabase
     .from("interviews")
-    .select("id, interview_at, duration_min, round, notes, notes2, meeting_link, given_by, whom_should_give, lead:leads(id, company, role)")
+    .select("id, interview_at, duration_min, round, round_name, participants, notes, notes2, meeting_link, given_by, whom_should_give, lead:leads(id, company, role)")
     .eq("id", id)
     .maybeSingle();
   if (!iv) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -48,16 +48,29 @@ async function loadCtx(id: string): Promise<Ctx | NextResponse> {
   return { iv, lead: iv.lead, devEmail, devName };
 }
 
+// Prefer the semantic round name ("Initial call", "Technical round 1") over the ordinal for the title.
+function roundLabelOf(iv: any): string | null {
+  return iv.round_name || (iv.round ? `${iv.round} round` : null);
+}
+function peopleOf(iv: any): { name: string; note: string }[] {
+  return (Array.isArray(iv.participants) ? iv.participants : [])
+    .map((p: any) => ({ name: String(p?.name ?? "").trim(), note: String(p?.note ?? "").trim() }))
+    .filter((p: any) => p.name || p.note);
+}
 function title(ctx: Ctx) {
   const { iv, lead } = ctx;
-  return `Interview · ${lead?.company ?? "Lead"}${lead?.role ? ` · ${lead.role}` : ""}${iv.round ? ` (${iv.round})` : ""}`;
+  const rn = roundLabelOf(iv);
+  return `Interview · ${lead?.company ?? "Lead"}${rn ? ` · ${rn}` : ""}`;
 }
 function baseDetails(ctx: Ctx): string[] {
   const { iv, lead, devName } = ctx;
+  const people = peopleOf(iv);
+  const peopleText = people.map((p) => (p.note ? `${p.name} (${p.note})` : p.name)).join(", ");
   return [
-    `${iv.round ? `${iv.round} round` : "Interview"}${devName ? ` with ${devName}` : ""}.`,
+    `${roundLabelOf(iv) ?? "Interview"}${devName ? ` with ${devName}` : ""}.`,
     lead?.role ? `Role: ${lead.role}` : "",
     `Scheduled: ${formatCrmDate(iv.interview_at)} (Pakistan time)`,
+    people.length ? `People on the call (${people.length}): ${peopleText}` : "",
     iv.notes ? `\nNotes: ${iv.notes}` : "",
     iv.notes2 ? `Notes 2: ${iv.notes2}` : "",
   ].filter(Boolean);

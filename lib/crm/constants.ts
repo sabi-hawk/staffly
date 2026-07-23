@@ -25,6 +25,12 @@ export const INTERVIEW_STATUS = ["pending", "scheduled", "completed", "cancelled
 export const INTERVIEW_ROUND = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "final"] as const;
 /** Display label for a round value ("final" → "Final", others as-is). */
 export const roundLabel = (r: string) => (r === "final" ? "Final" : r);
+// Common semantic round names (a typical hiring pipeline). The field is free text — these are just
+// suggestions in a datalist; a BD can type a new one.
+export const INTERVIEW_ROUND_NAMES = [
+  "Initial call", "Technical round 1", "Technical round 2", "Technical round 3",
+  "Architectural round", "Cultural round", "Final round",
+] as const;
 export const INTERVIEW_OUTCOME = ["pending", "selected", "rejected", "on_hold"] as const;
 
 export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancelled"] as const;

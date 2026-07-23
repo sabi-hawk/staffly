@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
 import { DatePicker, DateTimePicker } from "@/components/ui/date-picker";
 import { INTERVIEW_HINTS } from "@/lib/crm/field-hints";
-import { labelize, roundLabel, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME, INTERVIEW_DURATIONS, durationMinLabel } from "@/lib/crm/constants";
+import { labelize, roundLabel, INTERVIEW_STATUS, INTERVIEW_ROUND, INTERVIEW_OUTCOME, INTERVIEW_DURATIONS, durationMinLabel, INTERVIEW_ROUND_NAMES } from "@/lib/crm/constants";
 import { companyToday } from "@/lib/time";
 import type { Opt } from "@/lib/crm/options";
 
@@ -55,6 +55,7 @@ export function InterviewForm({
     status: initial?.status ?? "scheduled",
     round: initial?.round ?? "1st",
     outcome: initial?.outcome ?? "pending",
+    round_name: initial?.round_name ?? "",
     given_by: initial?.given_by ?? devDefault,
     whom_should_give: initial?.whom_should_give ?? devDefault,
     interview_at: toLocalInput(initial?.interview_at),
@@ -126,6 +127,17 @@ export function InterviewForm({
       >
         {INTERVIEW_ROUND.map((s) => <option key={s} value={s}>{roundLabel(s)}</option>)}
       </FloatSelect>
+      <FloatInput
+        id="interview-round-name"
+        label="Round name"
+        hint="What kind of round it is — Initial call, Technical round 1, Architectural round… Pick a suggestion or type your own."
+        list="interview-round-names"
+        value={form.round_name}
+        onChange={(e) => set("round_name", e.target.value)}
+      />
+      <datalist id="interview-round-names">
+        {INTERVIEW_ROUND_NAMES.map((n) => <option key={n} value={n} />)}
+      </datalist>
       <FloatSelect
         id="interview-outcome"
         label="Outcome"

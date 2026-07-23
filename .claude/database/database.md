@@ -383,6 +383,12 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
   `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
   `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
+- `0080_interview_round_name.sql` — `interviews.round_name text` (nullable): a SEMANTIC round name
+  (Initial call / Technical round 1-3 / Architectural / Cultural / Final), separate from the ordinal
+  `round`. Free text with a datalist of presets (`INTERVIEW_ROUND_NAMES`) so a BD picks a suggestion or
+  types a new one. In `INTERVIEW_FIELDS`; used in the Google Calendar event title + the shared/copied
+  details. Interview share text also carries `participants` (people on the call) — added to the event
+  description. Copy endpoint: `GET /api/crm/interviews/[id]/share` ({text, fields}).
 - `0079_interview_duration.sql` — `interviews.duration_min int not null default 60` (check 1..600): the
   interview length in minutes, so a scheduled call has a real end time (start + duration) and the Google
   Calendar event spans the right window. Options 15/20/30/45/60/90/120/180 (`INTERVIEW_DURATIONS`); in

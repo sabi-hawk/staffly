@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus, CircleX, RotateCcw, Video, Users } from "lucide-react";
 import { GoogleCalendarButton } from "@/components/crm/gcal-button";
+import { CopyInterview } from "@/components/crm/copy-interview";
+import { Tip } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, ReasonDialog } from "@/components/ui/dialog";
@@ -73,20 +75,21 @@ export function LeadActivity({
   // Dismiss (anyone, own record) vs Restore + Delete (super admin only). A dismissed record is crossed out.
   function rowActions(kind: "interviews" | "assessments", id: string, dismissed: boolean, editing: boolean, onEdit: () => void) {
     return (
-      <span className="flex shrink-0 gap-1">
-        <Button variant="outline" size="sm" onClick={onEdit} title={editing ? "Close" : "Edit"}><Pencil className="size-4" /></Button>
+      <span className="flex shrink-0 items-center gap-1">
+        <Tip label={editing ? "Close" : "Edit"}><Button variant="outline" size="sm" onClick={onEdit} aria-label={editing ? "Close" : "Edit"}><Pencil className="size-4" /></Button></Tip>
         {!dismissed && (
-          <Button variant="outline" size="sm" onClick={() => setPendingDismiss({ kind, id })} title="Dismiss (cross out)"><CircleX className="size-4" /></Button>
+          <Tip label="Dismiss"><Button variant="outline" size="sm" onClick={() => setPendingDismiss({ kind, id })} aria-label="Dismiss"><CircleX className="size-4" /></Button></Tip>
         )}
         {dismissed && canManage && (
-          <Button variant="outline" size="sm" onClick={() => patch(kind, id, { _restore: true }, "Restored")} title="Restore"><RotateCcw className="size-4" /></Button>
+          <Tip label="Restore"><Button variant="outline" size="sm" onClick={() => patch(kind, id, { _restore: true }, "Restored")} aria-label="Restore"><RotateCcw className="size-4" /></Button></Tip>
         )}
         {dismissed && !canManage && (
           <span className="rounded-md border border-border px-1.5 text-[11px] leading-7 text-text-secondary" title="A super admin can restore or delete this">Dismissed</span>
         )}
         {canManage && (
-          <Button variant="outline" size="sm" onClick={() => setPendingDelete({ kind, id })} title="Delete permanently"><Trash2 className="size-4" /></Button>
+          <Tip label="Delete permanently"><Button variant="outline" size="sm" onClick={() => setPendingDelete({ kind, id })} aria-label="Delete permanently"><Trash2 className="size-4" /></Button></Tip>
         )}
+        {kind === "interviews" && <CopyInterview interviewId={id} />}
       </span>
     );
   }
@@ -113,6 +116,7 @@ export function LeadActivity({
                 <div className={`flex flex-wrap items-center gap-2 text-sm ${iv.dismissed_at ? "line-through" : ""}`}>
                   <span className="font-medium">{iv.job_title || iv.company || "Interview"}</span>
                   {iv.round && <Badge tone="neutral">{iv.round}</Badge>}
+                  {iv.round_name && <span className="text-caption font-medium text-brand-primary">{iv.round_name}</span>}
                   <Badge tone={statusTone(iv.status)}>{labelize(iv.status)}</Badge>
                   {iv.outcome && <Badge tone={statusTone(iv.outcome)}>{labelize(iv.outcome)}</Badge>}
                   <span className="text-text-secondary">· given {devName(iv.given_by)}{iv.whom_should_give ? ` → next ${devName(iv.whom_should_give)}` : ""} · {fmt(iv.interview_at)}{iv.interview_at && iv.duration_min ? ` · ${durationMinLabel(iv.duration_min)}` : ""}</span>
