@@ -41,7 +41,7 @@ export default async function LeadDetail({ params, searchParams }: { params: { i
   const [ivRes, asRes, profiles, developers, owners, categories] = await Promise.all([
     supabase.from("interviews").select("*").eq("lead_id", params.id).order("interview_at", { ascending: true, nullsFirst: false }),
     supabase.from("assessments").select("*").eq("lead_id", params.id).order("created_at", { ascending: true }),
-    crmProfileOptions(supabase),
+    crmProfileOptions(supabase, me.id),
     developerOptions(supabase),
     bdOptions(supabase),
     assessmentCategoryOptions(supabase),

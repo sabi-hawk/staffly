@@ -10,6 +10,7 @@ import { Pencil, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FloatInput, FloatSelect } from "@/components/ui/field";
+import { Combobox } from "@/components/ui/combobox";
 import { StatusPill } from "@/components/crm/status-pill";
 import { LEAD_HINTS } from "@/lib/crm/field-hints";
 import { labelize, LEAD_STATUS, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
@@ -96,10 +97,12 @@ export function LeadDetailsCard({
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FloatInput id="ld-company" label="Company *" hint={LEAD_HINTS.company} required value={form.company} onChange={(e) => set("company", e.target.value)} />
             <FloatInput id="ld-role" label="Role" hint={LEAD_HINTS.role} value={form.role} onChange={(e) => set("role", e.target.value)} />
-            <FloatSelect id="ld-profile" label="Profile" hint={LEAD_HINTS.profile} value={form.dev_profile_id} onChange={(e) => set("dev_profile_id", e.target.value)}>
-              <option value="">Not set</option>
-              {profiles.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </FloatSelect>
+            <Combobox
+              id="ld-profile" label="Profile" hint={LEAD_HINTS.profile}
+              value={form.dev_profile_id}
+              onChange={(v) => set("dev_profile_id", v)}
+              options={profiles.map((p) => ({ value: p.id, label: p.label, sublabel: p.sublabel, color: p.color, mine: p.mine }))}
+            />
             <FloatSelect id="ld-status" label="Status" hint={LEAD_HINTS.status} className="capitalize" value={form.status} onChange={(e) => set("status", e.target.value)}>
               {MANUAL_STATUSES.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
             </FloatSelect>

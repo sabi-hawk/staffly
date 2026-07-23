@@ -9,7 +9,7 @@ import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FloatShell } from "@/components/ui/field";
 
-export type ComboOption = { value: string; label: string; sublabel?: string; color?: string };
+export type ComboOption = { value: string; label: string; sublabel?: string; color?: string; mine?: boolean };
 
 export function Combobox({
   options,
@@ -97,6 +97,7 @@ export function Combobox({
                     <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
                       {o.color && <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: o.color }} />}
                       <span className="truncate" style={o.color ? { color: o.color } : undefined}>{o.label}</span>
+                      {o.mine && <span className="shrink-0 rounded bg-brand-primary/10 px-1 text-[10px] font-semibold text-brand-primary">You</span>}
                     </span>
                     {o.sublabel && <span className="block truncate text-caption text-text-secondary">{o.sublabel}</span>}
                   </span>

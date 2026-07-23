@@ -3,20 +3,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { receivingAccountLabel } from "@/lib/crm/receiving";
 
-export type Opt = { id: string; label: string; sublabel?: string; color?: string };
+export type Opt = { id: string; label: string; sublabel?: string; color?: string; mine?: boolean };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export async function crmProfileOptions(supabase: SupabaseClient): Promise<Opt[]> {
+// `mineId` (the current BD): profiles that BD owns are flagged `mine` so a BD-Lead who sees ALL profiles
+// can still spot their own at a glance (a "You" marker in the picker).
+export async function crmProfileOptions(supabase: SupabaseClient, mineId?: string): Promise<Opt[]> {
   // Rich two-line card in the combobox: "#14 Ali Ahmad · Backend" with the email underneath, so two
   // profiles that share a name/stack are still distinguishable by email (0043 + owner 2026-07-15).
-  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, color, stack:dev_stacks(name)").order("profile_no");
-  return (data ?? []).map((p: any) => ({
+  const { data } = await supabase.from("dev_profiles").select("id, profile_no, name, email, color, owner_bd_id, stack:dev_stacks(name)").order("profile_no");
+  const rows = (data ?? []).map((p: any) => ({
     id: p.id,
     label: `#${p.profile_no} ${p.name}${p.stack?.name ? ` · ${p.stack.name}` : ""}`,
     sublabel: p.email ?? undefined,
     // colour by the PROFILE (each is distinct), not the stack (same-stack profiles would share a colour)
     color: p.color ?? undefined,
+    mine: mineId ? p.owner_bd_id === mineId : undefined,
   }));
+  // Show the BD's own profiles first so they're easy to reach, then the rest.
+  return mineId ? rows.sort((a, b) => Number(!!b.mine) - Number(!!a.mine)) : rows;
 }
 
 export async function developerOptions(supabase: SupabaseClient): Promise<Opt[]> {
