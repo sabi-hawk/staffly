@@ -16,7 +16,8 @@ import { LEAD_HINTS } from "@/lib/crm/field-hints";
 import { labelize, LEAD_STATUS, LEAD_REASON_STATUSES } from "@/lib/crm/constants";
 import type { Opt } from "@/lib/crm/options";
 
-const MANUAL_STATUSES = LEAD_STATUS.filter((s) => !(LEAD_REASON_STATUSES as readonly string[]).includes(s));
+// Rejected / Dismissed need a reason (captured inline here, same as the card + Qualification panel).
+const needsReason = (s: string) => (LEAD_REASON_STATUSES as readonly string[]).includes(s);
 
 type Initial = {
   company: string; role: string | null; dev_profile_id: string | null; status: string;
@@ -47,6 +48,7 @@ export function LeadDetailsCard({
     budget: initial.budget ?? "",
     expected_budget: initial.expected_budget ?? "",
     shift: initial.shift ?? "",
+    feedback: "",
   });
   const set = (k: keyof typeof form, v: string) => setForm((s) => ({ ...s, [k]: v }));
 
@@ -54,18 +56,22 @@ export function LeadDetailsCard({
     setForm({
       company: initial.company ?? "", role: initial.role ?? "", dev_profile_id: initial.dev_profile_id ?? "",
       status: initial.status ?? "in_progress", owner_bd_id: initial.owner_bd_id ?? "",
-      budget: initial.budget ?? "", expected_budget: initial.expected_budget ?? "", shift: initial.shift ?? "",
+      budget: initial.budget ?? "", expected_budget: initial.expected_budget ?? "", shift: initial.shift ?? "", feedback: "",
     });
     setEditing(false);
   }
 
   async function save() {
     if (!form.company.trim()) return toast.error("Company is required");
+    if (needsReason(form.status) && !form.feedback.trim()) return toast.error(`A reason is required to mark this lead ${labelize(form.status)}`);
     setBusy(true);
+    // Only send `feedback` when the status needs a reason — otherwise we'd wipe any existing feedback.
+    const payload: Record<string, unknown> = { ...form };
+    if (!needsReason(form.status)) delete payload.feedback;
     const res = await fetch(`/api/crm/leads/${leadId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     const json = await res.json().catch(() => ({}));
     setBusy(false);
@@ -104,8 +110,11 @@ export function LeadDetailsCard({
               options={profiles.map((p) => ({ value: p.id, label: p.label, sublabel: p.sublabel, color: p.color, mine: p.mine }))}
             />
             <FloatSelect id="ld-status" label="Status" hint={LEAD_HINTS.status} className="capitalize" value={form.status} onChange={(e) => set("status", e.target.value)}>
-              {MANUAL_STATUSES.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
+              {LEAD_STATUS.map((s) => <option key={s} value={s}>{labelize(s)}</option>)}
             </FloatSelect>
+            {needsReason(form.status) && (
+              <FloatInput id="ld-reason" label={`Reason for ${labelize(form.status)} *`} hint="Required — why the lead is being rejected or dismissed. Shown in its history." value={form.feedback} onChange={(e) => set("feedback", e.target.value)} />
+            )}
             {canAssignOwner && (
               <FloatSelect id="ld-owner" label="Owner (BD)" hint={LEAD_HINTS.owner} value={form.owner_bd_id} onChange={(e) => set("owner_bd_id", e.target.value)}>
                 <option value="">Me</option>

@@ -383,6 +383,9 @@ Cloud Supabase Postgres 17. Migrations in `supabase/migrations/` (applied via `n
   to the `supabase_realtime` publication for live updates. Routes: `POST /api/crm/job-hunts` (single),
   `POST /api/crm/job-hunts/bulk` (paste many URLs, de-duped vs the paste AND the board),
   `PATCH|DELETE /api/crm/job-hunts/[id]`. Page `/crm/job-board`, component `job-board.tsx`.
+- `0081_assessment_expired.sql` — widened `assessments_status_check` to add **`expired`** (deadline
+  passed, no submission): status ∈ pending / in_progress / completed / cancelled / **expired**. Matches
+  `ASSESSMENT_STATUS`.
 - `0080_interview_round_name.sql` — `interviews.round_name text` (nullable): a SEMANTIC round name
   (Initial call / Technical round 1-3 / Architectural / Cultural / Final), separate from the ordinal
   `round`. Free text with a datalist of presets (`INTERVIEW_ROUND_NAMES`) so a BD picks a suggestion or

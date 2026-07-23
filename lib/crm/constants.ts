@@ -33,7 +33,7 @@ export const INTERVIEW_ROUND_NAMES = [
 ] as const;
 export const INTERVIEW_OUTCOME = ["pending", "selected", "rejected", "on_hold"] as const;
 
-export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "cancelled"] as const;
+export const ASSESSMENT_STATUS = ["pending", "in_progress", "completed", "expired", "cancelled"] as const;
 
 // Assessment camera setting (0069) — optional; null/"" = not determined (the default, since we usually
 // don't know up front). Category is a configurable list (assessment_categories), not a fixed enum.
