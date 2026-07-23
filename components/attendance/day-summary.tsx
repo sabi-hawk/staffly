@@ -3,8 +3,10 @@
 // mini modal with the BD job applications (profile → count, + total) and the Notes. Used in the
 // Recent-days / attendance-history "Task summary" column so the whole summary is visible, not just text.
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { summaryShareText } from "@/lib/summary-share";
 
 const PROSE = "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-brand-primary [&_a]:underline [&_p]:mb-1";
 const strip = (html: string | null | undefined) => (html ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
@@ -13,10 +15,19 @@ export type JobLine = { label: string; count: number };
 
 export function DaySummary({ workDate, notesHtml, jobs = [], hunted = 0 }: { workDate: string; notesHtml: string | null; jobs?: JobLine[]; hunted?: number }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const hasNotes = !!strip(notesHtml);
   const total = jobs.reduce((s, j) => s + (Number(j.count) || 0), 0);
   const hasContent = hasNotes || total > 0 || hunted > 0;
   if (!hasContent) return null;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(summaryShareText({ date: workDate, lines: jobs, hunted, notes: notesHtml }));
+      setCopied(true); toast.success("Summary copied");
+      setTimeout(() => setCopied(false), 1500);
+    } catch { toast.error("Copy failed"); }
+  }
 
   return (
     <>
@@ -30,7 +41,12 @@ export function DaySummary({ workDate, notesHtml, jobs = [], hunted = 0 }: { wor
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogTitle>Summary · {workDate}</DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle>Summary · {workDate}</DialogTitle>
+            <button onClick={copy} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-caption text-text-secondary hover:bg-surface hover:text-brand-primary">
+              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />} Copy
+            </button>
+          </div>
           <DialogDescription>What was done on this day.</DialogDescription>
           <div className="mt-4 space-y-4">
             {hunted > 0 && (

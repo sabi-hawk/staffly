@@ -14,7 +14,7 @@ import { CorrectionActions } from "@/components/admin/correction-actions";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { DaySummary, type JobLine } from "@/components/attendance/day-summary";
 import { huntedCountsForRange } from "@/lib/services/job-hunts";
-import { formatHours, formatCode, formatCrmDatetime } from "@/lib/utils";
+import { formatHours, formatCode } from "@/lib/utils";
 
 const strip = (html: string | null | undefined) => (html ?? "").replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").trim();
 
@@ -180,24 +180,16 @@ export default async function AdminAttendancePage({
                     </TD>
                     <TD className="max-w-[240px]">
                       {(() => {
+                        // Eye-only (owner 2026-07-22): no preview text (it collided with the icon) — just the
+                        // eye to open the full summary, or a "missing" badge. Keep a small "late" flag.
                         const jobs = jobsByEmpDate[`${r.employee_id}|${r.work_date}`] ?? [];
                         const total = jobs.reduce((s, j) => s + j.count, 0);
                         const hunted = huntedByEmpDate[`${r.employee_id}|${r.work_date}`] ?? 0;
-                        const notesText = strip(r.daily_summary);
-                        if (notesText || total > 0 || hunted > 0) {
-                          const preview = notesText || [total > 0 ? `${total} job app${total === 1 ? "" : "s"}` : "", hunted > 0 ? `${hunted} hunted` : ""].filter(Boolean).join(" · ");
+                        if (strip(r.daily_summary) || total > 0 || hunted > 0) {
                           return (
                             <div className="flex items-center gap-2">
-                              <div className="min-w-0 space-y-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="truncate text-text-secondary">{preview}</span>
-                                  {r.summary_late && <Badge tone="warning">late</Badge>}
-                                </div>
-                                {r.summary_late && r.summary_at && (
-                                  <div className="text-caption text-warning">added {formatCrmDatetime(r.summary_at)}</div>
-                                )}
-                              </div>
                               <DaySummary workDate={r.work_date} notesHtml={r.daily_summary} jobs={jobs} hunted={hunted} />
+                              {r.summary_late && <Badge tone="warning">late</Badge>}
                             </div>
                           );
                         }

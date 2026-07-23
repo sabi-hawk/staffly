@@ -107,6 +107,32 @@ BD can link their Google account (prereq for real file attachments):
   test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
   DECISIONS #105. Shipped 2026-07-22.
 
+## 2026-07-23 — Interview copy-for-Slack, round names, people-on-call, summary copy + eye-only, rich lead profile picker (owner)
+A batch of CRM polish:
+- **Copy interview details (for Slack)** on the calendar popup AND the lead's interview row: a copy
+  button pulls full details (date/time, duration, company, job designation, job-post URL, budget, the
+  dev profile name/email/stack, the assigned developer + email, meeting link, people on the call) via
+  `GET /api/crm/interviews/[id]/share`. The calendar popup now shows those rich details too (it fetches
+  `/share` on open). **Bug fixed:** the `/share` query referenced a non-existent `leads.job_post_url`
+  column, so it returned "Not found" for every interview — the copy was fully broken; now it works.
+- **Round name field** (`0080`, `interviews.round_name`): a semantic name (Initial call / Technical
+  round 1-3 / Architectural / Cultural / Final) via a datalist (pick a preset or type your own). Used in
+  the **calendar event title** (`Interview · Company · <round name>`) and the copied details.
+- **People on the call** → added to the calendar **event description** (`People on the call (N): name
+  (note), …`), from the interview's `participants`.
+- **Instant tooltips**: action icons (edit/dismiss/copy) use `<Tip>` (CSS, no delay) instead of the
+  slow native `title`. New `components/ui/tooltip.tsx`.
+- **Summary copy + eye-only**: the read-only day-summary eye modal gets a **Copy** button (per-profile
+  `#id name · stack · count`, jobs hunted, date, notes). Admin attendance Summary column now shows just
+  the **eye** (+ "missing"), no truncated preview text.
+- **BD daily summary = edit mode + copy**: the "Today's summary" opens **read-only** with **Edit** +
+  **Copy** buttons (a saved summary no longer looks "still being typed"); Edit reveals the fields, Save
+  returns to read-only, Cancel reverts. Copy builds the same Slack text.
+- **Rich lead profile picker**: the lead-edit Profile dropdown was a plain select — swapped to the rich
+  `Combobox` (colour, name·stack, email). Profiles the logged-in BD owns show a **"You"** marker and
+  sort first (`crmProfileOptions(supabase, mineId)`), so a BD-Lead who sees all profiles spots their own.
+Migrations 0080 applied dev + prod. tsc + build clean. DECISIONS #107. Shipped 2026-07-23.
+
 ## 2026-07-22 — Google Calendar API: create the event + ATTACH the documents (owner)
 The connect foundation was live but the button still used the one-click URL (docs as links, not
 attached) — the owner saw signed Supabase links on the event and asked why the API wasn't attaching.

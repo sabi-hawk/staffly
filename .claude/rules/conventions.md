@@ -50,6 +50,12 @@ in the same change. Seed = `supabase/seed.sql` + `scripts/seed.mjs`.
   icon for consistency, no per-click modal.)
 - **Selects** always `appearance-none` with our own chevron and a real gap from the right border
   (see `FloatSelect`).
+- **Icon-button tooltips = instant** (owner 2026-07-22): the native `title` attribute waits ~1s. For
+  action icons (edit / dismiss / copy / …) wrap in `<Tip label>` (`components/ui/tooltip.tsx`, CSS-only,
+  no delay) and keep an `aria-label` on the button. Don't rely on `title` for discoverability.
+- **Read-only summary cells show the eye only** (owner 2026-07-22): a per-row summary/notes cell shows
+  just the `DaySummary` eye (open for the full view) + a "missing" badge when empty — no truncated
+  preview text (it collided with the icon).
 - **No em dashes (—) in user-visible copy** — write plain sentences (owner: reads as AI-generated).
 - Every field that needs explaining gets an InfoHint `hint` (2 words to 3 lines, say WHY it exists).
 
