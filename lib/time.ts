@@ -68,11 +68,13 @@ export function resolveRange(
     return { from: customFrom || isoDaysAgo(30), to: customTo || today, range: "custom" };
   }
   if (r === "week") {
-    // This week: Monday → today (company timezone).
+    // This week: the FULL Monday → Sunday week (company timezone) — owner wants the whole week, not
+    // just up to today (2026-07-23).
     const d = new Date(`${today}T00:00:00+05:00`);
     const dow = (d.getUTCDay() + 6) % 7; // Mon=0
-    d.setUTCDate(d.getUTCDate() - dow);
-    return { from: companyToday(d), to: today, range: "week" };
+    const mon = new Date(d); mon.setUTCDate(d.getUTCDate() - dow);
+    const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
+    return { from: companyToday(mon), to: companyToday(sun), range: "week" };
   }
   if (r === "month") {
     // Current calendar month, 1st → today (company timezone).

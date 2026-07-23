@@ -107,6 +107,21 @@ BD can link their Google account (prereq for real file attachments):
   test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
   DECISIONS #105. Shipped 2026-07-22.
 
+## 2026-07-23 — Lead-edit statuses, assessment "expired", recharts BD dashboards, this-week default (owner)
+- **Lead edit status** now offers the full set incl. **Rejected / Dismissed** (was only in progress /
+  on hold / closed). Picking Rejected/Dismissed reveals a **required reason** inline (sent as `feedback`;
+  only sent when a reason status is chosen so it never wipes existing feedback).
+- **Assessments gain an "Expired" status** (`0081`, deadline passed with no submission) — in the status
+  dropdown + `ASSESSMENT_STATUS`.
+- **BD Performance charts rebuilt with recharts** (was hand-rolled SVG): grouped bar "Activity per BD" +
+  area "Weekly trend", validated colorblind-safe palette, hover tooltips, legend. **Drill-down:** click a
+  BD's bar → the page re-scopes to that BD (`?bd=`), and the Breakdown + per-profile tables become the
+  detail. Standardised on recharts (already installed) for future dashboards — no new chart lib.
+- **BD Performance defaults to "This week" = Monday→Sunday** (`resolveRange('week')` now spans the full
+  week, not Mon→today). Verified: opens on 21→27 Jul.
+- (Partial ask deferred: the assessment "type" field — the message was cut off; awaiting the full spec.)
+Migrations 0081 dev + prod. tsc + build clean; charts screenshot-verified. DECISIONS #108. Shipped 2026-07-23.
+
 ## 2026-07-23 — Interview copy-for-Slack, round names, people-on-call, summary copy + eye-only, rich lead profile picker (owner)
 A batch of CRM polish:
 - **Copy interview details (for Slack)** on the calendar popup AND the lead's interview row: a copy

@@ -15,10 +15,11 @@ import { Briefcase, CalendarClock, ClipboardList, Trophy, Send, type LucideIcon 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const dynamic = "force-dynamic";
 
+// Categorical palette (validated colorblind-safe + contrast-safe against the light chart surface).
 const SERIES = [
-  { name: "Leads", color: "hsl(217 71% 53%)" },
-  { name: "Interviews", color: "hsl(160 60% 40%)" },
-  { name: "Assessments", color: "hsl(35 90% 55%)" },
+  { name: "Leads", color: "#2563eb" },
+  { name: "Interviews", color: "#059669" },
+  { name: "Assessments", color: "#d97706" },
 ];
 
 // ISO week bucket (Monday) of a date, in Asia/Karachi.
@@ -56,7 +57,7 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
   const me = await getCurrentProfile();
   if (!me || !hasPermP(me, PERM.crmAnalyticsView)) redirect("/dashboard");
   const supabase = createClient();
-  const { from, to, range } = resolveRange((searchParams.range as RangeKey) ?? "month", searchParams.from, searchParams.to);
+  const { from, to, range } = resolveRange((searchParams.range as RangeKey) ?? "week", searchParams.from, searchParams.to);
   const bdFilter = searchParams.bd || "";
   // Karachi day edges (a bare date would anchor to UTC midnight = 5am PKT and drop early rows).
   const fromISO = new Date(`${from}T00:00:00+05:00`).toISOString();
@@ -158,7 +159,7 @@ export default async function BdPerformancePage({ searchParams }: { searchParams
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             <Panel title={bdFilter ? "Activity" : "Activity per BD"}>
               {hasBarData ? (
-                <BarChart groups={rows.map((r) => ({ label: r.name, values: [r.leads, r.interviews, r.assessments] }))} series={SERIES} />
+                <BarChart groups={rows.map((r) => ({ label: r.name, values: [r.leads, r.interviews, r.assessments], id: r.id }))} series={SERIES} drilldownParam={bdFilter ? undefined : "bd"} />
               ) : (
                 <p className="py-10 text-center text-caption text-text-secondary">No activity in this range.</p>
               )}
