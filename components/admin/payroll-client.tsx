@@ -314,7 +314,10 @@ function RunRow({ run, emp, lines, open, savedComps = [], refreshing, onToggle, 
         </TD>
         <TD className="tabular text-text-secondary">{formatCode(emp?.employee_code)}</TD>
         <TD>{emp?.full_name ?? "—"}</TD>
-        <TD className="tabular text-caption">{run.period_start}→{run.period_end}</TD>
+        <TD className="tabular text-caption whitespace-nowrap leading-tight">
+          <div>{run.period_start} <span className="text-text-secondary">→</span></div>
+          <div>{run.period_end}</div>
+        </TD>
         <TD className="tabular">{formatPKR(run.base_salary)}</TD>
         <TD className="tabular">{formatPKR(run.additions_total)}</TD>
         <TD className="tabular text-danger">{formatPKR(run.deductions)}</TD>
