@@ -107,6 +107,23 @@ BD can link their Google account (prereq for real file attachments):
   test (can't be automated). NEXT: create-event-with-Drive-attachments once a BD has connected.
   DECISIONS #105. Shipped 2026-07-22.
 
+## 2026-07-24 — Leads Board (Kanban pipeline) view (owner)
+Owner wanted a Jira-style board for leads with stage columns, flagging the hard case: activities
+interleave (Assessment → R1 → another Assessment → R2), so "which column?" isn't linear. Resolved with
+a **current-stage** model (owner picked it): columns are stage TYPES, not unique events, so there's ONE
+Assessment column — a later assessment just moves the card back there (its history stays on the card),
+avoiding an "Assessment 2 / 3" explosion.
+- **`?view=board` toggle** (Cards ↔ Board) on the Leads tab. Horizontal-scroll pipeline: New · Assessment
+  · 1st…furthest-round-present · Selected · Closed · Parked (terminal columns only when non-empty).
+- A lead sits in the column of its **most recent activity's stage** (`lib/crm/lead-stage.ts`): interviews
+  by interview_at/received_date, assessments by entry_date; dismissed activities excluded; selected
+  outcome → Selected, closed → Closed, on_hold/rejected/dismissed → Parked.
+- **No drag-drop** (owner's reasoning: can't drag to a round the lead hasn't done) — placement is derived
+  from state. Server-rendered (cards are links, no client JS). Board loads a big page (respects filters).
+- Verified on real data: a lead with 3 interviews but a newer assessment lands in Assessment (the
+  interleaving case, working). Couldn't screenshot the UI (network flaky) — owner to eyeball.
+`components/crm/{leads-board,leads-view-toggle}.tsx`. No migration. tsc + build clean. DECISIONS #109.
+
 ## 2026-07-23 — Lead-edit statuses, assessment "expired", recharts BD dashboards, this-week default (owner)
 - **Lead edit status** now offers the full set incl. **Rejected / Dismissed** (was only in progress /
   on hold / closed). Picking Rejected/Dismissed reveals a **required reason** inline (sent as `feedback`;

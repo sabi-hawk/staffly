@@ -11,6 +11,8 @@ import { CrmFilterBar } from "@/components/crm/filter-bar";
 import { CrmDateFilter } from "@/components/crm/crm-date-filter";
 import { FilterShell } from "@/components/crm/filter-shell";
 import { LeadCardActions } from "@/components/crm/lead-card-actions";
+import { LeadsBoard } from "@/components/crm/leads-board";
+import { LeadsViewToggle } from "@/components/crm/leads-view-toggle";
 import { StatusPill } from "@/components/crm/status-pill";
 import { CopyButton } from "@/components/crm/copy-button";
 import { leadShareText } from "@/lib/crm/share-text";
@@ -20,7 +22,7 @@ import { formatCrmDate } from "@/lib/utils";
 import { resolveRange, type RangeKey } from "@/lib/time";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string; range?: string; from?: string; to?: string };
+type SP = { page?: string; pageSize?: string; status?: string; owner?: string; profile?: string; q?: string; range?: string; from?: string; to?: string; view?: string };
 
 const roundRank = (r: string | null) => (r ? INTERVIEW_ROUND.indexOf(r as any) : -1);
 const initials = (name?: string | null) =>
@@ -42,6 +44,10 @@ function BdAvatar({ fullName }: { fullName?: string | null }) {
 export async function LeadsCards({ searchParams, profiles }: { searchParams: SP; profiles: Opt[] }) {
   const supabase = createClient();
   const { page, pageSize, from, to } = parsePaging(searchParams);
+  // Board (Kanban) view shows the whole pipeline at once, so it loads a big page (no small pagination).
+  const view: "cards" | "board" = searchParams.view === "board" ? "board" : "cards";
+  const rangeFrom = view === "board" ? 0 : from;
+  const rangeTo = view === "board" ? 499 : to;
 
   let query = supabase
     .from("leads")
@@ -49,8 +55,8 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
       `id, company, role, status, feedback, budget, expected_budget, shift, updated_at,
        profile:dev_profiles(name, stack:dev_stacks(name)),
        owner:profiles!leads_owner_bd_id_fkey(full_name),
-       interviews(id, round, status, outcome, interview_at, received_date),
-       assessments(id, status, entry_date, deadline)`,
+       interviews(id, round, status, outcome, interview_at, received_date, dismissed_at),
+       assessments(id, status, entry_date, deadline, dismissed_at)`,
       { count: "exact" }
     );
   // Default to IN PROGRESS (the active pipeline) so the list opens on live leads, not everything;
@@ -68,7 +74,7 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
   // Last-activity date range (by updated_at) — default last 30 days, like interviews/assessments.
   const { from: rFrom, to: rTo, range } = resolveRange((searchParams.range as RangeKey) ?? "1m", searchParams.from, searchParams.to);
   query = query.gte("updated_at", `${rFrom}T00:00:00`).lte("updated_at", `${rTo}T23:59:59`);
-  const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(from, to);
+  const { data: rows, count } = await query.order("updated_at", { ascending: false }).range(rangeFrom, rangeTo);
 
   const list = (rows ?? []) as any[];
 
@@ -95,7 +101,10 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
             <Badge tone="success">🏆 {closedCount} deal{closedCount === 1 ? "" : "s"} closed. Details with admin</Badge>
           )}
         </span>
-        <CrmDateFilter range={range} from={rFrom} to={rTo} />
+        <div className="flex items-center gap-2">
+          <LeadsViewToggle view={view} />
+          <CrmDateFilter range={range} from={rFrom} to={rTo} />
+        </div>
       </div>
       <div className="border-t border-border pt-3">
         <CrmFilterBar
@@ -118,6 +127,10 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
 
   return (
     <FilterShell toolbar={toolbar}>
+      {view === "board" ? (
+        <LeadsBoard leads={list} />
+      ) : (
+      <>
       {list.length === 0 && (
         <div className="rounded-lg border border-dashed border-border py-10 text-center text-text-secondary">
           No leads match. Use <span className="font-medium">Add</span> to start a company thread.
@@ -191,6 +204,8 @@ export async function LeadsCards({ searchParams, profiles }: { searchParams: SP;
       <div className="mt-4">
         <Pagination total={count ?? 0} page={page} pageSize={pageSize} />
       </div>
+      </>
+      )}
     </FilterShell>
   );
 }
