@@ -1,19 +1,20 @@
 "use client";
 // Cards ↔ Board (Kanban pipeline) toggle for the Leads tab. Writes ?view=board (cards is the default,
 // so it clears the param).
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutGrid, Columns3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFilterTransition } from "@/components/crm/filter-shell";
 
 export function LeadsViewToggle({ view }: { view: "cards" | "board" }) {
-  const router = useRouter();
   const sp = useSearchParams();
   const pathname = usePathname();
+  const { nav } = useFilterTransition(); // shows the FilterShell loading overlay during the switch
   const go = (v: "cards" | "board") => {
     const p = new URLSearchParams(Array.from(sp.entries()));
     if (v === "cards") p.delete("view"); else p.set("view", v);
     p.delete("page");
-    router.push(`${pathname}?${p.toString()}`);
+    nav(`${pathname}?${p.toString()}`);
   };
   const seg = "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-caption font-medium";
   const on = "bg-white text-brand-primary shadow-sm";

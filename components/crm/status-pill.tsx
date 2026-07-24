@@ -20,8 +20,8 @@ const DOT: Record<string, string> = {
 export function StatusPill({ status, className }: { status: string | null | undefined; className?: string }) {
   const tone = statusTone(status);
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-caption font-semibold", TONE[tone] ?? TONE.neutral, className)}>
-      <span className={cn("size-1.5 rounded-full", DOT[tone] ?? DOT.neutral)} />
+    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[11px] font-medium leading-5", TONE[tone] ?? TONE.neutral, className)}>
+      <span className={cn("size-1 rounded-full", DOT[tone] ?? DOT.neutral)} />
       {labelize(status)}
     </span>
   );

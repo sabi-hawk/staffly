@@ -41,20 +41,9 @@ export function DaySummary({ workDate, notesHtml, jobs = [], hunted = 0 }: { wor
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <div className="flex items-center justify-between gap-2">
-            <DialogTitle>Summary · {workDate}</DialogTitle>
-            <button onClick={copy} className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-caption text-text-secondary hover:bg-surface hover:text-brand-primary">
-              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />} Copy
-            </button>
-          </div>
+          <DialogTitle>Summary · {workDate}</DialogTitle>
           <DialogDescription>What was done on this day.</DialogDescription>
           <div className="mt-4 space-y-4">
-            {hunted > 0 && (
-              <div className="flex items-center justify-between rounded-md border border-border bg-surface/60 px-3 py-2 text-sm">
-                <span className="font-medium text-text-primary">Jobs hunted (board)</span>
-                <span className="tabular font-semibold text-text-primary">{hunted}</span>
-              </div>
-            )}
             {total > 0 && (
               <div>
                 <div className="mb-2 text-sm font-medium text-text-primary">Job applications</div>
@@ -72,12 +61,25 @@ export function DaySummary({ workDate, notesHtml, jobs = [], hunted = 0 }: { wor
                 </div>
               </div>
             )}
-            {hasNotes && (
-              <div>
-                <div className="mb-2 text-sm font-medium text-text-primary">Notes</div>
-                <div className={`rounded-md border border-border p-3 text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: notesHtml as string }} />
+            {/* Jobs hunted — always shown for a BD summary, even when 0. */}
+            {(total > 0 || hunted > 0) && (
+              <div className="flex items-center justify-between rounded-md border border-border bg-surface/60 px-3 py-2 text-sm">
+                <span className="font-medium text-text-primary">Jobs hunted (board)</span>
+                <span className="tabular font-semibold text-text-primary">{hunted}</span>
               </div>
             )}
+            <div>
+              <div className="mb-2 text-sm font-medium text-text-primary">Notes <span className="font-normal text-text-secondary">(optional)</span></div>
+              {hasNotes
+                ? <div className={`rounded-md border border-border p-3 text-sm text-text-primary ${PROSE}`} dangerouslySetInnerHTML={{ __html: notesHtml as string }} />
+                : <div className="rounded-md border border-dashed border-border p-3 text-sm text-text-secondary/70">No notes.</div>}
+            </div>
+          </div>
+          {/* Copy at the bottom-right so it never collides with the dialog's close (X). */}
+          <div className="mt-4 flex justify-end border-t border-border pt-3">
+            <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-caption font-medium text-text-secondary hover:bg-surface hover:text-brand-primary">
+              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />} Copy for Slack
+            </button>
           </div>
         </DialogContent>
       </Dialog>
